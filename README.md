@@ -1,6 +1,6 @@
 # Trae Harness Advisor
 
-> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.3）
+> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.4）
 
 ---
 
@@ -16,7 +16,7 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.3）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.4）
 │   └── templates/                                     # 可复用模板（14 个文件）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）

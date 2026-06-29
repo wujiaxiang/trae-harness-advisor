@@ -1,8 +1,8 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v4.3  
+> **版本**: v4.4  
 > **日期**: 2026-06-29  
-> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）  
+> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）  ；v4.3 决策 15；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -248,6 +248,21 @@
 3. 这把 v4.1 砍掉的"协商"以**可选、且基于真实草稿**的形式请回来，正好对应"开发写一版、测试 review 后调标准"。
 
 **影响**：覆盖了"验收标准自顶向下(预定)"与"自底向上(涌现)"两类来源；联调走 planned、早期开发可选 codraft。改动 planner-role / stage-executor / 文档 / 自检计划。
+
+---
+
+### 决策 16：v4.3 真机重跑结论——动态编排=图灵完备 + 方案1（MCP 代行）（v4.4）
+
+**日期**：2026-06-29
+
+**背景**：v4.3 重跑（commit 21e4497）验证了 Decision 独立、retry 闭环、三件套→.trae/specs 全部成立；AP4 给出决定性结论：**即便配置 Playwright MCP，`mcp__*` 工具也只对主 Orchestrator 可见、不下发给 SubAgent**。同时用户提出一个重要洞察：Orchestrator 能运行时改 tasks.md，是否意味着图灵完备、可模拟真 PGE？
+
+**结论与决策**：
+1. **重要发现：动态编排 = 图灵完备执行底座（LLM 驱动）**。真机验证 Orchestrator 具备顺序/分支(读 verdict)/有界循环(retry 重派)/跳出(escalate)/**自修改 tasks.md**/持久状态(board+harness)，叠加子代理 **Shell(RunCommand)** 可跑任意程序 → 整体图灵完备。故**真正自适应的 PGE 流程可行**（据运行时证据动态重规划），不再只是静态脚本。注脚：控制是**推理级非计算级**（图灵完备≠可靠）、**有界**（受上下文/轮次，靠 board 外置状态、max_rounds/escalate 护栏）、**效果可追齐 Claude Code、确定性追不齐**。措辞："顺序模拟对抗" → "LLM 驱动的动态编排"。
+2. **子代理工具能力实测**：17 个工具含 Web(WebSearch/WebFetch)+Shell(RunCommand 等)+文件操作，**唯缺 MCP**。
+3. **方案1（采纳）**：`verification_mode=full` 的浏览器/MCP 验证改由**主 Orchestrator 代行**（它有 MCP），把截图/日志写入 `browser-check.md`，Evaluator 子代理 Read 后纳入四维评分；Evaluator 自身用 RunCommand 跑测试/Lint。无 MCP/浏览器环境则降级 `automated`。
+
+**影响**：方法论从"静态模拟"升级为"动态自适应编排"的定位；解决了 AP4 带来的浏览器验证缺口；改动 evaluator-role / stage-executor / verification_mode 映射 / 文档。
 
 ---
 

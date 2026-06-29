@@ -1,4 +1,4 @@
-# Deliverable Specifications (v4.3)
+# Deliverable Specifications (v4.4)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
 > 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
@@ -63,11 +63,13 @@
 
 ### 验证模式映射（Evaluator 业务质量验收）
 
-| 模式 | 包含步骤 |
-|------|---------|
-| `quick` | 自动化测试 + 代码审查 |
-| `automated` | 代码审查 + 自动化测试 + Lint |
-| `full` | 代码审查 + 自动化测试 + Lint + 浏览器测试 + 截图 |
+| 模式 | 包含步骤 | 谁执行 |
+|------|---------|--------|
+| `quick` | 自动化测试 + 代码审查 | Evaluator 子代理（RunCommand 跑测试） |
+| `automated` | 代码审查 + 自动化测试 + Lint | Evaluator 子代理 |
+| `full` | automated + **浏览器测试 + 截图** | 浏览器步骤由 **Orchestrator 代行 MCP**（子代理无 MCP），证据写 `browser-check.md`，Evaluator 读取纳入评分 |
+
+> ⚠ 真机实测：SubAgent **不继承 MCP**。`full` 的浏览器验证必须由有 MCP 的 Orchestrator 代行；若环境无 MCP 或无浏览器二进制，降级为 `automated`。
 
 ---
 
@@ -148,7 +150,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 **核心内容（必须保留）**:
 - 定位：**业务质量**对抗验收（"怀疑者"），在 task 内部作为 `[EVALUATOR]` 步骤运行；**与 checklist 完成性 gate 不同维度**（见第零部分 0.2）
 - 四维评分（功能性、工艺质量、完整性、用户体验）+ 判定阈值
-- 工具集 + 路径白名单（只读全部；只写 `.../eval.md`）
+- 工具集 + 路径白名单（只读全部；只写 `.../eval.md`）。**子代理无 MCP**：用 RunCommand 跑测试/Lint；`verification_mode=full` 的浏览器证据由 Orchestrator 代行写入 `browser-check.md`，Evaluator Read 后纳入评分
 - 评估报告写入 `.../eval.md`
 - **不含裁决**：裁决已抽出为独立 `decision-role`（见下节 3.5）
 - 若 `{use_calibration}=true`：追加 2-3 个 few-shot 评分案例

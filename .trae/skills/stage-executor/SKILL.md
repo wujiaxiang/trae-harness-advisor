@@ -59,8 +59,9 @@ description: >
 ### 6. 顺序派发对抗步骤
 按 tasks.md 顺序执行，最多 3 轮：
 1. 【派发独立 SubAgent，加载 @generator-role】[GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
-2. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估 → `eval.md`。
-3. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
+2. **（仅 verification_mode=full 且该 Stage 需浏览器验证）** 由**你（Orchestrator）代行 MCP 浏览器验证**：子代理拿不到 MCP，但你有 `mcp__*`（如 Playwright）。你用 MCP 跑浏览器检查，把截图/日志/结论写入 `browser-check.md`。这属"取证"，不算你兼任评分。
+3. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估（用 RunCommand 跑测试/Lint，并 Read `browser-check.md` 纳入浏览器证据）→ `eval.md`。
+4. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
    - Decision 必须是独立子代理（与 G/E 隔离、看不到双方对话），保证中立盲审；**你（Orchestrator）不得自己兼任裁决**。
 
 **根据 decision.md 的 verdict 决定下一步（这是你的核心编排职责）**：

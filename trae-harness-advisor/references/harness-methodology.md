@@ -1,6 +1,6 @@
 # Harness Engineering 方法论参考
 
-> 本文是 `trae-harness-advisor` Skill 的方法论参考文件（v4.3）。
+> 本文是 `trae-harness-advisor` Skill 的方法论参考文件（v4.4）。
 > 完整文档见 `../resources/harness-engineering-on-trae-work.md`，术语权威定义见其"第零部分"。
 
 ## 目录
