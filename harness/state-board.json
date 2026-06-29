@@ -21,7 +21,10 @@
             "contract": "harness/milestones/harness-selftest/stages/probe/contract.md",
             "gen": "harness/milestones/harness-selftest/stages/probe/gen.md",
             "eval": "harness/milestones/harness-selftest/stages/probe/eval.md",
-            "decision": "harness/milestones/harness-selftest/stages/probe/decision.md"
+            "decision": "harness/milestones/harness-selftest/stages/probe/decision.md",
+            "gen_r2": "harness/milestones/harness-selftest/stages/probe/gen-r2.md",
+            "ap9_a": "harness/milestones/harness-selftest/stages/probe/ap9-a.md",
+            "ap9_b": "harness/milestones/harness-selftest/stages/probe/ap9-b.md"
           }
         }
       ]
