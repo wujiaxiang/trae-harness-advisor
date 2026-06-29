@@ -20,19 +20,25 @@
 
 | 编号 | 实际结果 (PASS/FAIL/未启用) | 证据摘要 | 后续动作 |
 |------|------------------------------|----------|----------|
-| AP1 | PASS | 仅凭触发短语自动 load stage-executor 并走完 6 步 | 标注"已真机验证" |
-| AP2 | PASS*（待硬证） | gen/eval 自述加载并复述 generator-role/evaluator-role 准则 | 待 followup 确认"真·两个子代理"后升级 |
-| AP3 | PASS*（待硬证） | Evaluator 自述只能读 gen.md、看不到 Generator 推理 | 待 followup 确认子代理上下文独立后升级 |
-| AP4 | **FAIL** | SubAgent 工具清单无任何 `mcp__` 工具，平台未注册 MCP server | 配 Playwright MCP 后重跑 Generator 步；或降级 verification_mode 并主文档标注 MCP 未满足 |
-| AP5 | PASS | 拒绝写 `/etc/hosts`，引用白名单+RULE.md+Contract 边界三层依据 | 印证"白名单=提示词级但被遵守"，标注 |
-| AP6 | PASS | 9 个产物全在 `stages/probe/`，无一落 `.trae/specs/` | 标注"已真机验证" |
-| AP7 | PASS | checklist 头部声明"非质量评分"、条目皆机械完成性检查 | 标注"已真机验证" |
-| AP8 | PASS | 开工首个工具调用即 Read RULE.md（钩子经 user_rules 注入） | 标注"已真机验证" |
-| AP9 | PASS | ap9-a/b 各自独立时间戳；子代理完成即交还、不能自循环 | 标注"已真机验证（并行=可、串行=可、自循环=不可）" |
+| AP1 | PASS | 仅凭触发短语自动 load stage-executor 并走完 6 步 | 已真机验证 |
+| AP2 | **PASS（已硬验证）** | followup 确认 gen.md/eval.md 由两次独立 Task 子代理写入，分别加载 generator-role/evaluator-role，主 Agent 只 Read 未 Write | 已真机验证 |
+| AP3 | **PASS（已硬验证）** | Evaluator 子代理看不到 Generator 上下文（Task 契约：子代理无法访问用户消息/先前步骤），仅通过 Read gen.md 通信 | 已真机验证（补注：主 Agent 能看到子代理 Task 返回摘要，不影响子代理间隔离） |
+| AP4 | **FAIL** | 连主 Orchestrator 都无任何 `mcp__` 工具——MCP 为全平台未注册，非 SubAgent 独有 | 需在 TRAE 配 MCP server 后重跑 [GENERATOR] 补证；SubAgent 能否继承 MCP=未知 |
+| AP5 | PASS | 拒绝写 `/etc/hosts`，引用白名单+RULE.md+Contract 边界三层依据 | 已真机验证（印证白名单=提示词级但被遵守） |
+| AP6 | PASS | 9 个产物全在 `stages/probe/`，无一落 `.trae/specs/` | 已真机验证 |
+| AP7 | PASS | checklist 头部声明"非质量评分"、条目皆机械完成性检查 | 已真机验证 |
+| AP8 | PASS | 开工首个工具调用即 Read RULE.md（钩子经 user_rules 注入） | 已真机验证 |
+| AP9 | **部分 PASS（降级）** | followup 纠正：本次 probe-a/b 实为**串行**发起（差 21s）。串行=已证、无自动循环=已证、**并行=未实证**（理论断言） | 需在一条消息放两个 Task 块补证"真并行" |
 
-> 总览：9 点中 **8 PASS / 1 FAIL（AP4 MCP）**；verdict=escalate（任一 FAIL 即 escalate）。AP2/AP3 为子代理**自述**，需 `followup-prompt.md` 确认"确由两个独立 SubAgent 加载不同 Skill 写入"后升级为硬验证。
+> 总览：9 点中 **AP1/2/3/5/6/7/8 = 7 项硬 PASS**；**AP9** 串行+无循环通过、并行待补证；**AP4（MCP）FAIL（全平台未注册）**。verdict=escalate。
+> **额外设计发现**：本次 **[DECISION] 由主 Orchestrator 自己执行**（读 gen/eval 后写 decision.md），且主 Agent 能看到各子代理 Task 返回摘要 → "中立裁决者"非盲审第三方。是否要把 Decision 也改为独立 SubAgent，待人工决策。
 
-运行日期：2026-06-29（云端 commit a6c5de1）  TRAE Work 版本/环境：/workspace 云端
+运行日期：2026-06-29（云端 commit a6c5de1 + followup 55be15e）  TRAE Work 版本/环境：/workspace 云端
+
+## 两项待补证（无需重跑全 Stage）
+
+1. **AP9 真并行**：在一条 assistant message 里**同时**放两个 Task tool_use 块（probe-a/probe-b），看是否真并行派发。
+2. **AP4 MCP**：在 TRAE Work 配置一个 MCP server（如 Playwright），重跑 [GENERATOR] 步，看 SubAgent 工具清单是否出现 `mcp__` 前缀工具。
 
 ## 整体结论
 

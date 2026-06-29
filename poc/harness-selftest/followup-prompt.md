@@ -26,3 +26,26 @@
 - 若任一其实是主 Agent 代劳 → 把对应 AP 降级，并在主文档把“角色分离/上下文隔离”从机制保证改为“同会话角色扮演 + 文件隔离”的弱化表述。
 - #4 用于确认 AP9 的“真并行”而非串行模拟。
 - #5 决定 AP4 是否可通过配置 MCP 补救，以及 SubAgent 是否能继承 MCP。
+
+---
+
+## 补证提示词（首轮已澄清后使用）
+
+首轮 followup 已确认：AP2/AP3 硬验证 PASS；AP9 实为串行（并行未实证）；AP4 MCP 全平台未注册；[DECISION] 由主 Agent 兼任。
+还剩两项可补证：
+
+### 补证 1 — AP9「真并行」（无需 MCP，最便宜）
+
+```
+请做一次 AP9 真并行补证：在“同一条 assistant 消息里”同时放两个 Task tool_use 块，分别派发 probe-c 与 probe-d 两个 SubAgent，让它们各自把当前时间戳写到
+harness/milestones/harness-selftest/stages/probe/ap9-c.md 和 ap9-d.md。
+完成后如实报告：这两个 Task 是否在同一条消息里并行发起？两个时间戳间隔多少？据此判定平台是否“真支持并行派发”。把结论追加到 followup.md 并推 main。
+```
+
+### 补证 2 — AP4「SubAgent 是否继承 MCP」（需先配 MCP server）
+
+> 前提：在 TRAE Work 配置一个 MCP server（如 Playwright MCP）。配好后：
+
+```
+现在我已为 TRAE Work 配置了 MCP server。请重跑 probe Stage 的 [GENERATOR] 步骤：派发一个加载 @generator-role 的 SubAgent，让它列出自己的完整工具清单，确认是否出现 mcp__ 前缀工具；若有，尝试调用一次（如 Playwright 打开 about:blank）并报告。把结论（SubAgent 是否继承 MCP）追加到 followup.md 并推 main。
+```
