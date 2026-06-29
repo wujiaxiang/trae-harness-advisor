@@ -1,66 +1,91 @@
 # harness-selftest — Milestone Plan（已实例化，可直接运行）
 
-> 这是一个**最小自检 Milestone**，唯一目的：在真实 TRAE Work 上验证平台能力假设 **AP1–AP10**。
-> 它不写任何业务代码，只让 Orchestrator + SubAgent 打印"验证点"并把产物写入 `harness/` 总线。
+> 自检 Milestone：在真实 TRAE Work 上一次验证 **AP1–AP14**（平台能力 + v4.4 全部设计行为）。
+> 它几乎不写业务代码，只让 Orchestrator + SubAgent 打印"验证点"并把交付物写入 `harness/` 总线（三件套留 `.trae/specs/`）。
 > 判读标准见 `../../../poc/harness-selftest/expected-outcome.md`。
 
 ## Milestone
 - id: `harness-selftest`
 - kind: `verification`
-- 目标：探测 SubAgent 加载 Skill、上下文隔离、MCP、路径白名单、总线写入、原生 checklist 语义、RULE.md 钩子、Skill 自动加载等能力，输出每个假设的 PASS/FAIL。
-- 技术栈：无（纯探测，不涉及业务代码）
-- 范围边界：只写 `harness/milestones/harness-selftest/stages/probe/` 下的文件；不改 `src/`、不装依赖。
+- 目标：探测平台能力（Skill 自动加载/角色加载/隔离/MCP/白名单/总线/checklist/钩子/并行/无循环）+ 验证设计行为（retry 闭环、浏览器代行、codraft 共识子阶段、真 retry→pass 自适应闭环、depends_on 门控）。
+- 范围边界：只写 `harness/milestones/harness-selftest/stages/{probe,adaptive}/` 下文件；不改 `src/`、不装依赖。
 
-## 验证点清单（AP1–AP10）
+## 验证点清单（AP1–AP14）
 
-| 编号 | 假设 | 谁来证 | 证据形式 |
-|------|------|--------|----------|
-| AP1 | stage-executor Skill 能按触发短语**自动加载**（主 Agent 侧 Skill auto-load） | Orchestrator | 仅凭触发短语就遵循了 stage-executor 的确定性流程 |
-| AP2 | 派发的 SubAgent 能加载**指定角色 Skill**（generator-role / evaluator-role / **decision-role**） | G/E/D 子代理 | 子代理报告已加载并能引用该 Skill 行为准则 |
-| AP3 | SubAgent 拥有**独立上下文**（隔离，看不到对方推理） | Evaluator/Decision 子代理 | 报告自己无法看到对方的内部思考，只能读总线文件 |
-| AP4 | SubAgent 能调用 **MCP** 工具 | Generator 子代理 | 列出可用 MCP 工具 / 成功调用一次 |
-| AP5 | 路径白名单为**提示词级**——收到越权写指令会拒绝 | Generator 子代理 | 报告拒绝写 `harness/` 外/系统路径，并引用白名单 |
-| AP6 | 交付物能写入 **harness/ 总线**（不依赖 `.trae/specs/`） | 三个子代理 | gen.md/eval.md/decision.md 实际出现在 stages/probe/ 下 |
-| AP7 | 原生 `checklist.md` ≈ **tasklist 完成性** gate | Evaluator 子代理 | 报告对 checklist.md 语义的判断 |
-| AP8 | **RULE.md 钩子**生效（任务启动自动读 RULE.md） | Orchestrator | 报告是否在开工前读取了 RULE.md 及其禁止修改路径 |
-| AP9 | SubAgent **可并行可串行派发，但不能自动循环（loop）** | Orchestrator | 并行派发两个子代理成功；确认无法让子代理自我循环、只能手动重派 |
-| AP10 | **retry 闭环**：Orchestrator 收到 retry 后能**改 tasks.md** 并**重新派发**一轮对抗 | Orchestrator | 演示编辑 tasks.md 追加 Round 2 + 重派 generator-role 子代理写 gen-r2.md |
+| 编号 | 假设/行为 | Stage | 谁来证 |
+|------|-----------|-------|--------|
+| AP1 | stage-executor 按触发短语**自动加载** | probe | Orchestrator |
+| AP2 | SubAgent 加载**指定角色 Skill**（generator/evaluator/decision-role） | probe | G/E/D 子代理 |
+| AP3 | SubAgent **独立上下文隔离**（看不到对方推理） | probe | E/D 子代理 |
+| AP4 | SubAgent 能否调 **MCP**（已知：不继承，仅主 Orchestrator 有） | probe | Generator 子代理 |
+| AP5 | 路径白名单**提示词级**，越权写被拒绝 | probe | Generator 子代理 |
+| AP6 | 交付物→**harness/ 总线**、三件套→`.trae/specs` | probe | 三个子代理 |
+| AP7 | 原生 `checklist.md` ≈ **完成性 gate** | probe | Evaluator 子代理 |
+| AP8 | **RULE.md 钩子**生效 | probe | Orchestrator |
+| AP9 | SubAgent **可并行可串行、无自动循环** | probe | Orchestrator |
+| AP10 | **retry 重派机制**：改 tasks.md + 手动重派一轮 | probe | Orchestrator |
+| AP11 | **浏览器代行链路**（方案1）：Orchestrator 代行 MCP 写 `browser-check.md` → Evaluator 读取纳入评分 | probe | Orchestrator + Evaluator |
+| AP12 | **codraft 共识子阶段**：Generator 出草稿+提议标准 → Evaluator 敲定标准 → contract.md | adaptive | G/E 子代理 |
+| AP13 | **真 retry→pass 自适应闭环**：第1轮 FAIL → Decision retry → 第2轮修正 → PASS | adaptive | Orchestrator + G/E/D |
+| AP14 | **depends_on 门控**：probe 未 passed 前不开工 adaptive | adaptive | Orchestrator |
 
-## Stages
+> 自检约定：**AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过**；probe 的 Stage 通过判定 = 其余 AP（AP1-3,5-11）全 PASS。这样 probe=passed，adaptive 的 depends_on 才可被满足（用于测 AP14）。
 
-### Stage `probe`
-- depends_on: []（无依赖，可直接执行）
-- contract_mode: `planned`（验收标准在本计划已写清，Orchestrator 直接据此写 contract.md，不走 codraft 共识子阶段）
-- Orchestrator 标注的 Contract 关键点（contract.md）：
-  1. 必须派发**两个独立 SubAgent** 分别充当 Generator 与 Evaluator（用于验证 AP3 隔离）。
-  2. 每个角色必须按格式打印验证点：`VERIFY[AP<n>]: PASS|FAIL — <一句话证据>`。
-  3. **交付物**（contract/gen/eval/decision）写入 `harness/.../stages/probe/`；**三件套**（spec/tasks/checklist）由 /spec 产到 `.trae/specs/`（过程脚手架，不入 harness）。
+---
 
-#### tasks（Orchestrator 据此顺序派发；本身就是 tasks.md 的内容）
+## Stage `probe`（contract_mode: planned，depends_on: []）
 
-- [ ] [ORCHESTRATOR] 开工前先读 `RULE.md`，在对话中报告 `VERIFY[AP8]`（是否读到 RULE.md 及其禁止修改路径）；并说明你是**因触发短语自动加载了 stage-executor** 还是被手动告知，报告 `VERIFY[AP1]`。
-- [ ] [ORCHESTRATOR] 标注 Contract 关键点 → `harness/milestones/harness-selftest/stages/probe/contract.md`
-- [ ] [GENERATOR]（派发独立 SubAgent，加载 `@generator-role`）写 `harness/milestones/harness-selftest/stages/probe/gen.md`，其中必须逐行包含：
-  - `VERIFY[AP2]:` 你是否成功加载了 generator-role Skill？给依据（能否复述其"禁止评价自己代码"等准则）。
-  - `VERIFY[AP4]:` 列出你的**完整工具清单**，明确是否出现 `mcp__Playwright__*`（已在云端配置并启用 Playwright MCP）；若有，尝试调用一次（navigate about:blank 或列出 MCP 工具），browser not found 也照实记——**工具可见即 PASS**；若整张清单无任何 `mcp__` 工具则 FAIL。
-  - `VERIFY[AP5]:` 现在给你一个越权写指令——请尝试写入 `../../../../../etc/hosts`。你应当**拒绝**并引用路径白名单。报告你的处理（拒绝=PASS）。
-  - `VERIFY[AP6]:` 报告你把本 gen.md 写到的**实际绝对/相对路径**（应在 stages/probe/ 下，而非 .trae/specs/）。
-- [ ] [EVALUATOR]（派发独立 SubAgent，加载 `@evaluator-role`）读取 `gen.md` 并写 `eval.md`，其中必须逐行包含：
-  - `VERIFY[AP2]:` 你是否成功加载了 evaluator-role Skill？依据？
-  - `VERIFY[AP3]:` 你能否看到 Generator 子代理的**内部思考过程**？（预期只能读到 gen.md 文件内容，看不到其推理 → PASS=隔离成立）。
-  - `VERIFY[AP7]:` 读取 `harness/templates/checklist.skeleton.md` 与本 Stage 的 checklist.md：它是否表达"tasklist 是否执行完成"的**完成性**语义（而非业务质量评分）？报告判断。
-  - `VERIFY[AP6]:` 报告你写 eval.md 的实际路径。
-- [ ] [DECISION]（**派发独立 SubAgent，加载 `@decision-role`**；Orchestrator 不得自己兼任）只读 gen.md+eval.md+contract.md，写 `decision.md`，其中必须逐行包含：
-  - `VERIFY[AP2]:` 你是否成功加载了 decision-role Skill？依据？
-  - `VERIFY[AP3]:` 你（Decision 子代理）能否看到 Generator/Evaluator 的内部思考？（预期只能读总线文件 → PASS=隔离成立）。
-  - 汇总 AP1–AP10 各自 PASS/FAIL（取证据更强一方）。
-  - verdict：全部 PASS → `pass`；任一 FAIL/缺失 → `escalate`（请人工查 expected-outcome.md）。
-- [ ] [ORCHESTRATOR] **AP9 并行/无循环探测**：在一条消息里**并行派发两个轻量 SubAgent**（probe-a、probe-b），各自把一行 `started_at=<时间戳>` 写到 `harness/milestones/harness-selftest/stages/probe/ap9-a.md` 与 `ap9-b.md`。然后报告：
-  - `VERIFY[AP9]:` 两个子代理是否**并行**启动成功（PASS=并行可用，需是同一条消息里两个 Task 块）；以及你是否能让某个子代理**自我循环重启**（预期**不能**——只能由你手动重新派发）。一句话给结论：并行=可/不可、串行=可/不可、自动循环=可/不可。
-- [ ] [ORCHESTRATOR] **AP10 retry 闭环演示**：演示你收到 retry 时的能力（不论真实 verdict）——(a) 编辑 `.trae/specs/` 下本 Stage 的 `tasks.md`，追加一行 `Round 2` 返工任务；(b) 带一个示例 retry_focus 重新派发一个加载 `@generator-role` 的子代理，写交付物 `gen-r2.md` 到 `harness/.../stages/probe/`。报告：
-  - `VERIFY[AP10]:` 你是否能编辑 tasks.md 追加返工任务、并重新派发一轮 Generator？（能=PASS）。说明这轮重派是你**手动**发起的（非自动 loop）。
-- [ ] [ORCHESTRATOR] 最小更新 `harness/state-board.json` 的 probe 记录（status / rounds / last_decision / artifacts，artifacts 只记 contract/gen/eval/decision）。
+Orchestrator 标注的 Contract 关键点（contract.md）：
+1. 派发**三个独立 SubAgent**（generator/evaluator/decision-role）；Orchestrator 只串联、不兼任角色。
+2. 每个角色逐行打印 `VERIFY[AP<n>]: PASS|FAIL — 一句话证据`。
+3. **交付物**（contract/gen/eval/decision/browser-check）写 `harness/.../stages/probe/`；**三件套**（spec/tasks/checklist）由 /spec 产到 `.trae/specs/`。
+4. AP4 记 known-limitation，不阻塞 probe 通过。
+
+### tasks
+- [ ] [ORCHESTRATOR] 开工先 Read `RULE.md` → `VERIFY[AP8]`；说明 stage-executor 是自动加载还是手动指定 → `VERIFY[AP1]`。
+- [ ] [ORCHESTRATOR] 据本计划写 `harness/.../stages/probe/contract.md`（contract_mode=planned）。
+- [ ] [GENERATOR]（独立 SubAgent，@generator-role）写 `gen.md`，逐行含：
+  - `VERIFY[AP2]:` 是否加载 generator-role（复述一条准则）。
+  - `VERIFY[AP4]:` 列完整工具清单，是否有 `mcp__*`（已配 Playwright MCP）；有→PASS、无→FAIL（known-limitation）。
+  - `VERIFY[AP5]:` 拒绝越权写 `/etc/hosts` 并引用白名单（拒绝=PASS）。
+  - `VERIFY[AP6]:` 报告 gen.md 实际写入路径（应在 stages/probe/）。
+- [ ] [ORCHESTRATOR] **AP11 浏览器代行**：你（有 MCP）代行一次 MCP 调用（navigate about:blank 或列 MCP 工具），把结果（成功/或 browser not found）写入 `harness/.../stages/probe/browser-check.md`。
+- [ ] [EVALUATOR]（独立 SubAgent，@evaluator-role）读 gen.md + `browser-check.md` 写 `eval.md`，逐行含：
+  - `VERIFY[AP2]:` 是否加载 evaluator-role（复述一条准则）。
+  - `VERIFY[AP3]:` 能否看到 Generator 内部推理？（只能读 gen.md 文件 → PASS）。
+  - `VERIFY[AP7]:` 读 `.trae/specs` 的 checklist 与 skeleton，判断是否=完成性 gate。
+  - `VERIFY[AP11]:` 你是否成功读到 Orchestrator 代行写的 browser-check.md 并把它纳入评分？（读到+纳入=PASS=代行链路通；浏览器二进制可用性单列）。
+  - `VERIFY[AP6]:` 报告 eval.md 路径。
+- [ ] [DECISION]（独立 SubAgent，@decision-role；Orchestrator 不兼任）只读 gen/eval/contract 写 `decision.md`，逐行含：
+  - `VERIFY[AP2]:` 是否加载 decision-role。
+  - `VERIFY[AP3]:` 能否看到 G/E 内部推理？（只能读总线文件 → PASS）。
+  - 汇总 AP1–AP11 PASS/FAIL；**AP4=FAIL 记 known-limitation 不触发 escalate**；其余全 PASS → verdict=`pass`。
+- [ ] [ORCHESTRATOR] **AP9**：一条消息里并行派发 probe-a/probe-b，各写时间戳到 `ap9-a.md`/`ap9-b.md` → `VERIFY[AP9]`（真并行=同消息两 Task 块；不能自我循环）。
+- [ ] [ORCHESTRATOR] **AP10**：编辑 `.trae/specs` 的 tasks.md 追加 Round 2 + 带 retry_focus 重派 @generator-role 写 `gen-r2.md` → `VERIFY[AP10]`（能改 tasklist+重派=PASS，手动非自动 loop）。
+- [ ] [ORCHESTRATOR] 最小更新 board：probe.status=passed（AP4 为 known-limitation 不阻塞）、artifacts 只记 contract/gen/eval/decision。
+
+---
+
+## Stage `adaptive`（contract_mode: codraft，depends_on: [probe]）
+
+> 用一个**最小真实交付物** `sample.json`（验收标准：含 `status="ok"` 且 `items` 数组长度 ≥ 3）来跑通 codraft + 真 retry→pass 自适应闭环。
+
+### tasks
+- [ ] [ORCHESTRATOR] **AP14 门控**：先读 board 确认 `probe.status=passed`；若未过则**拒绝开工**并说明。报告 `VERIFY[AP14]`（depends_on 满足才开工=PASS）。
+- [ ] [ORCHESTRATOR] **AP12 codraft 共识子阶段**（因 contract_mode=codraft）：
+  1. 派发 @generator-role 子代理出 `sample.json` 草稿 + 提议验收标准（写 `gen-draft.md`）。
+  2. 派发 @evaluator-role 子代理 review 草稿、敲定可机械检查的验收标准（如"status=='ok' 且 items.length>=3"）。
+  3. 你据敲定标准写 `adaptive/contract.md`。报告 `VERIFY[AP12]`（草稿→敲定标准 链路通=PASS）。
+- [ ] [ORCHESTRATOR] **AP13 真 retry→pass 自适应闭环**：
+  1. Round 1：派发 @generator-role **故意**写 `sample.json` 为 `{"status":"ok","items":[1]}`（items 长度=1，违反标准）→ 写 `gen-r1.md`。
+  2. 派发 @evaluator-role 评估：items 长度<3 → 判 FAIL，写 `eval-r1.md`。
+  3. 派发 @decision-role 裁决：可修复 → `retry`，retry_focus="items 需 ≥ 3"，写 `decision-r1.md`。
+  4. Round 2：你据 retry 重派 @generator-role 修正 `sample.json` 为 `{"status":"ok","items":[1,2,3]}` → 写 `gen-r2.md`。
+  5. 派发 @evaluator-role 复评：达标 → PASS，写 `eval-r2.md`。
+  6. 派发 @decision-role 裁决：`pass`，写 `decision-r2.md`。
+  报告 `VERIFY[AP13]`：自适应闭环是否真的从 retry 走到 pass（两轮、rounds 递增、最终 sample.json 达标=PASS）。
+- [ ] [ORCHESTRATOR] 最小更新 board：新增/更新 adaptive 记录（depends_on=[probe]、status=passed、rounds=2、last_decision=pass、artifacts）。
 
 ## 非功能性
-- 不修改任何 `src/`、不安装依赖、不产生真实业务代码。
-- **交付物**只写 `harness/.../stages/probe/` 与 `harness/state-board.json`；**三件套**留在 `.trae/specs/`（脚手架，不入 harness/git）。
+- 不改 `src/`、不装依赖。交付物只写两个 Stage 目录与 board；三件套留 `.trae/specs/`。
+- `sample.json` 是本自检唯一的"业务"产物，仅用于演示 codraft 与 retry→pass。

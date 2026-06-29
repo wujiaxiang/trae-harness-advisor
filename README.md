@@ -45,12 +45,12 @@
 ├── harness/                                           # 持久真值 + 消息总线
 │   ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
 │   ├── state-board.json                               # 已 seed: harness-selftest/probe
-│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP10）
+│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP14）
 ├── poc/                                               # 平台能力自检 PoC（人类可读测试套件）
 │   └── harness-selftest/
 │       ├── README.md                                  # 如何运行与判读
 │       ├── test-prompt.md                             # ★ 复制粘贴到 TRAE Work 的测试提示词
-│       └── expected-outcome.md                        # AP1–AP10 判读表 + 结果记录
+│       └── expected-outcome.md                        # AP1–AP14 判读表 + 结果记录
 ├── archive/                                           # 过程档案
 │   ├── harness-engineering-on-trae-work-plan.md       # v1.0 编写计划
 │   └── supplement-and-alignment-plan.md               # v2.0 补充对齐计划
@@ -124,7 +124,7 @@
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（11 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
 5. **`trae-harness-advisor/templates/`** — 14 个模板文件，尤其是 stage-executor、decision-role 与四个 skeleton
-6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP10 假设
+6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP14 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。
