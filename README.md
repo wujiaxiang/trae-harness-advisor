@@ -32,14 +32,31 @@
 │       ├── project-rules-template.md                  # RULE.md 模板（项目根目录，钩子规则加载）
 │       └── eval-report-template.md                    # 业务质量评估报告模板
 ├── conversation-context-and-design-decisions.md       # 会话上下文与设计决策记录
-├── poc/                                               # 平台能力自检 PoC
-│   └── harness-selftest/                              # 喂给真机 TRAE Work 验证 AP1–AP5 假设
+│
+│   # ↓↓↓ 以下为「自检 PoC 实例化环境」——由模板实例化，供真机 TRAE Work 跑 harness-selftest ↓↓↓
+├── .trae/skills/                                      # 已实例化的 4 个角色/playbook Skill（可被云端加载）
+│   ├── planner-role/SKILL.md
+│   ├── generator-role/SKILL.md
+│   ├── evaluator-role/SKILL.md                        # 含 Decision 裁决者
+│   └── stage-executor/SKILL.md                        # Orchestrator 运行时 playbook
+├── RULE.md                                            # 项目规范（钩子规则加载目标）
+├── harness/                                           # 持久真值 + 消息总线
+│   ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
+│   ├── state-board.json                               # 已 seed: harness-selftest/probe
+│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP8）
+├── poc/                                               # 平台能力自检 PoC（人类可读测试套件）
+│   └── harness-selftest/
+│       ├── README.md                                  # 如何运行与判读
+│       ├── test-prompt.md                             # ★ 复制粘贴到 TRAE Work 的测试提示词
+│       └── expected-outcome.md                        # AP1–AP8 判读表 + 结果记录
 ├── archive/                                           # 过程档案
 │   ├── harness-engineering-on-trae-work-plan.md       # v1.0 编写计划
 │   └── supplement-and-alignment-plan.md               # v2.0 补充对齐计划
 └── docs/                                              # 外部文档
     └── harness-engineering-on-trae-work/              # HTML 报告（人类可读）
 ```
+
+> 说明：`trae-harness-advisor/` 是**可打包安装的 Skill 本体**；而 `.trae/skills/`、`RULE.md`、`harness/` 是**为自检 PoC 实例化的运行环境**（相当于对本仓库跑了一遍 advisor 的产物），让你无需先生成即可直接在真机验证平台能力。
 
 ## Skill 是什么
 
@@ -104,7 +121,7 @@
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（10 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
 5. **`trae-harness-advisor/templates/`** — 13 个模板文件，尤其是 stage-executor 与四个 skeleton
-6. **`poc/harness-selftest/`** — 平台能力自检集，真机验证 AP1–AP5 假设
+6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP8 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。

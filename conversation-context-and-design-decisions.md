@@ -212,7 +212,7 @@
 3. **Contract 简化**：废除 Generator↔Evaluator 多轮协商，改为 **Orchestrator 起 Stage 时一次标注关键 Contract 点**（目标/验收要点/边界）。删除 `max_contract_rounds`，问答从 13 题降为 12 题。
 4. **board 写协议**：最小更新原则（每次只改当前 Stage 那条记录）→ git 合并不冲突；代码级冲突由人工依据 `depends_on` 在投递 Stage 时把关。明确"并发=人工多对话，非自动调度"。
 5. **约束强度诚实化**：路径白名单、RULE.md 钩子、playbook、board 全部标注为"提示词级、best-effort、非沙箱强制"，需 CI/评审兜底。
-6. **PoC 自检集**：新增 `poc/harness-selftest/`，喂给真机 TRAE Work 验证 AP1–AP5（SubAgent 加载 Skill、调 MCP、白名单、写 harness 总线、checklist 语义）。
+6. **PoC 自检集 + 实例化环境**：新增 `poc/harness-selftest/`（测试套件）并在仓库**实例化** `.trae/skills/`+`RULE.md`+`harness/` 运行环境，喂给真机 TRAE Work 验证 AP1–AP8（Skill 自动加载、SubAgent 加载角色 Skill、上下文隔离、MCP、路径白名单、harness 总线写入、原生 checklist 语义、RULE.md 钩子）。
 
 **影响**：方法论主张更稳健、措辞更诚实；平台假设从"纸面"转为"可真机验证"。
 

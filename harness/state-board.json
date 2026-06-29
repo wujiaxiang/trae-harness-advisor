@@ -1,0 +1,30 @@
+{
+  "version": "2.0",
+  "created_at": "2026-06-29T00:00:00Z",
+  "milestones": [
+    {
+      "id": "harness-selftest",
+      "kind": "verification",
+      "status": "in_progress",
+      "stages": [
+        {
+          "id": "probe",
+          "title": "探测 TRAE Work 平台能力假设 AP1-AP8",
+          "depends_on": [],
+          "status": "planned",
+          "rounds": 0,
+          "last_decision": null,
+          "artifacts": {
+            "spec": "",
+            "tasks": "",
+            "checklist": "",
+            "contract": "",
+            "gen": "",
+            "eval": "",
+            "decision": ""
+          }
+        }
+      ]
+    }
+  ]
+}
