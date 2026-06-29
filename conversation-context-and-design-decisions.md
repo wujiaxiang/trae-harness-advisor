@@ -446,13 +446,22 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 4. **无外部触发**: 无法通过 Webhook 或 API 触发 SPEC 工作流，必须手动执行 `/spec` 命令。
 
-### 待验证（已提供 PoC 自检集 `poc/harness-selftest/`，真机跑一遍即可判定）
+### 平台假设验证状态（已真机端到端验证，v4.4 综合自检 13/14 PASS）
 
-1. SubAgent 是否支持加载自定义 Skill（@generator-role、@evaluator-role）→ PoC 的 AP1
-2. SubAgent 能否访问 MCP 工具（如 Playwright 浏览器测试）→ PoC 的 AP2
-3. 路径白名单在 SubAgent 中的实际生效范围（提示词级，预期会拒绝越权写）→ PoC 的 AP3
-4. 交付物能否写入 `harness/` 总线、原生 checklist 语义 → PoC 的 AP4 / AP5
-5. 长 session 中 SubAgent 的上下文窗口管理策略（暂未纳入 PoC）
+通过 `poc/harness-selftest/`（probe + adaptive 两 Stage，commit f76f8fc）已验证：
+
+1. ✅ SubAgent 加载自定义角色 Skill（generator/evaluator/decision-role）— AP2
+2. ✅ SubAgent 上下文隔离（三方）— AP3；✅ 自动加载 — AP1；✅ RULE.md 钩子 — AP8
+3. ✅ 路径白名单提示词级、拒绝越权 — AP5
+4. ✅ 交付物→harness、三件套→.trae/specs、原生 checklist=完成性 — AP6/AP7
+5. ✅ 真并行+无自动循环 — AP9；✅ retry 重派 — AP10；✅ 真 retry→pass 自适应闭环 — AP13
+6. ✅ 浏览器代行链路（方案1）— AP11；✅ codraft — AP12；✅ depends_on 门控 — AP14
+7. ❌ **SubAgent 不继承 MCP — AP4（已知平台限制，不阻塞；浏览器验证由 Orchestrator 代行）**
+
+**仍待处理/操作项**：
+- AP11 实际浏览器交互需预装 chromium（`npx playwright install chromium`）或配置 TRAE 远程环境（docs.trae.cn/solo_set-up-the-remote-environment）。
+- 长 session 中 Orchestrator 上下文窗口管理：靠 board+harness 外置状态分 Stage 续跑；超长流程建议人工分批投递（暂未纳入 PoC）。
+- 小项目 Lite 预设（跳过部分角色）为可选优化，尚未实现。
 
 ---
 
