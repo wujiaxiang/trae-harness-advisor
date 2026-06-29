@@ -72,7 +72,7 @@
 |------|------|------|------|
 | L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 5 个 Skill + RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
 | L1 | **Planner** | 将需求规划为 Milestone，并拆成可独立验收的 Stage | milestone-plan.md + 初始化 state-board.json |
-| L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产三件套并**串联**对抗（自己不兼任角色） | Stage 级 spec/tasks/checklist + 据裁决决定下一步（retry 改 tasks.md+重派）+ 状态回写 |
+| L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产三件套（留 .trae/specs）并**串联**对抗（自己不兼任角色） | 交付物 contract/gen/eval/decision 写 harness/ + 据裁决决定下一步（retry 改 tasks.md+重派）+ 状态回写 |
 | 执行层 | **Generator/Evaluator/Decision**（各为独立 SubAgent） | 顺序模拟对抗：实现、业务质量评分、**独立中立裁决** | gen.md + eval.md + decision.md |
 
 **TRAE Work 能力映射**：
@@ -97,8 +97,9 @@
 **关键架构要点**：
 
 - 严格三级层次：Milestone > Stage > Task。
-- SPEC 三件套在 Stage 层由 Orchestrator 运行时创建，Advisor 只提供结构骨架，不预生成业务内容。
-- `harness/` 是唯一持久真值与消息总线；`.trae/specs/` 只是原生临时 scratch。
+- SPEC 三件套在 Stage 层由 Orchestrator 运行时创建于 `.trae/specs/`（过程脚手架，不入 harness/git）；只有交付物 contract/gen/eval/decision + board 持久化到 `harness/`。
+- `harness/` 是唯一持久真值与消息总线；`.trae/specs/` 是原生三件套 scratch（对话结束即弃）。
+- 验收标准放 `contract.md`（不在 spec.md），故三件套不持久化不影响验收。
 - 两类验收分工：checklist.md 是底层完成性 gate；Evaluator 是业务质量四维评估。
 - 对抗流程为顺序模拟，最多 3 轮返工，超限 escalate 给人类。
 - Contract 简化为 Orchestrator 起 Stage 时一次标注关键点（非多轮协商）。

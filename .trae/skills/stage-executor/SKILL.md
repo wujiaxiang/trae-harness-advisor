@@ -2,7 +2,7 @@
 name: stage-executor
 description: >
   当用户说“执行 Stage”“开始阶段”“run stage”或要求推进当前 Stage 时使用。
-  这是 Orchestrator 的运行时 playbook：读取 state-board.json 和 milestone-plan.md，按骨架运行 /spec，持久化三件套，顺序派发 Generator/Evaluator/Decision，并回写状态。
+  这是 Orchestrator 的运行时 playbook：读取 state-board.json 和 milestone-plan.md，按骨架运行 /spec（三件套留在 .trae/specs 即可），只把交付物 contract/gen/eval/decision 写入 harness/ 总线，顺序派发 Generator/Evaluator/Decision，并回写状态。
 ---
 
 # stage-executor playbook
@@ -12,8 +12,8 @@ description: >
 
 ## 强约束
 - harness/ 是唯一持久真值与消息总线。
-- .trae/specs/ 完全可弃：原生 /spec 临时 scratch，不读取、不依赖、不传消息。
-- subagent 执行 tasklist 时，必须把我们关心的交付物主动写入 harness/milestones/{milestone}/stages/{stage}/。
+- .trae/specs/ 放原生 /spec 三件套（spec/tasks/checklist），是过程脚手架：本对话内可读，不进 harness、不进 git、对话结束即弃。
+- subagent 执行 tasklist 时，必须把交付物（contract/gen/eval/decision）主动写入 harness/milestones/{milestone}/stages/{stage}/。
 - skeleton 文件只提供结构，不包含业务内容；业务内容由 Orchestrator 在当前 Stage 对话中推理填充。
 - 对抗流程是顺序模拟，不是自动控制流循环；最多 3 轮，超限 escalate。
 
@@ -30,11 +30,11 @@ description: >
 2. 提取当前 Stage 的目标、范围、验收标准要点、depends_on、技术栈与非功能性需求。
 3. 不把动态状态写回 milestone-plan.md；动态状态只写 state-board.json。
 
-### 3. 运行 /spec 并把交付物写入总线
+### 3. 运行 /spec 产出三件套（脚手架，留在 .trae/specs），交付物写总线
 1. 读取 `harness/templates/spec.skeleton.md`、`tasks.skeleton.md`、`checklist.skeleton.md`。
-2. 运行 `/spec`，按骨架生成当前 Stage 的 spec.md、tasks.md、checklist.md。
-3. `.trae/specs/` 下的原生产物**完全可弃**：不读取、不依赖其路径。
-4. 在 tasks.md 中显式约定：每个 subagent 执行时，把"我们关心的交付物"**主动写入** `harness/milestones/{milestone}/stages/{stage}/`（spec/checklist 关键信息 + contract.md/gen.md/eval.md/decision.md）。总线 = harness/，不是 .trae/specs/。
+2. 运行 `/spec`，按骨架生成当前 Stage 的 spec.md、tasks.md、checklist.md——这三件套是**过程脚手架，放原生 `.trae/specs/`** 即可，G/E/D 子代理在**本对话内**可直接读取。
+3. **三件套不必复制/持久化到 `harness/`、不进 git**；对话结束即弃，丢了能靠 milestone-plan + 重跑 /spec 再生。
+4. 只把**交付物/证据**写入总线 `harness/milestones/{milestone}/stages/{stage}/`：`contract.md`（你标注的验收要点）、`gen.md`、`eval.md`、`decision.md`。验收标准放 contract.md，子代理据此验收（不依赖持久化的 spec）。
 
 ### 4. 自检门
 继续前必须同时满足：
@@ -65,7 +65,7 @@ description: >
 - status: spec_ready / in_progress / passed / failed / escalated
 - rounds
 - last_decision: pass | retry | escalate | null
-- artifacts: spec/tasks/checklist/contract/gen/eval/decision 的实际路径
+- artifacts: contract/gen/eval/decision 的实际路径（三件套留在 .trae/specs，不记入持久 artifacts）
 
 > 并发说明：Stage 并发 = 人类开多个独立对话推进，非自动调度。投递某 Stage 前须确认其 `depends_on` 全部 passed，且与在途 Stage 无源文件交集（代码冲突由人工把关）。
 

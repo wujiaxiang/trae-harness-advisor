@@ -33,7 +33,7 @@
 - Orchestrator 标注的 Contract 关键点（contract.md）：
   1. 必须派发**两个独立 SubAgent** 分别充当 Generator 与 Evaluator（用于验证 AP3 隔离）。
   2. 每个角色必须按格式打印验证点：`VERIFY[AP<n>]: PASS|FAIL — <一句话证据>`。
-  3. 所有产物写入 `harness/milestones/harness-selftest/stages/probe/`。
+  3. **交付物**（contract/gen/eval/decision）写入 `harness/.../stages/probe/`；**三件套**（spec/tasks/checklist）由 /spec 产到 `.trae/specs/`（过程脚手架，不入 harness）。
 
 #### tasks（Orchestrator 据此顺序派发；本身就是 tasks.md 的内容）
 
@@ -56,10 +56,10 @@
   - verdict：全部 PASS → `pass`；任一 FAIL/缺失 → `escalate`（请人工查 expected-outcome.md）。
 - [ ] [ORCHESTRATOR] **AP9 并行/无循环探测**：在一条消息里**并行派发两个轻量 SubAgent**（probe-a、probe-b），各自把一行 `started_at=<时间戳>` 写到 `harness/milestones/harness-selftest/stages/probe/ap9-a.md` 与 `ap9-b.md`。然后报告：
   - `VERIFY[AP9]:` 两个子代理是否**并行**启动成功（PASS=并行可用，需是同一条消息里两个 Task 块）；以及你是否能让某个子代理**自我循环重启**（预期**不能**——只能由你手动重新派发）。一句话给结论：并行=可/不可、串行=可/不可、自动循环=可/不可。
-- [ ] [ORCHESTRATOR] **AP10 retry 闭环演示**：演示你收到 retry 时的能力（不论真实 verdict）——(a) 编辑 `harness/milestones/harness-selftest/stages/probe/tasks.md`，追加一行 `Round 2` 返工任务；(b) 带一个示例 retry_focus 重新派发一个加载 `@generator-role` 的子代理，写 `gen-r2.md`。报告：
+- [ ] [ORCHESTRATOR] **AP10 retry 闭环演示**：演示你收到 retry 时的能力（不论真实 verdict）——(a) 编辑 `.trae/specs/` 下本 Stage 的 `tasks.md`，追加一行 `Round 2` 返工任务；(b) 带一个示例 retry_focus 重新派发一个加载 `@generator-role` 的子代理，写交付物 `gen-r2.md` 到 `harness/.../stages/probe/`。报告：
   - `VERIFY[AP10]:` 你是否能编辑 tasks.md 追加返工任务、并重新派发一轮 Generator？（能=PASS）。说明这轮重派是你**手动**发起的（非自动 loop）。
-- [ ] [ORCHESTRATOR] 最小更新 `harness/state-board.json` 的 probe 记录（status / rounds / last_decision / artifacts 路径）。
+- [ ] [ORCHESTRATOR] 最小更新 `harness/state-board.json` 的 probe 记录（status / rounds / last_decision / artifacts，artifacts 只记 contract/gen/eval/decision）。
 
 ## 非功能性
 - 不修改任何 `src/`、不安装依赖、不产生真实业务代码。
-- 全程只写 `harness/milestones/harness-selftest/stages/probe/` 与 `harness/state-board.json`。
+- **交付物**只写 `harness/.../stages/probe/` 与 `harness/state-board.json`；**三件套**留在 `.trae/specs/`（脚手架，不入 harness/git）。

@@ -180,7 +180,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 **核心内容（必须保留，确定性过程）**:
 1. 读 `{harness_dir}state-board.json` → 定位当前 Stage，校验 `depends_on` 全部 `passed`
 2. 读 `{harness_dir}milestones/{milestone}/milestone-plan.md` → 取该 Stage 定义
-3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套；`.trae/specs/` 产物可弃。tasklist 显式要求 subagent 把交付物**写入总线** `{harness_dir}milestones/{milestone}/stages/{stage}/`（不依赖 `/spec` 路径）
+3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套（spec/tasks/checklist）——**留在原生 `.trae/specs/` 即可，本对话内供 G/E/D 读取，不复制到 harness/、不进 git**。只把**交付物** contract/gen/eval/decision 写入总线 `{harness_dir}milestones/{milestone}/stages/{stage}/`（验收标准放 contract.md）
 4. **自检门**：spec 章节齐全？tasks 与 checklist 1:1 映射？否 → 停止并报告
 5. 派发**三个独立 SubAgent**：`[GENERATOR]`(generator-role) → `[EVALUATOR]`(evaluator-role) → `[DECISION]`(decision-role，独立盲审)。Orchestrator 只串联、不兼任任何角色
 6. 据 `decision.md` 的 verdict：pass→checklist gate；**retry→Orchestrator 改 tasks.md 追加返工任务 + 带 retry_focus 重派 Generator（rounds+1）**；escalate→暂停回写 board
@@ -269,7 +269,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
       "status": "planned | spec_ready | in_progress | passed | failed | escalated",
       "rounds": 0,
       "last_decision": "pass | retry | escalate | null",
-      "artifacts": { "spec": "", "tasks": "", "checklist": "", "contract": "", "eval": "" }
+      "artifacts": { "contract": "", "gen": "", "eval": "", "decision": "" }
     }]
   }]
 }

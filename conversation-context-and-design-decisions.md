@@ -228,6 +228,7 @@
 1. **Decision 独立**：把 Decision 从 evaluator-role 抽出为独立 `decision-role` Skill，作为**独立 SubAgent** 派发（与 G/E 上下文隔离，中立盲审）。**Orchestrator 只串联流程，不兼任任何角色**。核心 Skill 4→5、核心文件 10→11、模板 13→14。
 2. **retry 闭环（新增 AP10）**：明确 Orchestrator 收到 `retry` 后可**编辑 tasks.md 追加返工任务 + 带 retry_focus 重新派发 Generator**（rounds+1），多轮返工靠手动重派（无自动 loop）。新增自检点 AP10 验证此能力。
 3. **MCP**：AP4 FAIL 是平台未配置；用户可在 TRAE Work「MCP > 云端 > 创建」添加 MCP server（如 Playwright）后，按 `followup-prompt.md` 补证 SubAgent 是否继承 mcp__ 工具。
+4. **三件套持久化收紧**：spec/tasks/checklist 是过程脚手架，只留 `.trae/specs/`（对话内可读、不入 harness、不进 git）；只有交付物 contract/gen/eval/decision + state-board 持久化到 `harness/`。验收标准在 contract.md，故三件套不持久化不影响 Evaluator/Decision 验收。board 的 `artifacts` 只记 contract/gen/eval/decision。
 
 **影响**：中立裁决从"名义"变"真盲审"；retry 闭环明确为人工驱动的有限重派；建议按更新后的 `test-prompt.md` 重跑一次以确认 Decision 独立 + AP10 + AP9 真并行。
 
