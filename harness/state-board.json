@@ -11,10 +11,15 @@
           "id": "probe",
           "title": "探测 TRAE Work 平台能力假设 AP1-AP10",
           "depends_on": [],
-          "status": "planned",
-          "rounds": 0,
-          "last_decision": null,
-          "artifacts": { "contract": "", "gen": "", "eval": "", "decision": "" }
+          "status": "escalated",
+          "rounds": 2,
+          "last_decision": "escalate",
+          "artifacts": {
+            "contract": "harness/milestones/harness-selftest/stages/probe/contract.md",
+            "gen": "harness/milestones/harness-selftest/stages/probe/gen.md",
+            "eval": "harness/milestones/harness-selftest/stages/probe/eval.md",
+            "decision": "harness/milestones/harness-selftest/stages/probe/decision.md"
+          }
         }
       ]
     }
