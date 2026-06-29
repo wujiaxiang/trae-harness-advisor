@@ -45,10 +45,19 @@ description: >
 
 任一失败：停止执行，报告缺口，不派发子角色。
 
-### 5. 标注 Contract 并顺序派发对抗步骤
-先由你（Orchestrator）标注关键 Contract 点 → `contract.md`（目标/验收要点/边界，一次标注，非多轮协商；若 force_contract=false 则跳过，Generator 直接按 spec 实现）。
+### 5. 确定 contract.md（按 Stage 的 contract_mode）
 你（Orchestrator）只负责**串联流程**：派发子代理、读裁决、决定下一步；**不亲自实现、不评分、不裁决**。
-然后按 tasks.md 顺序执行，最多 3 轮：
+先看该 Stage 在 milestone-plan.md 里的 `contract_mode`：
+
+- **planned（默认）**：验收标准在规划期已明确（需求清晰 / 联调阶段，骨架与模块契约已定）。你直接据 milestone-plan 的"验收标准要点" + 既定契约，写 `contract.md`（目标/验收要点/边界，一次标注）。**不加共识子阶段**。
+- **codraft（可选）**：验收标准需先有草稿才能定（早期/探索性开发）。先跑 **Contract 共识子阶段**：
+  1. 【派发独立 SubAgent，加载 @generator-role】出一版**草稿/接口骨架** + 提议验收标准 → `gen-draft.md`。
+  2. 【派发独立 SubAgent，加载 @evaluator-role】以测试视角 review 草稿 + 敲定可机械检查的验收标准 → 由你写入 `contract.md`。
+  3. 共识达成后再进入下面的正式对抗轮。
+- 若 force_contract=false：跳过 contract，Generator 直接按 spec 实现。
+
+### 6. 顺序派发对抗步骤
+按 tasks.md 顺序执行，最多 3 轮：
 1. 【派发独立 SubAgent，加载 @generator-role】[GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
 2. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估 → `eval.md`。
 3. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
@@ -60,7 +69,7 @@ description: >
 - `escalate`（或 rounds 达上限仍未过）→ 暂停，回写 board=escalated，请求人类裁决。
 - 你**不能**让任何子代理自我循环；多轮返工只能由你**手动重新派发**（无自动 loop）。
 
-### 6. 回写 state-board.json
+### 7. 回写 state-board.json
 根据 decision.md 回写 `harness/state-board.json`（**最小更新原则**：只改当前 Stage 那一条记录的字段，不整体重写、不动其它 Stage，确保 git 合并不冲突）：
 - status: spec_ready / in_progress / passed / failed / escalated
 - rounds

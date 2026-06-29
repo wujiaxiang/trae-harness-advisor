@@ -1,4 +1,4 @@
-# Deliverable Specifications (v4.2)
+# Deliverable Specifications (v4.3)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
 > 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
@@ -116,7 +116,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 - `hybrid` → 两者，并要求 Planner 为每个 Milestone 标注 `kind`
 
 **核心内容（必须保留）**:
-- 职责：用户需求 → 一个 Milestone（标注 `kind`）+ 战略分解为若干 Stage（含 `depends_on`）
+- 职责：用户需求 → 一个 Milestone（标注 `kind`）+ 战略分解为若干 Stage（含 `depends_on`、`contract_mode`）
+- **每个 Stage 标 `contract_mode`**：`planned`（默认，验收标准规划期已明确/联调，Orchestrator 直接写 contract.md）或 `codraft`（验收标准需先有草稿才能定，早期/探索性开发，走"Generator 草稿→Evaluator 敲定标准"共识子阶段）
 - 行为准则（只描述做什么/为什么、机械可检查验收标准、依赖标注、确定性语言、量化指标、Stage 粒度适中）
 - **输出 `milestone-plan.md` + 初始化 `state-board.json`；不生成三件套**
 
@@ -182,9 +183,10 @@ RULE.md                           # 项目根目录（钩子规则加载）
 2. 读 `{harness_dir}milestones/{milestone}/milestone-plan.md` → 取该 Stage 定义
 3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套（spec/tasks/checklist）——**留在原生 `.trae/specs/` 即可，本对话内供 G/E/D 读取，不复制到 harness/、不进 git**。只把**交付物** contract/gen/eval/decision 写入总线 `{harness_dir}milestones/{milestone}/stages/{stage}/`（验收标准放 contract.md）
 4. **自检门**：spec 章节齐全？tasks 与 checklist 1:1 映射？否 → 停止并报告
-5. 派发**三个独立 SubAgent**：`[GENERATOR]`(generator-role) → `[EVALUATOR]`(evaluator-role) → `[DECISION]`(decision-role，独立盲审)。Orchestrator 只串联、不兼任任何角色
-6. 据 `decision.md` 的 verdict：pass→checklist gate；**retry→Orchestrator 改 tasks.md 追加返工任务 + 带 retry_focus 重派 Generator（rounds+1）**；escalate→暂停回写 board
-7. 回写 `state-board.json`：`status / rounds / last_decision / artifacts`（最小更新）
+5. **确定 contract.md（按 Stage 的 `contract_mode`）**：`planned`→Orchestrator 据 milestone-plan 要点+既定契约直接写；`codraft`→先跑共识子阶段（@generator-role 出草稿+提议标准 → @evaluator-role 敲定标准 → 写 contract.md）再对抗
+6. 派发**三个独立 SubAgent**：`[GENERATOR]`(generator-role) → `[EVALUATOR]`(evaluator-role) → `[DECISION]`(decision-role，独立盲审)。Orchestrator 只串联、不兼任任何角色
+7. 据 `decision.md` 的 verdict：pass→checklist gate；**retry→Orchestrator 改 tasks.md 追加返工任务 + 带 retry_focus 重派 Generator（rounds+1）**；escalate→暂停回写 board
+8. 回写 `state-board.json`：`status / rounds / last_decision / artifacts`（最小更新）
 
 > 强调：三件套内容由 Orchestrator 运行时推理，骨架只给章节契约。不要预生成业务内容。Orchestrator 不得自己兼任 Generator/Evaluator/Decision。
 

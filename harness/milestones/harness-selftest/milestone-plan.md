@@ -30,6 +30,7 @@
 
 ### Stage `probe`
 - depends_on: []（无依赖，可直接执行）
+- contract_mode: `planned`（验收标准在本计划已写清，Orchestrator 直接据此写 contract.md，不走 codraft 共识子阶段）
 - Orchestrator 标注的 Contract 关键点（contract.md）：
   1. 必须派发**两个独立 SubAgent** 分别充当 Generator 与 Evaluator（用于验证 AP3 隔离）。
   2. 每个角色必须按格式打印验证点：`VERIFY[AP<n>]: PASS|FAIL — <一句话证据>`。

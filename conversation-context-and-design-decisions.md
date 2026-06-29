@@ -1,8 +1,8 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v4.2  
+> **版本**: v4.3  
 > **日期**: 2026-06-29  
-> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源；v3.x 增加三层推理与 RULE.md 钩子方案；v4.0 增加 Milestone/Stage/Task 概念重构、Stage 级 SPEC 三件套、stage-executor、两类验收分工与 state-board v2；v4.1 见决策 13；v4.2 见决策 14（真机自检结果、Decision 独立 SubAgent、retry 闭环 AP10）  
+> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）  
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -231,6 +231,23 @@
 4. **三件套持久化收紧**：spec/tasks/checklist 是过程脚手架，只留 `.trae/specs/`（对话内可读、不入 harness、不进 git）；只有交付物 contract/gen/eval/decision + state-board 持久化到 `harness/`。验收标准在 contract.md，故三件套不持久化不影响 Evaluator/Decision 验收。board 的 `artifacts` 只记 contract/gen/eval/decision。
 
 **影响**：中立裁决从"名义"变"真盲审"；retry 闭环明确为人工驱动的有限重派；建议按更新后的 `test-prompt.md` 重跑一次以确认 Decision 独立 + AP10 + AP9 真并行。
+
+---
+
+### 决策 15：验收标准来源澄清 + 可选 codraft 共识子阶段（v4.3）
+
+**日期**：2026-06-29
+
+**背景**：用户质疑"验收标准真的能让 Orchestrator(串联者)定吗?"——Orchestrator 没看代码，早期开发阶段的验收标准往往要"开发先写一版、测试 review 后再调"才能定清楚；而联调阶段(骨架与模块契约已定)验收标准又天然明确。
+
+**决策**：
+1. **澄清来源**：验收标准的"根"在 Planner 的 `milestone-plan.md`（每个 Stage 带"验收标准要点"），Orchestrator 只是据此 + 既定契约**誊写/收敛**成 contract.md，**不凭空发明**。联调/需求明确的 Stage 由此即可。
+2. **新增 per-Stage `contract_mode`**（Planner 在 milestone-plan 标，默认 `planned`）：
+   - `planned`：验收标准规划期已明确 → Orchestrator 直接写 contract.md，不加子阶段。
+   - `codraft`（可选）：验收标准需先有草稿才能定（早期/探索性）→ 插入 **Contract 共识子阶段**：Generator 出草稿+提议标准 → Evaluator(测试视角)敲定标准写入 contract.md → 再进入正式 G→E→D 对抗。
+3. 这把 v4.1 砍掉的"协商"以**可选、且基于真实草稿**的形式请回来，正好对应"开发写一版、测试 review 后调标准"。
+
+**影响**：覆盖了"验收标准自顶向下(预定)"与"自底向上(涌现)"两类来源；联调走 planned、早期开发可选 codraft。改动 planner-role / stage-executor / 文档 / 自检计划。
 
 ---
 

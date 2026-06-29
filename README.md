@@ -1,6 +1,6 @@
 # Trae Harness Advisor
 
-> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.2）
+> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.3）
 
 ---
 
@@ -16,7 +16,7 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.2）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.3）
 │   └── templates/                                     # 可复用模板（14 个文件）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
@@ -101,8 +101,8 @@
 - `harness/` 是唯一持久真值与消息总线；`.trae/specs/` 是原生三件套 scratch（对话结束即弃）。
 - 验收标准放 `contract.md`（不在 spec.md），故三件套不持久化不影响验收。
 - 两类验收分工：checklist.md 是底层完成性 gate；Evaluator 是业务质量四维评估。
+- 验收标准来源：根在 milestone-plan（Planner 要点），Orchestrator 誊写不发明。每 Stage 标 `contract_mode`：`planned`（默认，直接写 contract.md）或 `codraft`（可选，Generator 草稿→Evaluator 敲定标准→再对抗）。
 - 对抗流程为顺序模拟，最多 3 轮返工，超限 escalate 给人类。
-- Contract 简化为 Orchestrator 起 Stage 时一次标注关键点（非多轮协商）。
 - milestone-plan.md 是静态定义；state-board.json v2 是动态状态机唯一真值（最小更新，git 合并友好）。
 - 并发 = 人类开多个独立对话推进；depends_on 是人工投递前的冲突规避依据，非自动调度。
 - 约束强度：路径白名单/RULE.md 钩子/playbook 均为提示词级（best-effort），非沙箱强制，需 CI/评审兜底。

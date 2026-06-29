@@ -30,9 +30,14 @@ description: >
 ## milestone-plan.md 必须包含
 - Milestone id、名称、kind: development | verification、目标与范围边界
 - 技术栈和架构约束
-- Stage 列表：id、title、目标、验收标准要点、depends_on、预估复杂度
+- Stage 列表：id、title、目标、验收标准要点、depends_on、预估复杂度、**contract_mode**
 - 非功能性需求（量化指标）
 - 开放问题（如有）
+
+## contract_mode（每个 Stage 必标，决定验收标准怎么来）
+- **planned（默认）**：验收标准在规划期已明确——需求清晰、或处于**联调阶段**（项目骨架与模块间契约已定，Stage 背景天然明确验收标准，如"下单接口调通、整个购买流程不报错、日志无 ERROR"）。此时 Orchestrator 直接据本要点 + 既定契约写 contract.md，不加共识子阶段。
+- **codraft（可选）**：验收标准**需先有一版草稿实现才能定清楚**——早期/探索性开发，"开发先写一版 → 测试 review → 再调验收标准"。此时走 Contract 共识子阶段（Generator 出草稿 + 提议标准 → Evaluator review 敲定 → 写入 contract.md）后再对抗。
+- 判据：能在规划期写出可机械检查的验收标准 → planned；写不出、要看到草稿才能定 → codraft。
 
 ## state-board.json 初始化要求
 - version 固定为 "2.0"
@@ -43,7 +48,7 @@ description: >
 
 ## 与 Orchestrator 的契约
 milestone-plan.md 必须让 Orchestrator 能据此为单个 Stage 产出三件套：
-- 每个 Stage 的目标、验收标准要点、depends_on
+- 每个 Stage 的目标、验收标准要点、depends_on、contract_mode
 - 技术栈和架构约束
 - 非功能性需求（量化指标）
 - 不替 Orchestrator 填写 Stage 级 spec/tasks/checklist 内容
