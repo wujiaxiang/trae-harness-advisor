@@ -1,7 +1,8 @@
-# Deliverable Specifications
+# Deliverable Specifications (v4.0)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
-> 所有生成规则基于 `../templates/` 目录中的模板文件。
+> 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
+> 核心理念：Advisor 只生成**脚手架与指导思想**（角色 Skill、stage-executor playbook、结构骨架、RULE.md、空 board），**不生成任何业务内容**。三件套由 Orchestrator 运行时产出。
 
 ## 目录
 
@@ -10,43 +11,40 @@
 3. [1. Planner Role Skill](#1-planner-role-skill)
 4. [2. Generator Role Skill](#2-generator-role-skill)
 5. [3. Evaluator Role Skill](#3-evaluator-role-skill)
-6. [4. Generator SubAgent Config（可选）](#4-generator-subagent-config可选)
-7. [5. Evaluator SubAgent Config（可选）](#5-evaluator-subagent-config可选)
-8. [6. Decision SubAgent Config（可选）](#6-decision-subagent-config可选)
-9. [7. RULE.md（项目规范）](#7-rulemd项目规范)
-10. [8. 钩子规则文本](#8-钩子规则文本)
-11. [9. SPEC 模板](#9-spec-模板)
-12. [10. 编排模式参考](#10-编排模式参考)
-13. [11. Sprint Contract 模板](#11-sprint-contract-模板)
-14. [12. 全局任务看板](#12-全局任务看板)
-15. [13. 生成后验证](#13-生成后验证)
+6. [4. stage-executor Playbook Skill](#4-stage-executor-playbook-skill)
+7. [5. RULE.md（项目规范）](#5-rulemd项目规范)
+8. [6. 钩子规则文本](#6-钩子规则文本)
+9. [7. 三件套骨架模板](#7-三件套骨架模板)
+10. [8. stage-contract 骨架](#8-stage-contract-骨架)
+11. [9. state-board.json（v2 空表）](#9-state-boardjson-v2-空表)
+12. [10. 可选 Agent 配置](#10-可选-agent-配置)
+13. [11. 生成后验证](#11-生成后验证)
 
 ---
 
 ## 配置变量映射
 
-从用户 Q&A 收集的配置映射到模板变量。问题编号与 `SKILL.md` 工作流 Step 1-4 的 16 个问题严格对应；`skill_dir`、`agent_dir` 不在问答中询问，使用默认值（用户可在确认阶段手动覆盖）：
+问题编号与 `SKILL.md` 工作流 Step 1-4 的 13 个问题严格对应。`skill_dir`、`agent_dir` 不在问答中询问，使用默认值：
 
 | 问题 | 变量名 | 默认值 |
 |------|--------|--------|
 | Q1: task_type | `{task_type}` | `"development"` |
 | Q2: tech_stack | `{tech_stack}` | 用户输入 |
 | Q3: project_scale | `{project_scale}` | `"medium"` |
-| Q4: spec_dir | `{spec_dir}` | `"harness-specs/{feature}/"` |
-| Q5: eval_dir | `{eval_dir}` | `"eval/"` |
-| Q6: contract_dir | `{contract_dir}` | `"harness-contracts/{feature}/"` |
-| Q7: generate_agents | `{generate_agents}` | `false` |
-| Q8: max_adversarial_rounds | `{max_rounds}` | `3` |
-| Q9: eval_strictness | `{eval_strictness}` | `"standard"` |
-| Q10: max_contract_rounds | `{contract_rounds}` | `3` |
-| Q11: force_contract | `{force_contract}` | `true` |
-| Q12: use_task_board | `{use_task_board}` | `false` |
-| Q13: tdd_mode | `{tdd_mode}` | `"standard"` |
-| Q14: verification_mode | `{verification_mode}` | `"full"` |
-| Q15: use_calibration | `{use_calibration}` | `false` |
-| Q16: custom_acceptance_rules | `{custom_rules}` | `"none"` |
+| Q4: harness_dir | `{harness_dir}` | `"harness/"` |
+| Q5: generate_agents | `{generate_agents}` | `false` |
+| Q6: max_adversarial_rounds | `{max_rounds}` | `3` |
+| Q7: eval_strictness | `{eval_strictness}` | `"standard"` |
+| Q8: max_contract_rounds | `{contract_rounds}` | `3` |
+| Q9: force_contract | `{force_contract}` | `true` |
+| Q10: tdd_mode | `{tdd_mode}` | `"standard"` |
+| Q11: verification_mode | `{verification_mode}` | `"full"` |
+| Q12: use_calibration | `{use_calibration}` | `false` |
+| Q13: custom_acceptance_rules | `{custom_rules}` | `"none"` |
 | （不询问）skill_dir | `{skill_dir}` | `".trae/skills/"` |
 | （不询问）agent_dir | `{agent_dir}` | `".trae/agents/"` |
+
+> 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成（不再作为可选项）。
 
 ### 评分严格度映射
 
@@ -60,11 +58,11 @@
 
 | 模式 | 行为描述 |
 |------|---------|
-| `relaxed` | 先实现，Sprint 结束前补齐测试 |
+| `relaxed` | 先实现，Stage 结束前补齐测试 |
 | `standard` | 先写测试 → 确认失败 → 实现 → 全部通过 |
 | `strict` | red-green-refactor 循环，覆盖率 >= 80% |
 
-### 验证模式映射
+### 验证模式映射（Evaluator 业务质量验收）
 
 | 模式 | 包含步骤 |
 |------|---------|
@@ -79,28 +77,32 @@
 先创建目标目录（如果不存在）：
 
 ```
-{skill_dir}                    # 默认 .trae/skills/
+{skill_dir}                       # 默认 .trae/skills/（静态/git）
 ├── planner-role/SKILL.md
-├── generator-role/SKILL.md
-└── evaluator-role/SKILL.md
-RULE.md                        # 项目根目录（替代 .trae/rules/，TRAE Work 云端通过钩子规则加载）
-（可选）{agent_dir}            # 默认 .trae/agents/（仅 generate_agents=true 时生成）
-├── generator.md
-├── evaluator.md
-└── decision.md
-{spec_dir}/{feature}/          # 默认 harness-specs/{feature}/
-└── tasks-pattern.md
-{contract_dir}/{feature}/      # 默认 harness-contracts/{feature}/
-└── sprint-N.md
-{eval_dir}                     # 默认 eval/
-└── (运行时创建)
-global_task_board.json (可选)
+├── generator-role/SKILL.md       # 内嵌 Agent 工具集 + 路径白名单
+├── evaluator-role/SKILL.md       # 内嵌 Decision 裁决者
+└── stage-executor/SKILL.md       # 运行时拉起 playbook
+RULE.md                           # 项目根目录（钩子规则加载）
+{harness_dir}                     # 默认 harness/（持久真值 + 消息总线）
+├── templates/
+│   ├── spec.skeleton.md
+│   ├── tasks.skeleton.md
+│   ├── checklist.skeleton.md
+│   └── stage-contract.skeleton.md
+└── state-board.json              # v2 空表
+（可选）{agent_dir}               # 默认 .trae/agents/（仅 generate_agents=true）
+├── generator.md  evaluator.md  decision.md
+.trae/specs/ → 加入 .gitignore（原生临时 scratch，不生成、不依赖）
 ```
 
+运行时由 Orchestrator 创建（**不在 Advisor 输出范围**）：
+- `{harness_dir}milestones/{milestone}/milestone-plan.md`（Planner 产出）
+- `{harness_dir}milestones/{milestone}/stages/{stage}/{spec,tasks,checklist,contract,gen,eval,decision}.md`
+
 注意：
-- spec.md（空模板）由 Planner 在 `/spec` 阶段生成到 `{spec_dir}/{feature}/spec.md`，不在专家 Skill 输出范围内
-- `.trae/rules/` 已删除——TRAE Work 不支持 `.trae/rules/` 目录，项目规范改为 RULE.md + 钩子规则方案
-- Agent 配置文件为可选生成——当前 TRAE Work 云端不支持 `.trae/agents/`，Agent 角色行为已内嵌到 Skill 中
+- Advisor **不生成任何业务内容**（不写 milestone-plan、不写三件套），只生成骨架与角色规范。
+- `.trae/rules/` 不存在——项目规范用 RULE.md + 钩子规则。
+- Agent 配置文件可选——当前云端不支持 `.trae/agents/`，角色行为已内嵌 Skill。
 
 ---
 
@@ -108,17 +110,15 @@ global_task_board.json (可选)
 
 **文件路径**: `{skill_dir}planner-role/SKILL.md`
 
-**生成规则**: 基于 `templates/planner-skill-template.md`，保持不变的核心内容。根据 `{task_type}` 调整：
-
-- `development` → 描述中强调"需求分析、任务拆解、Sprint 分解"
-- `verification` → 描述中强调"验收标准定义、测试用例设计、验证流程规划"
-- `hybrid` → 包含两者
+**生成规则**: 基于 `../resources/...` 第 4.2 节 Planner Skill 模板。根据 `{task_type}` 调整描述：
+- `development` → 强调"需求分析、Milestone→Stage 分解"
+- `verification` → 强调"验收范围定义、验证 Stage 拆分"
+- `hybrid` → 两者，并要求 Planner 为每个 Milestone 标注 `kind`
 
 **核心内容（必须保留）**:
-- 职责：需求 → 产品规格 + Sprint 分解（战略级别）
-- 行为准则 6 条（只描述做什么/为什么、机械可检查的验收标准、依赖识别、确定性语言、量化指标、Sprint 粒度适中）
-- **Planner 只输出 spec.md 和更新 global_task_board.json，不输出 tasks.md 和 checklist.md**
-- **tasks.md 由云端 Agent 运行时动态生成**，读取 spec.md + 全局任务表后，按照 Harness 编排模式（见 tasks-pattern.md）自动生成
+- 职责：用户需求 → 一个 Milestone（标注 `kind`）+ 战略分解为若干 Stage（含 `depends_on`）
+- 行为准则（只描述做什么/为什么、机械可检查验收标准、依赖标注、确定性语言、量化指标、Stage 粒度适中）
+- **输出 `milestone-plan.md` + 初始化 `state-board.json`；不生成三件套**
 
 ---
 
@@ -126,18 +126,15 @@ global_task_board.json (可选)
 
 **文件路径**: `{skill_dir}generator-role/SKILL.md`
 
-**生成规则**: 基于 `templates/generator-skill-template.md`。根据 `{tdd_mode}` 调整 TDD 行为描述：
+**生成规则**: 基于 `templates/generator-skill-template.md`。根据 `{tdd_mode}` 调整 TDD 描述（见映射表）。
 
-- `relaxed`: "先实现核心功能，Sprint 结束前补齐测试"
-- `standard`: "先写测试 → 确认测试失败 → 再写实现"
-- `strict`: "严格遵循 red-green-refactor 循环，确保测试覆盖率 >= 80%"
-
-**跳过条件**: `{task_type}` 为 `"verification"` 时跳过 Generator Skill 生成。
+**跳过条件**: `{task_type}` 为 `"verification"` 时跳过。
 
 **核心内容（必须保留）**:
-- 职责：按 Sprint 实现功能，不评价自己代码
-- 行为准则 8 条
-- 实现总结格式
+- 职责：按 Stage 实现功能，不评价自己代码
+- 工具集（Read/Write/Edit/Glob/Grep/Bash）+ 路径白名单（可改 `src/`、`tests/`；禁改 `{harness_dir}`、`{skill_dir}`、`RULE.md`）
+- 行为准则；实现总结写入 `{harness_dir}milestones/{milestone}/stages/{stage}/gen.md`
+- 若 `{force_contract}=true`：追加"必须等待 Stage Contract 被 Evaluator 批准后才能编码"
 
 ---
 
@@ -145,115 +142,56 @@ global_task_board.json (可选)
 
 **文件路径**: `{skill_dir}evaluator-role/SKILL.md`
 
-**生成规则**: 基于 `templates/evaluator-skill-template.md`。根据 `{eval_strictness}` 调整评分阈值，根据 `{verification_mode}` 调整验证步骤：
-
-- 严格度阈值见上方映射表
-- `quick` 模式: 移除"必须实际启动应用并通过浏览器测试"要求，替换为"必须运行全部自动化测试"
-- `automated` 模式: 移除"必须截图留证"，替换为"必须运行 Lint 检查"
-- `full` 模式: 保留所有要求
+**生成规则**: 基于 `templates/evaluator-skill-template.md`。根据 `{eval_strictness}` 调整阈值、`{verification_mode}` 调整验证步骤。
 
 **核心内容（必须保留）**:
-- 职责：以"怀疑者"身份验证，不妥协
-- 四维评分标准（功能性、工艺质量、完整性、用户体验）
-- 判定规则（含严格度阈值）
-- 行为准则 6 条
-- 评估报告格式
-
-**如果 `{use_calibration}` = true**: 在 Skills 末尾追加"校准参考"章节，包含 2-3 个历史评分案例作为 few-shot 示例。
-
-**如果 `{custom_rules}` != "none"**: 在行为准则中追加一条："9. 特殊验收规则: {custom_rules}"
+- 定位：**业务质量**对抗验收（"怀疑者"），在 task 内部作为 `[EVALUATOR]` 步骤运行；**与 checklist 完成性 gate 不同维度**（见第零部分 0.2）
+- 四维评分（功能性、工艺质量、完整性、用户体验）+ 判定阈值
+- 工具集 + 路径白名单（只读全部；只写 `.../eval.md`）
+- 评估报告写入 `.../eval.md`
+- **内嵌 Decision 裁决者定义**：只读 `gen.md`+`eval.md` → `decision.md`（pass/retry/escalate），`rounds` 达 `{max_rounds}` 仍未过 → escalate
+- 若 `{use_calibration}=true`：追加 2-3 个 few-shot 评分案例
+- 若 `{custom_rules}!="none"`：追加一条特殊验收规则
 
 ---
 
-## 4. Generator SubAgent Config（可选）
+## 4. stage-executor Playbook Skill
 
-**生成条件**: 仅当 `{generate_agents}` = true 时生成。
+**文件路径**: `{skill_dir}stage-executor/SKILL.md`
 
-**文件路径**: `{agent_dir}generator.md`
+**生成规则**: 基于 `templates/stage-executor-skill-template.md`。这是 **L2 的单一运行时入口**，触发短语如"执行 Stage / 开始阶段 / run stage"。
 
-> 注意：当前 TRAE Work 云端不支持 `.trae/agents/` 目录，Agent 角色行为已内嵌到 generator-role Skill 中。此文件为未来兼容保留。
+**核心内容（必须保留，确定性过程）**:
+1. 读 `{harness_dir}state-board.json` → 定位当前 Stage，校验 `depends_on` 全部 `passed`
+2. 读 `{harness_dir}milestones/{milestone}/milestone-plan.md` → 取该 Stage 定义
+3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套 → **持久化到** `{harness_dir}milestones/{milestone}/stages/{stage}/`（不依赖 `.trae/specs/`）
+4. **自检门**：spec 章节齐全？tasks 与 checklist 1:1 映射？否 → 停止并报告
+5. 顺序派发 `[GENERATOR]→[EVALUATOR]→[DECISION]`（顺序模拟对抗，`{max_rounds}` 上限，超限 escalate）
+6. 回写 `state-board.json`：`status / rounds / last_decision / artifacts`
 
-**生成规则**: 基于 `templates/generator-agent-template.md`。根据 `{force_contract}` 调整行为：
-
-- 如果 `{force_contract}` = true: 追加规则 "0. 必须等待 Sprint Contract 被 Evaluator 批准后才开始编码"
-- 如果 `{force_contract}` = false: 追加规则 "0. 可直接从 spec.md 开始实现，无需等待 Contract 批准"
-
-**跳过条件**: `{task_type}` 为 `"verification"` 时跳过。
-
-**核心内容（必须保留）**:
-- 角色定义
-- 工具集（Read, Write, Edit, Glob, Grep, Bash）
-- 路径白名单（允许修改：src/, tests/, {eval_dir}；禁止修改：{spec_dir}, {contract_dir}, {skill_dir}）
-- 行为规则 5 条
+> 强调：三件套内容由 Orchestrator 运行时推理，骨架只给章节契约。不要预生成业务内容。
 
 ---
 
-## 5. Evaluator SubAgent Config（可选）
-
-**生成条件**: 仅当 `{generate_agents}` = true 时生成。
-
-**文件路径**: `{agent_dir}evaluator.md`
-
-> 注意：当前 TRAE Work 云端不支持 `.trae/agents/` 目录，Agent 角色行为已内嵌到 evaluator-role Skill 中。此文件为未来兼容保留。
-
-**生成规则**: 基于 `templates/evaluator-agent-template.md`。根据 `{verification_mode}` 调整工具集：
-
-- `quick`: 工具集移除 "Playwright MCP"
-- `automated`: 工具集移除 "Playwright MCP"，追加 "MCP Linter"
-- `full`: 保留 "Playwright MCP" 和全部工具
-
-**核心内容（必须保留）**:
-- 角色定义（严格的 QA 工程师，怀疑者）
-- 工具集
-- 路径白名单（允许读取全部，允许写入仅 {eval_dir}，禁止修改任何代码文件）
-- 行为规则 7 条
-
----
-
-## 6. Decision SubAgent Config（可选）
-
-**生成条件**: 仅当 `{generate_agents}` = true 时生成。
-
-**文件路径**: `{agent_dir}decision.md`
-
-> 注意：当前 TRAE Work 云端不支持 `.trae/agents/` 目录，Decision 角色定义已内嵌到 evaluator-role Skill 中。此文件为未来兼容保留。
-
-**生成规则**: 基于 `templates/decision-agent-template.md`。根据 `{max_rounds}` 和 `{eval_strictness}` 调整：
-
-- 裁决规则中的通过阈值映射到 Evaluator 严格度阈值
-- `max_rounds` 写入 escalate 条件："已重试 {max_rounds} 次仍未通过"
-
-**核心内容（必须保留）**:
-- 角色定义（中立裁决者，Orchestrator 代理，不写代码不评估代码）
-- 工具集（仅 Read，只读不写代码）
-- 路径白名单（允许读取 {eval_dir}、{contract_dir}、{spec_dir}；允许写入仅 {eval_dir}/xxx-decision-N.md）
-- 裁决规则（pass/retry/escalate 三种结果的条件）
-- 行为规则 7 条
-
----
-
-## 7. RULE.md（项目规范）
+## 5. RULE.md（项目规范）
 
 **文件路径**: `RULE.md`（项目根目录）
 
-**设计说明**: TRAE Work 不支持 `.trae/rules/` 目录。替代方案是在 TRAE Work「设置 > 规则」中创建一条云端钩子规则，让所有云端 Task 启动时自动读取项目根目录的 `RULE.md`。钩子规则文本由专家 Skill 在生成完成后输出，用户复制粘贴即可。
+**设计说明**: TRAE Work 不支持 `.trae/rules/`。在「设置 > 规则」建一条云端钩子规则让每个 Task 启动读 `RULE.md`；`RULE.md` 顶部指向 `stage-executor` playbook。
 
-**生成规则**: 基于 `templates/project-rules-template.md`。根据 `{tech_stack}` 和 `{project_scale}` 定制：
-
-- **常用命令**: 根据 `{tech_stack}` 推断。例如 React → 追加 `npm run dev` / `npm test`；Python → 追加 `pytest` / `python -m uvicorn`；Go → 追加 `go test ./...` / `go build`
-- **关键目录结构**: 追加 `{spec_dir}`, `{eval_dir}`, `{contract_dir}` 的实际路径
-- **编码约定**: 根据 `{tech_stack}` 推断语言特定约定
-- **全局禁止修改**: 追加 `{spec_dir}`、`{contract_dir}`、`{skill_dir}`
-
-**如果 `{custom_rules}` != "none"**: 在"编码约定"章节追加自定义规则。
+**生成规则**: 基于 `templates/project-rules-template.md`，按 `{tech_stack}`、`{project_scale}` 定制：
+- **常用命令**: 按 `{tech_stack}` 推断（React→`npm run dev`/`npm test`；Python→`pytest`；Go→`go test ./...` 等）
+- **关键目录结构**: `{harness_dir}`（持久总线）、`.trae/specs/`（临时 scratch，gitignore）
+- **编码约定**: 按 `{tech_stack}` 推断
+- **全局禁止修改**: `{harness_dir}`、`{skill_dir}`、`RULE.md`、`node_modules/`、`.git/`、`.env`
+- **入口指引**: "执行某个 Stage 时，加载 stage-executor playbook 并遵循其确定性流程"
+- 若 `{custom_rules}!="none"`：追加到"编码约定"
 
 ---
 
-## 8. 钩子规则文本
+## 6. 钩子规则文本
 
-**文件路径**: 不生成文件，直接在对话中输出文本供用户复制。
-
-**内容**: 用户复制到 TRAE Work「设置 > 规则」中创建云端规则：
+**不生成文件**，直接在对话输出供用户复制到「设置 > 规则」：
 
 ```
 在开始执行任何任务之前，必须先读取当前项目根目录的 RULE.md 文件，将其内容作为当前项目的编码规范、约束条件和行为准则。如果 RULE.md 不存在，则跳过此步骤。
@@ -261,170 +199,90 @@ global_task_board.json (可选)
 
 ---
 
-## 9. SPEC 模板
+## 7. 三件套骨架模板
 
-### spec.md
+> 这些是**结构骨架**（只有章节契约，无业务内容），供 Orchestrator 运行时填充。内容见 `../resources/...` 第 4.1 节。
 
-**注意：spec.md 不在专家 Skill 的输出范围内。** 专家 Skill 只生成 `tasks-pattern.md`（编排模式参考）。spec.md 的生成流程如下：
+| 文件 | 路径 | 定位 |
+|------|------|------|
+| spec 骨架 | `{harness_dir}templates/spec.skeleton.md` | Stage 规格（目标/范围/验收标准/依赖/非功能） |
+| tasks 骨架 | `{harness_dir}templates/tasks.skeleton.md` | 对抗编排（[GENERATOR]/[EVALUATOR]/[DECISION] 顺序步骤） |
+| checklist 骨架 | `{harness_dir}templates/checklist.skeleton.md` | **底层机制**：tasklist 完成性 gate（≠ Evaluator 质量评分） |
 
-1. **Planner**（`/spec` 阶段）生成 spec.md **空模板**（只有结构框架，占位符）
-2. **主Agent**（云端运行时）读取模板 + 全局 Sprint 文档 → 推理填充 spec.md 具体内容
-3. **主Agent** 根据填充后的 spec.md 生成 tasks.md
-
-spec.md 模板的结构参考 `templates/spec-template.md`。Planner 根据业务需求形态定制模板结构，但只填充结构框架，不填充具体内容。
-
-**如果 `{task_type}` = "verification"**: Planner 在模板中额外添加"验证范围"章节占位符。
+**生成规则**: 直接落地 `templates/{spec,tasks,checklist}.skeleton.md` 的内容；`{tdd_mode}`、`{eval_strictness}` 作为占位提示写入 tasks 骨架。
 
 ---
 
-## 10. 编排模式参考
+## 8. stage-contract 骨架
 
-### tasks-pattern.md
+**文件路径**: `{harness_dir}templates/stage-contract.skeleton.md`
 
-**文件路径**: `{spec_dir}/{feature}/tasks-pattern.md`
-
-**⚠️ 这不是预生成的 tasks.md**。这是编排模式参考——云端 Agent 启动时读取此文件，理解 Harness 编排模式，然后**动态生成**实际的 tasks.md。
-
-**生成规则**: 生成一个包含完整 PGE 编排模式的参考文档：
-
-```markdown
-# Harness 编排模式参考
-
-> 云端 Agent 启动时读取此文件，理解对抗编排模式，动态生成 tasks.md。
-> 不要直接使用此文件作为 tasks.md——它需要根据 spec.md 的实际 Sprint 填充。
-
-## 四角色编排模式
-
-每个 Sprint 遵循以下流程：
-
-```
-[Sprint Start]
-      ↓
-[GENERATOR] → 提出 Sprint Contract 草案
-      ↓
-[EVALUATOR] → 审查 Contract（批准后才可编码）
-      ↓
-[GENERATOR] → 按 Contract 实现（TDD）
-      ↓
-[GENERATOR] → 实现总结 → eval/{feature}-gen-{N}.md
-      ↓
-[EVALUATOR] → 评估验证 → eval/{feature}-eval-{N}.md
-      ↓
-[DECISION]  → 读取两份报告 → 裁决
-      ↓
-  pass     → 进入下一 Sprint
-  retry    → 回到 [GENERATOR]，附带 Decision 的 retry_focus
-  escalate → 暂停，请求人类裁决
-```
-
-## tasks.md 生成规则
-
-云端 Agent 生成 tasks.md 时必须遵循以下规则：
-
-1. 读取 spec.md 的 Sprint 分解，为每个 Sprint 生成一个循环块
-2. 每个 Sprint 块包含 6 个步骤：GENERATOR(Contract) → EVALUATOR(Contract审查) → GENERATOR(实现) → GENERATOR(总结) → EVALUATOR(评估) → DECISION(裁决)
-3. 每个步骤标注角色标记：[GENERATOR]、[EVALUATOR]、[DECISION]
-4. 角色标记后注明：加载对应 Skill，使用 SubAgent 独立上下文
-5. max_rounds 配置：{max_rounds}
-6. eval_strictness 配置：{eval_strictness}
-
-## 生成的 tasks.md 示例结构
-
-```markdown
-# {Feature Name} — 任务分解
-
-## 产品概述
-（从 spec.md 提取）
-
-## 技术栈
-（从 spec.md 提取）
-
-## 任务列表
-
-### 阶段 1: 初始化
-- [ ] 读取 spec.md 理解产品需求
-- [ ] 读取 tasks-pattern.md 理解编排模式
-- [ ] 读取 global_task_board.json 同步状态
-
-### 阶段 2: Sprint 循环（max_rounds={max_rounds}）
-
-#### Sprint 1: {从 spec.md 提取的 Sprint 名称}
-- [ ] [GENERATOR] 提出 Sprint Contract 草案 → {contract_dir}/{feature}/sprint-1.md
-- [ ] [EVALUATOR] 审查 Contract，批准或要求修改
-- [ ] [GENERATOR] 按 Contract 实现（TDD: {tdd_mode}）
-- [ ] [GENERATOR] 实现总结 → {eval_dir}/{feature}-gen-1.md
-- [ ] [EVALUATOR] 评估验证（严格度: {eval_strictness}）→ {eval_dir}/{feature}-eval-1.md
-- [ ] [DECISION] 裁决 → {eval_dir}/{feature}-decision-1.md
-
-#### Sprint 2: {从 spec.md 提取的 Sprint 名称}
-- [ ] [GENERATOR] 提出 Sprint Contract 草案 → ...
-- ...（同上结构，重复 N 个 Sprint）
-
-### 阶段 3: 最终验收
-- [ ] [EVALUATOR] 全量回归测试
-- [ ] [EVALUATOR] 最终评估报告 → {eval_dir}/{feature}-final.md
-
-## 角色引用
-- Generator: 加载 @generator-role Skill，使用 SubAgent general_purpose_task
-- Evaluator: 加载 @evaluator-role Skill，使用 SubAgent general_purpose_task
-- Decision: 加载 @decision 配置，使用 SubAgent general_purpose_task
-```
-```
+**生成规则**: 基于 `templates/sprint-contract-template.md`（含本轮目标、实现范围、验收标准、依赖、风险、Evaluator 审查区）。顶部注明"每个 Stage 开始时由 Generator 复制填充为 `stages/{stage}/contract.md`"。
+- 若 `{force_contract}=false`：追加注释"当前为可选 Contract 模式，Generator 可直接实现"。
 
 ---
 
-## 11. Sprint Contract 模板
+## 9. state-board.json（v2 空表）
 
-**文件路径**: `{contract_dir}/{feature}/sprint-N.md`
+**文件路径**: `{harness_dir}state-board.json`（核心产物，始终生成）
 
-**生成规则**: 基于 `templates/sprint-contract-template.md`。生成一个可复用的模板文件，顶部注明：
-
-```
-# Sprint {N} Contract 模板
-> 本模板由 PGE Harness Advisor 生成。每个 Sprint 开始时复制此模板并填充实际内容。
-```
-
-然后包含模板的完整内容（本轮目标、实现范围、验收标准、依赖、预估风险、Evaluator 审查区）。
-
-**如果 `{force_contract}` = false**: 在模板顶部追加注释 "> 注意: 当前配置为可选 Contract 模式，Generator 可直接实现，无需等待批准。"
-
----
-
-## 12. 全局任务看板
-
-**生成条件**: 仅当 `{use_task_board}` = true 时生成。
-
-**文件路径**: `global_task_board.json`
-
-**内容**: 一个 JSON 文件，用于跨 session 跟踪所有 SPEC 任务的状态：
+**内容**: v2 空表，作为唯一跨 session 状态机真值：
 
 ```json
 {
-  "board_version": "1.0",
+  "version": "2.0",
   "created_at": "{当前 ISO 时间戳}",
-  "features": [
-    {
-      "id": "{feature_name}",
-      "status": "planned",
-      "spec_dir": "{spec_dir}",
-      "contract_dir": "{contract_dir}",
-      "eval_dir": "{eval_dir}",
-      "sprints": [],
-      "created_at": "{当前 ISO 时间戳}",
-      "updated_at": "{当前 ISO 时间戳}"
-    }
-  ]
+  "milestones": []
 }
 ```
 
+**Schema 约定**（写入文档说明，供 Planner/Orchestrator 遵循）：
+
+```jsonc
+{
+  "version": "2.0",
+  "milestones": [{
+    "id": "string",
+    "kind": "development | verification",
+    "status": "planning | in_progress | done",
+    "stages": [{
+      "id": "string",
+      "title": "string",
+      "depends_on": ["stage_id"],
+      "status": "planned | spec_ready | in_progress | passed | failed | escalated",
+      "rounds": 0,
+      "last_decision": "pass | retry | escalate | null",
+      "artifacts": { "spec": "", "tasks": "", "checklist": "", "contract": "", "eval": "" }
+    }]
+  }]
+}
+```
+
+- `milestone-plan.md` = 定义（静态只读）；`state-board.json` = 状态机（动态唯一真值）。两者不重复：plan 描述"是什么"，board 记录"到哪一步"。
+
 ---
 
-## 13. 生成后验证
+## 10. 可选 Agent 配置
 
-生成所有文件后，执行以下验证：
+**生成条件**: 仅当 `{generate_agents}=true`。当前云端不支持 `.trae/agents/`，角色行为已内嵌 Skill；此为未来兼容保留。
 
-1. **目录检查**: 确认所有目录已创建
-2. **文件计数**: 确认文件数量正确（核心交付物为 6 个文件：3 个 Skill + RULE.md + tasks-pattern.md + Sprint Contract 模板，外加 1 段钩子规则文本（非文件，直接在对话输出）；可选 +3 个 Agent 配置）
-3. **引用检查**: 确认生成的文件中路径引用使用了用户配置的实际路径
+| 文件 | 模板 | 要点 |
+|------|------|------|
+| `{agent_dir}generator.md` | `templates/generator-agent-template.md` | 工具集 + 路径白名单（可改 src/、tests/；禁改 {harness_dir}） |
+| `{agent_dir}evaluator.md` | `templates/evaluator-agent-template.md` | 只读全部、只写 eval.md；`{verification_mode}` 调工具集 |
+| `{agent_dir}decision.md` | `templates/decision-agent-template.md` | 仅 Read；裁决阈值映射 `{eval_strictness}`；escalate 条件含 `{max_rounds}` |
+
+跳过：`{task_type}="verification"` 时跳过 generator.md。
+
+---
+
+## 11. 生成后验证
+
+生成所有文件后执行：
+
+1. **目录检查**: `{skill_dir}` 4 个角色/playbook 目录、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建。
+2. **文件计数**: 核心 **10 个文件**（4 个 Skill：planner/generator/evaluator/stage-executor + RULE.md + 4 个骨架：spec/tasks/checklist/stage-contract + state-board.json），外加 1 段钩子规则文本（非文件）；可选 +3 个 Agent 配置。`task_type=verification` 时 generator-role 跳过 → 核心 9 个文件。
+3. **引用检查**: 生成文件中的路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
+4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 
 验证完成后，输出 Step 7 的完成摘要。
