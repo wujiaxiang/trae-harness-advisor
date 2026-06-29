@@ -1,11 +1,12 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v2.0  
+> **版本**: v4.0  
 > **日期**: 2026-06-29  
-> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源  
+> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源；v3.x 增加三层推理与 RULE.md 钩子方案；v4.0 增加 Milestone/Stage/Task 概念重构、Stage 级 SPEC 三件套、stage-executor、两类验收分工与 state-board v2  
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
+> **核心概念定义**: 以 `trae-harness-advisor/resources/harness-engineering-on-trae-work.md` 第零部分为准；后续实现必须遵循 Milestone / Stage / Task 术语与两类验收分工。
 
 ---
 
@@ -161,6 +162,41 @@
 - 交付物：核心 6 个文件（3 个 Skill + RULE.md + tasks-pattern.md + sprint-N.md）+ 1 段钩子规则文本（非文件）+ 可选 3 个 Agent 配置
 - Generator 和 Evaluator Skill 内容大幅扩展（合并了 Agent 工具集和 Decision 角色）
 - 主文档版本号：v3.0 → v3.1
+
+
+### 决策 11：概念重构（Milestone/Stage/Task）v4.0
+
+**日期**：2026-06-29
+
+**背景**：v3.x 中“业务层级、执行批次、原生任务”的边界仍然容易混淆，历史术语还会让 Planner、云端父 Agent、SubAgent 的职责发生重叠。用户要求把层级定义锁定为可长期维护的三层模型，并消除旧命名造成的歧义。
+
+**决策**：统一采用严格三级层次：
+- **Milestone**：一次 Planner 对话覆盖的完整研发或验收过程，标注 `kind: development | verification`，物理载体为 `harness/milestones/{milestone}/` 与 `state-board.json` 中的一条记录。
+- **Stage**：Milestone 下一个可独立验收的增量，允许声明 `depends_on`，可部分并发，通常对应一次云端对话与一次 `/spec` 实例。
+- **Task**：Stage 内 `tasks.md` 的一个 TRAE Work 原生执行步骤。
+
+**理由**：该定义把“规划范围”“可验收增量”“平台执行步骤”拆开，避免把战略规划、运行时编排和底层 tasklist 混为一谈。Anthropic Pattern A 中的功能分解在本设计中对应 Stage 分解，后续引用时必须显式说明。
+
+**影响**：后续文档、模板和 Skill 的正向表达均以主文档第零部分为唯一术语来源。历史决策记录保留原话，仅作为演进背景。
+
+---
+
+### 决策 12：SPEC 三件套下沉 Stage 层 + stage-executor + 两类验收分工 + 顺序模拟对抗 + state-board v2
+
+**日期**：2026-06-29
+
+**背景**：用户进一步澄清：Advisor 和 Planner 都不应预先生成业务内容；SPEC 三件套需要由执行当下的 Orchestrator 根据最新上下文推理生成。同时，TRAE Work 的 SubAgent 能力支持顺序执行，但不等价于真实自动控制流循环；旧状态文件也混合了定义与运行状态。
+
+**决策**：
+1. **SPEC 三件套下沉到 Stage 层**：`spec.md`、`tasks.md`、`checklist.md` 由 Orchestrator 在每个 Stage 的 `/spec` 对话中运行时创建，并持久化到 `harness/milestones/{milestone}/stages/{stage}/`。Advisor 只提供 `harness/templates/*.skeleton.md` 的结构骨架。
+2. **新增 stage-executor playbook**：作为 Orchestrator 的单一拉起入口，确定性执行“读 board → 读 plan → 运行 /spec → 自检 → 顺序派发 G/E/D → 回写 board”。RULE.md 钩子只负责指向该 playbook。
+3. **两类验收分工**：`checklist.md` 是底层机制，回答 tasklist 是否完成；Evaluator 是业务质量评估，作为 tasks.md 内的 `[EVALUATOR]` 步骤输出四维评分 `eval.md`。两者不互相替代。
+4. **顺序模拟对抗**：同一 Stage 对话内按 Generator → Evaluator → Decision 顺序执行，最多 3 轮返工；超过上限或出现根本分歧时 escalate 给人类。
+5. **state-board.json v2**：`milestone-plan.md` 只保存静态定义，`state-board.json` 是动态状态机唯一真值，记录 Stage 状态、轮次、最后裁决和产物路径。
+
+**理由**：运行时生成三件套可以利用最新代码与上下文；stage-executor 降低手动拼装输入的脆弱性；两类验收拆分避免重复或错位；顺序模拟对抗符合 TRAE Work 当前能力边界；状态定义分离使跨 session 恢复更可靠。
+
+**影响**：持久真值与消息总线统一落在 `harness/`；`.trae/specs/` 仅作为原生临时 scratch，不再承担持久消息传递。
 
 ---
 
@@ -365,7 +401,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 ### 中期（依赖平台能力演进）
 
 1. **自动化 Planner 触发**: 如果 TRAE Work 支持 Webhook/API 触发，可以实现 Git Push → 自动启动 SPEC 工作流
-2. **多 Feature 并行编排**: 利用 SubAgent 并行能力，同时执行多个 Feature 的 Generator/Evaluator 流程
+2. **多 Milestone/Stage 并行编排**: 利用 SubAgent 并行能力，同时推进多个依赖已满足的 Stage
 3. **Harness 组件自迭代**: 参考 OpenAI 的"Agent 遇到困难 → 分析根因 → 构建 Harness 组件"闭环
 
 ### 长期（方法论层面）

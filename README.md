@@ -1,6 +1,6 @@
 # Trae Harness Advisor
 
-> Harness Engineering 在 TRAE Work 上的最佳实践——Planner-Generator-Evaluator-Decision 四角色多智能体对抗架构，三层推理流程
+> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.0）
 
 ---
 
@@ -16,18 +16,21 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v3.1）
-│   └── templates/                                     # 可复用模板（10 个文件）
-│       ├── spec-template.md                           # SPEC 空模板（Planner 生成框架，主Agent 填充）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.0）
+│   └── templates/                                     # 可复用模板（13 个文件）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
-│       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含 Agent 工具集和路径白名单）
+│       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
+│       ├── evaluator-skill-template.md                # Evaluator 角色 Skill 模板（含 Decision 裁决）
+│       ├── stage-executor-skill-template.md           # Orchestrator 运行时 playbook Skill 模板
+│       ├── spec.skeleton.md                           # Stage 规格骨架
+│       ├── tasks.skeleton.md                          # Stage 任务骨架（G/E/D 顺序步骤）
+│       ├── checklist.skeleton.md                      # 完成性 gate 骨架
+│       ├── stage-contract.skeleton.md                 # Stage Contract 骨架
 │       ├── generator-agent-template.md                # Generator Agent 配置模板（可选，未来兼容）
-│       ├── evaluator-skill-template.md                # Evaluator 角色 Skill 模板（含 Decision 角色定义）
 │       ├── evaluator-agent-template.md                # Evaluator Agent 配置模板（可选，未来兼容）
 │       ├── decision-agent-template.md                 # Decision Agent 配置模板（可选，未来兼容）
 │       ├── project-rules-template.md                  # RULE.md 模板（项目根目录，钩子规则加载）
-│       ├── sprint-contract-template.md                # Sprint Contract 模板
-│       └── eval-report-template.md                    # 评估报告模板
+│       └── eval-report-template.md                    # 业务质量评估报告模板
 ├── conversation-context-and-design-decisions.md       # 会话上下文与设计决策记录
 ├── archive/                                           # 过程档案
 │   ├── harness-engineering-on-trae-work-plan.md       # v1.0 编写计划
@@ -38,40 +41,48 @@
 
 ## Skill 是什么
 
-`trae-harness-advisor` 是一个 TRAE Work 平台上的 Harness Engineering 专家技能。它通过结构化问题引导用户理清项目上下文和定制需求，然后一键生成完整的 PGE+D（Planner-Generator-Evaluator-Decision）四角色多智能体对抗架构配置。
+`trae-harness-advisor` 是一个 TRAE Work 平台上的 Harness Engineering 专家技能。它通过结构化问题引导用户理清项目上下文和定制需求，然后一键生成完整的 PGE+D（Planner-Generator-Evaluator-Decision）多智能体对抗架构配置。
 
-**核心设计思想**：在 TRAE Work 免费版的能力范围内，通过组合 SPEC + Skills + RULE.md 钩子规则等原生能力，"拼装"出一个模拟 Claude Code 内置 Orchestrator 的编排系统。方法论效果可以追齐 Claude Code 的 Harness 编排——角色分离、上下文隔离、对抗验证——但调度仍需人类触发（半自动）。
+**核心设计思想**：在 TRAE Work 免费版的能力范围内，通过组合 SPEC + Skills + RULE.md 钩子规则 + harness/ 持久消息总线，拼装出一个模拟 Claude Code 内置 Orchestrator 的编排系统。方法论效果可以追齐 Claude Code 的 Harness 编排——角色分离、上下文隔离、对抗验证——但调度仍需人类触发（半自动）。
 
-**三层推理流程**（v3.0 核心）：
+**v4.0 三级层次与角色分工**：
 
 | 层级 | 角色 | 职责 | 输出 |
 |------|------|------|------|
-| 第一层 | **专家 Skill** | 初始化 Harness 基础设施，根据技术栈定制规范 | Skills + RULE.md + tasks-pattern.md + sprint-N.md 模板 + 钩子规则文本 |
-| 第二层 | **Planner** | 理解业务需求，拆分 Sprint 大方向，生成空模板 | sprint-plan.md（全局规划）+ spec.md（空模板） |
-| 第三层 | **主Agent** | 运行时推理填充 spec.md → 生成 tasks.md → 调度 SubAgent | 填充后的 spec.md + tasks.md |
-| 执行层 | **Generator/Evaluator/Decision** | 对抗循环执行 | 代码 + 评估报告 + 裁决 |
+| L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 4 个 Skill + RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
+| L1 | **Planner** | 将需求规划为 Milestone，并拆成可独立验收的 Stage | milestone-plan.md + 初始化 state-board.json |
+| L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产出三件套并调度对抗 | Stage 级 spec.md / tasks.md / checklist.md + 状态回写 |
+| 执行层 | **Generator/Evaluator/Decision** | 顺序模拟对抗：实现、业务质量评估、中立裁决 | gen.md + eval.md + decision.md |
 
-**v3.1 TRAE Work 兼容性修正**：
+**TRAE Work 能力映射**：
 
-| 配置项 | 云端支持？ | 处理方式 |
-|--------|-----------|---------|
-| `.trae/skills/` | 是，自动按需加载 | 保留，唯一云端自动加载通道 |
-| `.trae/rules/` | 否 | 删除，改为 RULE.md + 钩子规则 |
+| 配置项 | 云端支持？ | v4.0 处理方式 |
+|--------|-----------|--------------|
+| `.trae/skills/` | 是，自动按需加载 | 角色 Skill + stage-executor 的唯一云端自动加载通道 |
+| `.trae/rules/` | 否 | 不使用；改为 RULE.md + 钩子规则 |
 | `.trae/agents/` | 否（当前） | 保留为可选，角色行为内嵌到 Skill 中 |
+| `.trae/specs/` | 原生临时区 | 仅作 /spec scratch，gitignored，不作为消息总线 |
+| `harness/` | 普通项目目录 | 持久真值与跨 session 消息总线 |
 
-**生成的文件**（核心 6 个文件 + 1 段钩子规则文本 + 可选 3 个）：
+**生成的文件**（10 个核心文件 + 1 段钩子规则文本；可选 3 个 Agent 配置）：
 
-- 3 个角色 Skill（Planner、Generator、Evaluator）— Generator 含 Agent 工具集和路径白名单，Evaluator 含 Decision 角色定义
+- 4 个 Skill：Planner、Generator、Evaluator（含 Decision）、stage-executor
 - RULE.md（项目根目录，TRAE Work 云端通过钩子规则加载）
+- 4 个结构骨架：spec.skeleton.md、tasks.skeleton.md、checklist.skeleton.md、stage-contract.skeleton.md
+- state-board.json v2（动态状态机唯一真值）
 - 钩子规则文本（用户复制到「设置 > 规则」的一次性配置）
-- 编排模式参考（tasks-pattern.md）
-- Sprint Contract 模板
-- 可选全局任务看板
 - 可选 3 个 Agent 配置文件（供未来兼容）
 
-**目录解耦**：业务文档（spec、contracts）默认放在项目根目录（`harness-specs/`、`harness-contracts/`），不绑定 `.trae/`。所有路径支持用户自定义配置。
+**关键架构要点**：
 
-**与 Claude Code 的差异**：见主文档 1.4 节和 3.9 节。简言之：Claude Code 是"全自动挡汽车"，我们是在"手动挡汽车"上安装了"辅助驾驶系统"。
+- 严格三级层次：Milestone > Stage > Task。
+- SPEC 三件套在 Stage 层由 Orchestrator 运行时创建，Advisor 只提供结构骨架，不预生成业务内容。
+- `harness/` 是唯一持久真值与消息总线；`.trae/specs/` 只是原生临时 scratch。
+- 两类验收分工：checklist.md 是底层完成性 gate；Evaluator 是业务质量四维评估。
+- 对抗流程为顺序模拟，最多 3 轮返工，超限 escalate 给人类。
+- milestone-plan.md 是静态定义；state-board.json v2 是动态状态机唯一真值。
+
+**与 Claude Code 的差异**：见主文档 1.4 节和 3.x 节。简言之：Claude Code 是“全自动挡汽车”，我们是在“手动挡汽车”上安装了“辅助驾驶系统”。
 
 ## 安装 Skill
 
@@ -83,18 +94,18 @@
 
 如果你是一个被要求继续优化此 Skill 的 Agent，请按以下顺序阅读：
 
-1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v3.1，含 Claude Code 对标分析、三层推理流程、TRAE Work 兼容性）
-2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含三层推理、目录解耦、RULE.md 钩子方案等决策）
-3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程（7 步，含三层推理 I/O 契约）
-4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（核心 6 个文件 + 钩子规则文本 + 可选 3 个交付物）
-5. **`trae-harness-advisor/templates/`** — 10 个模板文件
+1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.0；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架）
+2. **`/Users/wujiaxiang/.copilot/session-state/755d60bc-cc35-46cd-a77c-39a43b60ec2c/plan.md`** — v4.0 锁定设计契约（如可访问）
+3. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0 概念重构记录）
+4. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
+5. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（10 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
+6. **`trae-harness-advisor/templates/`** — 13 个模板文件，尤其是 stage-executor 与四个 skeleton
 
-**关键架构要点**（请勿回退）：
-- 三层推理流程：专家(基础设施) → Planner(全局规划+空模板) → 主Agent(推理填充spec→生成tasks) → SubAgent(执行)
-- 四角色架构：Planner + Generator + Evaluator + Decision
-- `.trae/rules/` 已删除，改为 RULE.md + 钩子规则方案
-- `.trae/agents/` 保留为可选生成，Agent 角色行为已内嵌到 Skill 中
-- 业务文档默认不绑定 `.trae/`（`harness-specs/`、`harness-contracts/`），所有路径可配置
+**请勿回退**：
+- 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。
+- 不要让 Planner 生成 Stage 三件套；它们必须由 Orchestrator 运行时创建。
+- 不要把 checklist.md 与 Evaluator 混为一谈。
+- 不要依赖 `.trae/specs/` 做持久状态或消息传递。
 
 ## 方法论来源
 
@@ -102,7 +113,7 @@
 
 | 来源 | 核心贡献 |
 |------|---------|
-| Mitchell Hashimoto | 6 阶段 AI 采用框架，阶段 5 = "工程化 Harness" |
+| Mitchell Hashimoto | 6 阶段 AI 采用框架，阶段 5 = “工程化 Harness” |
 | OpenAI | 0 人类代码行、100 万行生成代码、Context Engineering + Architectural Constraints |
 | Anthropic | Pattern A（Initializer + Coding Agent）和 Pattern B（Planner-Generator-Evaluator） |
 | Martin Fowler | Feedforward vs Feedback、Computational vs Inferential |

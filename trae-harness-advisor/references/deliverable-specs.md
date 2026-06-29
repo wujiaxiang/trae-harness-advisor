@@ -217,7 +217,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 **文件路径**: `{harness_dir}templates/stage-contract.skeleton.md`
 
-**生成规则**: 基于 `templates/sprint-contract-template.md`（含本轮目标、实现范围、验收标准、依赖、风险、Evaluator 审查区）。顶部注明"每个 Stage 开始时由 Generator 复制填充为 `stages/{stage}/contract.md`"。
+**生成规则**: 基于 `templates/stage-contract.skeleton.md`（含本轮目标、实现范围、验收标准、依赖、风险、Evaluator 审查区）。顶部注明"每个 Stage 开始时由 Generator 复制填充为 `stages/{stage}/contract.md`"。
 - 若 `{force_contract}=false`：追加注释"当前为可选 Contract 模式，Generator 可直接实现"。
 
 ---
