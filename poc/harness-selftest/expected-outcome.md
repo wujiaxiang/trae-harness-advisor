@@ -38,10 +38,29 @@
 
 运行日期：______  环境：______  Decision 是否独立子代理：______
 
-### 首轮（v4.1，commit a6c5de1 + followup 55be15e）历史记录
+### 本次 v4.3 重跑（commit 21e4497）
 
-> AP1/2/3/5/6/7/8 = 7 项硬 PASS；AP9 串行+无循环已证、并行未实证（首轮实为串行）；AP4 FAIL（当时 MCP 全平台未注册）；首轮 [DECISION] 由主 Orchestrator 兼任（非盲审）。
-> 据此已改进：v4.2 Decision 独立 + AP10；v4.3 验收标准来源澄清 + codraft。完整首轮证据见 git 历史。
+| 编号 | 实际结果 | 证据摘要 |
+|------|----------|----------|
+| AP1 | PASS | 触发短语自动加载 stage-executor（诚实注：加载需显式调 Skill 工具，非完全静默注入） |
+| AP2 | PASS（硬） | 三角色全加载并复述准则，**含 decision-role**（Decision 已独立） |
+| AP3 | PASS（硬） | G/E/**D 三方隔离**：各自只能 Read 总线文件，看不到对方推理/对话 |
+| AP4 | **FAIL（决定性）** | MCP 配置后**仅主 Orchestrator 可见**，**不下发给 SubAgent**：子代理工具清单 17 个无任何 `mcp__*` |
+| AP5 | PASS | 拒绝写 /etc/hosts，引用白名单+RULE.md |
+| AP6 | PASS | 交付物 contract/gen/eval/decision 落 harness/probe；**三件套落 .trae/specs**（新规则成立） |
+| AP7 | PASS | 读 `.trae/specs/probe/checklist.md` + skeleton，确认=完成性 gate（非质量评分） |
+| AP8 | PASS | 开工首个工具调用即 Read RULE.md |
+| AP9 | PASS | 一条消息两 Task 块并行派发 probe-a/b（时间戳 4s 内，Orchestrator 述真并行） |
+| AP10 | PASS | Orchestrator 手动改 .trae/specs 的 tasks.md 追加 Round 2 + 重派 Generator → gen-r2.md（非自动 loop） |
+
+> verdict=escalate（因 AP4）。board=escalated/rounds:2，artifacts 只记 contract/gen/eval/decision（新 schema 成立）。
+> **本轮验证成立**：Decision 真独立、retry 闭环(AP10)、三件套→.trae/specs、board artifacts 收紧、G/E/D 三方隔离。
+> **AP4 决定性结论**：SubAgent **不继承 MCP**（仅主 Orchestrator 可见 mcp__ 工具）→ 影响 Evaluator 的浏览器验证设计（见主文档处理）。
+
+### 首轮（v4.1）历史记录
+
+> 首轮（commit a6c5de1 + followup 55be15e）：AP1/2/3/5/6/7/8 = 7 项硬 PASS；AP9 串行+无循环已证、并行未实证（首轮实为串行）；AP4 FAIL（当时 MCP 全平台未注册）；首轮 [DECISION] 由主 Orchestrator 兼任（非盲审）。
+> 据此已改进：v4.2 Decision 独立 + AP10；v4.3 验收标准来源澄清 + codraft。v4.3 重跑（上表）已确认这些改动全部成立。完整首轮证据见 git 历史。
 
 - 全 PASS → 平台假设成立，可放心铺开，并把主文档相关 ASSUMPTION 升级为"已真机验证"。
 - 有 FAIL → 按上表"动作"列回主文档对应章节修正，并把该假设降级标注。
