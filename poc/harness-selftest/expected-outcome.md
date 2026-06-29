@@ -25,26 +25,28 @@
 
 ## 结果记录
 
-### 本次 v4.4 综合重跑（AP1–AP14，请填写）
+### 本次 v4.4 综合重跑（AP1–AP14，commit f76f8fc）
 
 | 编号 | 实际结果 (PASS/FAIL) | 证据摘要 |
 |------|----------------------|----------|
-| AP1 |  |  |
-| AP2 |  |  |
-| AP3 |  |  |
-| AP4 |  | （已知=FAIL/known-limitation） |
-| AP5 |  |  |
-| AP6 |  |  |
-| AP7 |  |  |
-| AP8 |  |  |
-| AP9 |  |  |
-| AP10 |  |  |
-| AP11 |  | 浏览器代行链路 |
-| AP12 |  | codraft 共识子阶段 |
-| AP13 |  | 真 retry→pass 自适应闭环 |
-| AP14 |  | depends_on 门控 |
+| AP1 | PASS | 触发短语自动加载 stage-executor |
+| AP2 | PASS | G/E/D 三子代理各加载角色 Skill 并复述准则 |
+| AP3 | PASS | G/E/D 三方隔离，各自只读总线文件 |
+| AP4 | FAIL（known-limitation） | 子代理 17 工具无 `mcp__*`/`run_mcp`；仅主 Orchestrator 有 MCP；不阻塞 |
+| AP5 | PASS | 写 `/etc/hosts` 被 PathScopeExceed/白名单拒绝 |
+| AP6 | PASS | 交付物落 `stages/probe/`；三件套落 `.trae/specs/` |
+| AP7 | PASS | checklist vs skeleton 机械比对=完成性 gate |
+| AP8 | PASS | 开工先 Read RULE.md |
+| AP9 | PASS | 同消息两 Task 块并行（时间戳 2s 内为时钟微差） |
+| AP10 | PASS | 改 .trae/specs 的 tasks.md(19-31 行) + 手动重派 → gen-r2.md |
+| AP11 | PASS | **代行链路通**：Orchestrator 经 `run_mcp` 派发 `mcp_Playwright/playwright_navigate`，MCP 路由层接受并返回结构化 Playwright 错误（browser not found，非 tool-not-found）→ 链路通；Evaluator 读 browser-check.md 纳入评分。chromium 二进制缺失单列。 |
+| AP12 | PASS | **codraft**：Generator 出 sample.json 草稿+提议标准 → Evaluator 敲定 3 条机械标准 → Orchestrator 写 contract.md |
+| AP13 | PASS | **真 retry→pass**：R1 items=[1]→Evaluator FAIL(12/20)→Decision retry(retry_focus)→R2 items=[1,2,3]→Evaluator PASS(18/20)→Decision pass。两轮、自适应闭环成立 |
+| AP14 | PASS | **depends_on 门控**：确认 probe.status=passed 后才开工 adaptive |
 
-运行日期：______  环境：______
+> 总览：**13/14 PASS**，AP4 为已知平台限制（MCP 不下发子代理）记 known-limitation 不阻塞。board：probe=passed(rounds:1)、adaptive=passed(rounds:2, last_decision:pass)。
+> **v4.4 架构真机端到端验证成立**：Decision 独立、retry 闭环、三件套/总线分离、三方隔离、并行、浏览器代行(方案1)、codraft 共识子阶段、**真 retry→pass 自适应闭环(AP13)**、depends_on 门控。
+> **环境备注**：① AP11 的浏览器二进制缺失——云端需预装 chromium（`npx playwright install chromium`）或配置远程环境（https://docs.trae.cn/solo_set-up-the-remote-environment）；② 沙箱无预置 git identity，云端 agent 设了仓库级（非 --global）身份以满足 commit&push。
 
 ### 本次 v4.3 重跑（commit 21e4497）
 

@@ -264,6 +264,8 @@
 
 **影响**：方法论从"静态模拟"升级为"动态自适应编排"的定位；解决了 AP4 带来的浏览器验证缺口；改动 evaluator-role / stage-executor / verification_mode 映射 / 文档。
 
+**真机确认（commit f76f8fc）**：v4.4 综合自检（AP1–AP14，probe+adaptive 两 Stage）**13/14 PASS**——浏览器代行(AP11)、codraft(AP12)、**真 retry→pass 自适应闭环(AP13)**、depends_on 门控(AP14) 全部端到端验证成立；唯一 FAIL 为 AP4(MCP 不下发子代理) known-limitation 不阻塞。浏览器二进制需 `npx playwright install chromium` 或配置远程环境（docs.trae.cn/solo_set-up-the-remote-environment）。**至此"LLM 驱动的动态自适应 PGE 编排"在真机端到端成立。**
+
 ---
 
 ## 关键发现与纠正

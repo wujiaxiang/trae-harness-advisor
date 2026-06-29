@@ -69,7 +69,7 @@
 | `automated` | 代码审查 + 自动化测试 + Lint | Evaluator 子代理 |
 | `full` | automated + **浏览器测试 + 截图** | 浏览器步骤由 **Orchestrator 代行 MCP**（子代理无 MCP），证据写 `browser-check.md`，Evaluator 读取纳入评分 |
 
-> ⚠ 真机实测：SubAgent **不继承 MCP**。`full` 的浏览器验证必须由有 MCP 的 Orchestrator 代行；若环境无 MCP 或无浏览器二进制，降级为 `automated`。
+> ⚠ 真机实测：SubAgent **不继承 MCP**。`full` 的浏览器验证必须由有 MCP 的 Orchestrator 代行（AP11 已验证链路可行）；**实际浏览器交互还需预装 chromium**（`npx playwright install chromium`）或配置 TRAE Work 远程环境（https://docs.trae.cn/solo_set-up-the-remote-environment）。若无 MCP 或无浏览器二进制，降级为 `automated`。
 
 ---
 
