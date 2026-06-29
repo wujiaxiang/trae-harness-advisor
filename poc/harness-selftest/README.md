@@ -20,23 +20,23 @@
 ## 已构造的环境
 
 ```
-.trae/skills/{planner-role,generator-role,evaluator-role,stage-executor}/SKILL.md   # 可被云端加载
+.trae/skills/{planner-role,generator-role,evaluator-role,decision-role,stage-executor}/SKILL.md   # 5 个，可被云端加载
 RULE.md                                                                              # 钩子目标
 harness/
 ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
-├── state-board.json                         # 已 seed: harness-selftest / probe (planned)
+├── state-board.json                         # 已 seed + 重置: harness-selftest / probe (planned)
 └── milestones/harness-selftest/
-    ├── milestone-plan.md                    # ★ 可直接运行的自检计划（含 AP1–AP10 的 VERIFY 指令）
-    └── stages/probe/                        # 运行时产物落点（gen/eval/decision/contract...）
+    ├── milestone-plan.md                    # ★ 自检计划（AP1–AP10 的 VERIFY 指令 + contract_mode=planned）
+    └── stages/probe/                        # 运行时交付物落点（contract/gen/eval/decision；三件套去 .trae/specs）
 ```
 
-## 如何运行
+## 如何运行（v4.3，单条提示词）
 
 见 **`test-prompt.md`**：
-1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）。
-2. 粘贴第 1 步"最小触发提示词"（测 AP1 自动加载）；若没自动加载，用第 2 步"显式提示词"兜底。
-3. 让每个角色按 `milestone-plan.md` 的要求逐行输出 `VERIFY[APn]: PASS|FAIL — 证据`。
+1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）+ 启用 Playwright MCP（AP4，你已配）。
+2. **复制 `test-prompt.md` 第 1 步那一整段**发给 TRAE Work——一次跑完 AP1–AP10（含 MCP、AP9 真并行、AP10 retry、Decision 独立）。
+3. 跑完让它把 10 行 `VERIFY[APn]` 汇总成表并 push 到 main。
 
 ## 如何判读
 
-对照 `expected-outcome.md` 的判读表，把 8 行 VERIFY 结果与实际产物登记进"结果记录"。任一 FAIL → 按"动作"列回主文档把对应假设降级/调整。
+对照 `expected-outcome.md` 的"本次 v4.3 重跑"表，把 10 行 VERIFY 结果与实际产物登记进去。重点确认 Decision 是独立子代理写的、AP4 的 `mcp__Playwright__*` 是否可见、三件套是否落 `.trae/specs`。任一 FAIL → 按主文档对应章节降级/调整。

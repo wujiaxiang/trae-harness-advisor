@@ -1,5 +1,7 @@
 # Follow-up Prompt — 确认 AP2/AP3 是否“真·子代理隔离”
 
+> **v4.3 起已并入主用例**：重跑统一用 `test-prompt.md` 的单条提示词（已含 AP9 真并行 + AP4 MCP 补证 + Decision 独立）。本文件留作首轮“事后核实”的问题记录与判读参考。
+
 > 首轮 probe Stage 跑出 8 PASS / 1 FAIL（AP4 MCP）。但 AP2（子代理加载角色 Skill）与 AP3（上下文隔离）
 > 目前是子代理**自述**。本提示词用于硬证实：gen.md / eval.md 是否确由两个独立 SubAgent 加载不同 Skill 写入，
 > 而非主 Orchestrator 自己扮演两个角色。把下面整段发给同一个云端会话即可。

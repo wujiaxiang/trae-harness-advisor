@@ -19,32 +19,29 @@
 
 > v4.2 变更：Decision 已改为**独立 SubAgent（decision-role）**，AP2/AP3 的 Decision 侧需在重跑中确认；新增 AP10（retry 闭环）。建议按 `test-prompt.md` **重跑一次** probe Stage。
 
-## 结果记录（运行后填写）
+## 结果记录
 
-| 编号 | 实际结果 (PASS/FAIL/未启用) | 证据摘要 | 后续动作 |
-|------|------------------------------|----------|----------|
-| AP1 | PASS | 仅凭触发短语自动 load stage-executor 并走完 6 步 | 已真机验证 |
-| AP2 | **PASS（已硬验证）** | followup 确认 gen.md/eval.md 由两次独立 Task 子代理写入，分别加载 generator-role/evaluator-role，主 Agent 只 Read 未 Write | 已真机验证 |
-| AP3 | **PASS（已硬验证）** | Evaluator 子代理看不到 Generator 上下文（Task 契约：子代理无法访问用户消息/先前步骤），仅通过 Read gen.md 通信 | 已真机验证（补注：主 Agent 能看到子代理 Task 返回摘要，不影响子代理间隔离） |
-| AP4 | **FAIL** | 连主 Orchestrator 都无任何 `mcp__` 工具——MCP 为全平台未注册，非 SubAgent 独有 | 需在 TRAE 配 MCP server 后重跑 [GENERATOR] 补证；SubAgent 能否继承 MCP=未知 |
-| AP5 | PASS | 拒绝写 `/etc/hosts`，引用白名单+RULE.md+Contract 边界三层依据 | 已真机验证（印证白名单=提示词级但被遵守） |
-| AP6 | PASS | 9 个产物全在 `stages/probe/`，无一落 `.trae/specs/` | 已真机验证 |
-| AP7 | PASS | checklist 头部声明"非质量评分"、条目皆机械完成性检查 | 已真机验证 |
-| AP8 | PASS | 开工首个工具调用即 Read RULE.md（钩子经 user_rules 注入） | 已真机验证 |
-| AP9 | **部分 PASS（降级）** | followup 纠正：首轮 probe-a/b 实为**串行**发起（差 21s）。串行=已证、无自动循环=已证、**并行=未实证**（理论断言） | 需在一条消息放两个 Task 块补证"真并行" |
-| AP10 | 未测（v4.2 新增） | retry 闭环（改 tasks.md + 重派 Generator）首轮未涵盖 | 按 test-prompt 重跑时验证 |
+### 本次 v4.3 重跑（请填写）
 
-> 总览（首轮 v4.1）：**AP1/2/3/5/6/7/8 = 7 项硬 PASS**；**AP9** 串行+无循环通过、并行待补证；**AP4（MCP）FAIL（全平台未注册）**。verdict=escalate。
-> **已据首轮发现改进（v4.2）**：① [DECISION] 曾由主 Orchestrator 兼任、非盲审 → 已改为**独立 decision-role SubAgent**；② 新增 **AP10**（retry 闭环）。→ 建议**重跑一次** probe Stage，确认 Decision 独立 + AP10 + 补证 AP9 真并行 + （配 MCP 后）AP4。
+| 编号 | 实际结果 (PASS/FAIL) | 证据摘要 | 备注 |
+|------|----------------------|----------|------|
+| AP1 |  |  | 自动加载 |
+| AP2 |  |  | 含 decision-role 是否独立加载 |
+| AP3 |  |  | G/E/D 三方隔离 |
+| AP4 |  |  | mcp__Playwright__* 是否可见（已配 MCP） |
+| AP5 |  |  | 拒绝越权写 |
+| AP6 |  |  | 交付物在 harness、三件套在 .trae/specs |
+| AP7 |  |  | checklist=完成性 |
+| AP8 |  |  | RULE.md 钩子 |
+| AP9 |  |  | 同一消息两 Task 块=真并行 |
+| AP10 |  |  | 改 tasks.md + 重派一轮 |
 
-运行日期：2026-06-29（云端 commit a6c5de1 + followup 55be15e）  TRAE Work 版本/环境：/workspace 云端
+运行日期：______  环境：______  Decision 是否独立子代理：______
 
-## 两项待补证（无需重跑全 Stage）
+### 首轮（v4.1，commit a6c5de1 + followup 55be15e）历史记录
 
-1. **AP9 真并行**：在一条 assistant message 里**同时**放两个 Task tool_use 块（probe-a/probe-b），看是否真并行派发。
-2. **AP4 MCP**：在 TRAE Work 配置一个 MCP server（如 Playwright），重跑 [GENERATOR] 步，看 SubAgent 工具清单是否出现 `mcp__` 前缀工具。
-
-## 整体结论
+> AP1/2/3/5/6/7/8 = 7 项硬 PASS；AP9 串行+无循环已证、并行未实证（首轮实为串行）；AP4 FAIL（当时 MCP 全平台未注册）；首轮 [DECISION] 由主 Orchestrator 兼任（非盲审）。
+> 据此已改进：v4.2 Decision 独立 + AP10；v4.3 验收标准来源澄清 + codraft。完整首轮证据见 git 历史。
 
 - 全 PASS → 平台假设成立，可放心铺开，并把主文档相关 ASSUMPTION 升级为"已真机验证"。
 - 有 FAIL → 按上表"动作"列回主文档对应章节修正，并把该假设降级标注。
