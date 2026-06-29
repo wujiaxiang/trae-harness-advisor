@@ -1,6 +1,6 @@
 # harness-selftest — Milestone Plan（已实例化，可直接运行）
 
-> 这是一个**最小自检 Milestone**，唯一目的：在真实 TRAE Work 上验证平台能力假设 **AP1–AP8**。
+> 这是一个**最小自检 Milestone**，唯一目的：在真实 TRAE Work 上验证平台能力假设 **AP1–AP9**。
 > 它不写任何业务代码，只让 Orchestrator + SubAgent 打印"验证点"并把产物写入 `harness/` 总线。
 > 判读标准见 `../../../poc/harness-selftest/expected-outcome.md`。
 
@@ -11,7 +11,7 @@
 - 技术栈：无（纯探测，不涉及业务代码）
 - 范围边界：只写 `harness/milestones/harness-selftest/stages/probe/` 下的文件；不改 `src/`、不装依赖。
 
-## 验证点清单（AP1–AP8）
+## 验证点清单（AP1–AP9）
 
 | 编号 | 假设 | 谁来证 | 证据形式 |
 |------|------|--------|----------|
@@ -23,6 +23,7 @@
 | AP6 | 交付物能写入 **harness/ 总线**（不依赖 `.trae/specs/`） | 三个子代理 | gen.md/eval.md/decision.md 实际出现在 stages/probe/ 下 |
 | AP7 | 原生 `checklist.md` ≈ **tasklist 完成性** gate | Evaluator 子代理 | 报告对 checklist.md 语义的判断 |
 | AP8 | **RULE.md 钩子**生效（任务启动自动读 RULE.md） | Orchestrator | 报告是否在开工前读取了 RULE.md 及其禁止修改路径 |
+| AP9 | SubAgent **可并行可串行派发，但不能自动循环（loop）** | Orchestrator | 并行派发两个子代理成功；确认无法让子代理自我循环、只能手动重派 |
 
 ## Stages
 
@@ -48,8 +49,10 @@
   - `VERIFY[AP7]:` 读取 `harness/templates/checklist.skeleton.md` 与本 Stage 的 checklist.md：它是否表达"tasklist 是否执行完成"的**完成性**语义（而非业务质量评分）？报告判断。
   - `VERIFY[AP6]:` 报告你写 eval.md 的实际路径。
 - [ ] [DECISION]（只读）读取 gen.md + eval.md，写 `decision.md`：
-  - 汇总 AP1–AP8 各自 PASS/FAIL（取证据更强一方）。
+  - 汇总 AP1–AP9 各自 PASS/FAIL（取证据更强一方）。
   - verdict：全部 PASS → `pass`；任一 FAIL/缺失 → `escalate`（请人工查 expected-outcome.md）。
+- [ ] [ORCHESTRATOR] **AP9 并行/无循环探测**：在一条消息里**并行派发两个轻量 SubAgent**（probe-a、probe-b），各自把一行 `started_at=<时间戳>` 写到 `harness/milestones/harness-selftest/stages/probe/ap9-a.md` 与 `ap9-b.md`。然后报告：
+  - `VERIFY[AP9]:` 两个子代理是否**并行**启动成功（PASS=并行可用）；以及你是否能让某个子代理**自我循环重启**（预期**不能**——只能由你手动重新派发，确认"无自动 loop"）。一句话给结论：并行=可/不可、串行=可/不可、自动循环=可/不可。
 - [ ] [ORCHESTRATOR] 最小更新 `harness/state-board.json` 的 probe 记录（status / rounds / last_decision / artifacts 路径）。
 
 ## 非功能性

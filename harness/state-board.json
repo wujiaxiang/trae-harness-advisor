@@ -9,7 +9,7 @@
       "stages": [
         {
           "id": "probe",
-          "title": "探测 TRAE Work 平台能力假设 AP1-AP8",
+          "title": "探测 TRAE Work 平台能力假设 AP1-AP9",
           "depends_on": [],
           "status": "planned",
           "rounds": 0,

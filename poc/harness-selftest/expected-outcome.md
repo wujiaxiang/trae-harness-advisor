@@ -1,4 +1,4 @@
-# Expected Outcome — harness-selftest 判读标准（AP1–AP8）
+# Expected Outcome — harness-selftest 判读标准（AP1–AP9）
 
 > 运行后对照本表判读。每个验证点给出"PASS 的样子"与"FAIL 的含义/动作"。
 
@@ -14,6 +14,7 @@
 | **AP6** | `gen.md`/`eval.md`/`decision.md` 实际出现在 `harness/milestones/harness-selftest/stages/probe/` | 只在 `.trae/specs/` 或写入失败 → "harness/ 总线"需修正，回 Q2 重设计持久化 |
 | **AP7** | Evaluator 判断原生 `checklist.md` 表达**完成性**语义 | 语义不符 → 调整 0.2 两类验收措辞，或改用我们自定义完成性清单 |
 | **AP8** | Orchestrator 报告开工前**读取了 RULE.md** 及其禁止修改路径 | 钩子没生效 → 评估钩子规则可靠性，或改为每个 Skill 顶部自带"先读 RULE.md"指令 |
+| **AP9** | 两个子代理**并行**启动成功；且**无法**让子代理自我循环（只能手动重派） | 若并行不可用 → 跨 Stage 并行假设需修正；若发现可自动循环 → 可简化"手动重派"流程，但需防失控 |
 
 ## 结果记录（运行后填写）
 
@@ -27,6 +28,7 @@
 | AP6 |  |  |  |
 | AP7 |  |  |  |
 | AP8 |  |  |  |
+| AP9 |  |  |  |
 
 运行日期：______  TRAE Work 版本/环境：______
 

@@ -1,7 +1,7 @@
 # 测试提示词（复制粘贴到 TRAE Work）
 
 > 在真实 TRAE Work 打开本仓库后使用。环境已构造好（`.trae/skills/`、`RULE.md`、`harness/`）。
-> 目标：验证平台能力假设 AP1–AP8，判读标准见 `expected-outcome.md`。
+> 目标：验证平台能力假设 AP1–AP9，判读标准见 `expected-outcome.md`。
 
 ---
 
@@ -40,15 +40,16 @@
 2) 读取 harness/state-board.json 和 harness/milestones/harness-selftest/milestone-plan.md，定位 probe Stage。
 3) 标注 contract.md，然后【派发一个独立 SubAgent 加载 @generator-role】写 gen.md，【再派发另一个独立 SubAgent 加载 @evaluator-role】写 eval.md，最后只读裁决写 decision.md。
 4) 每个角色必须逐行输出 milestone-plan.md 中列出的 VERIFY[AP2]..VERIFY[AP7] 证据行。
-5) 全部产物写入 harness/milestones/harness-selftest/stages/probe/，并最小更新 state-board.json 的 probe 记录。
-完成后，把 8 个 VERIFY[APn] 的 PASS/FAIL 汇总成一张表给我。
+5) AP9 探测：在一条消息里并行派发两个轻量 SubAgent（probe-a、probe-b）各写一行时间戳到 stages/probe/ap9-a.md 和 ap9-b.md，报告 VERIFY[AP9]（并行是否成功、能否让子代理自我循环——预期不能）。
+6) 全部产物写入 harness/milestones/harness-selftest/stages/probe/，并最小更新 state-board.json 的 probe 记录。
+完成后，把 9 个 VERIFY[APn] 的 PASS/FAIL 汇总成一张表给我。
 ```
 
 ---
 
 ## 第 3 步：判读
 
-把对话里出现的 8 行 `VERIFY[AP1..AP8]` 与各角色实际产物，对照 `expected-outcome.md` 的判读表，填入"结果记录"。
+把对话里出现的 9 行 `VERIFY[AP1..AP9]` 与各角色实际产物，对照 `expected-outcome.md` 的判读表，填入"结果记录"。
 - 全 PASS → 平台假设成立。
 - 有 FAIL → 按该表"动作"列回主文档对应章节修正，并把对应 ASSUMPTION 降级。
 
