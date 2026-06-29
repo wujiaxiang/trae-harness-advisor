@@ -60,11 +60,12 @@ Input:
   - skill_dir: string (default: ".trae/skills/", not asked)
   - agent_dir: string (default: ".trae/agents/", not asked)
 
-Output (10 core files):
+Output (11 core files):
   - {skill_dir}planner-role/SKILL.md
   - {skill_dir}generator-role/SKILL.md       # embeds Agent toolset + path whitelist
-  - {skill_dir}evaluator-role/SKILL.md       # embeds the Decision arbiter
-  - {skill_dir}stage-executor/SKILL.md       # runtime bootstrap playbook (single L2 entry)
+  - {skill_dir}evaluator-role/SKILL.md       # business-quality four-dimension scoring (no verdict)
+  - {skill_dir}decision-role/SKILL.md        # independent neutral arbiter (separate SubAgent)
+  - {skill_dir}stage-executor/SKILL.md       # runtime bootstrap playbook (single L2 entry; orchestrates only, plays no role)
   - RULE.md (project root, loaded by TRAE Work cloud via hook rule)
   - {harness_dir}templates/spec.skeleton.md
   - {harness_dir}templates/tasks.skeleton.md
@@ -216,14 +217,15 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
 1. Create dirs: {skill_dir} role folders, {harness_dir}templates/, ({agent_dir} if generate_agents=true)
 2. Planner Role Skill          → {skill_dir}planner-role/SKILL.md
 3. Generator Role Skill        → {skill_dir}generator-role/SKILL.md (toolset + path whitelist)
-4. Evaluator Role Skill        → {skill_dir}evaluator-role/SKILL.md (incl. Decision)
-5. stage-executor playbook     → {skill_dir}stage-executor/SKILL.md
-6. RULE.md (root)              → conventions + forbidden paths + pointer to stage-executor
-7. Hook rule text             → output in chat for the user to copy
-8. Three-piece skeletons      → {harness_dir}templates/{spec,tasks,checklist}.skeleton.md
-9. stage-contract skeleton    → {harness_dir}templates/stage-contract.skeleton.md
-10. state-board.json (empty v2) → {harness_dir}state-board.json
-11. (Optional) Agent configs   → {agent_dir}{generator,evaluator,decision}.md
+4. Evaluator Role Skill        → {skill_dir}evaluator-role/SKILL.md (business-quality scoring, no verdict)
+5. Decision Role Skill         → {skill_dir}decision-role/SKILL.md (independent neutral arbiter)
+6. stage-executor playbook     → {skill_dir}stage-executor/SKILL.md (orchestrates only, plays no role)
+7. RULE.md (root)              → conventions + forbidden paths + pointer to stage-executor
+8. Hook rule text             → output in chat for the user to copy
+9. Three-piece skeletons      → {harness_dir}templates/{spec,tasks,checklist}.skeleton.md
+10. stage-contract skeleton    → {harness_dir}templates/stage-contract.skeleton.md
+11. state-board.json (empty v2) → {harness_dir}state-board.json
+12. (Optional) Agent configs   → {agent_dir}{generator,evaluator,decision}.md
 ```
 
 Note: do NOT generate milestone-plan.md or any three-piece instance — those are produced by Planner and the Orchestrator at runtime.

@@ -1,9 +1,9 @@
 # Harness Self-Test（平台能力 PoC 自检集）
 
-> 目的：在**真实 TRAE Work** 上验证本设计依赖的平台能力假设 **AP1–AP9**，避免"纸面设计、真机跑不通"。
+> 目的：在**真实 TRAE Work** 上验证本设计依赖的平台能力假设 **AP1–AP10**，避免"纸面设计、真机跑不通"。
 > 环境**已在本仓库实例化**（无需先跑 advisor）：`.trae/skills/` 四个 Skill、根目录 `RULE.md`、`harness/`（templates + state-board + 自检 Milestone）都已就绪。
 
-## 它验证什么（AP1–AP9）
+## 它验证什么（AP1–AP10）
 
 | 编号 | 假设 | 为什么重要 |
 |------|------|-----------|
@@ -26,7 +26,7 @@ harness/
 ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
 ├── state-board.json                         # 已 seed: harness-selftest / probe (planned)
 └── milestones/harness-selftest/
-    ├── milestone-plan.md                    # ★ 可直接运行的自检计划（含 AP1–AP9 的 VERIFY 指令）
+    ├── milestone-plan.md                    # ★ 可直接运行的自检计划（含 AP1–AP10 的 VERIFY 指令）
     └── stages/probe/                        # 运行时产物落点（gen/eval/decision/contract...）
 ```
 

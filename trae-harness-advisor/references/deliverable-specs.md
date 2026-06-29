@@ -1,4 +1,4 @@
-# Deliverable Specifications (v4.1)
+# Deliverable Specifications (v4.2)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
 > 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
@@ -79,7 +79,8 @@
 {skill_dir}                       # 默认 .trae/skills/（静态/git）
 ├── planner-role/SKILL.md
 ├── generator-role/SKILL.md       # 内嵌 Agent 工具集 + 路径白名单
-├── evaluator-role/SKILL.md       # 内嵌 Decision 裁决者
+├── evaluator-role/SKILL.md       # 业务质量四维评分（不含裁决）
+├── decision-role/SKILL.md        # 独立中立裁决者
 └── stage-executor/SKILL.md       # 运行时拉起 playbook
 RULE.md                           # 项目根目录（钩子规则加载）
 {harness_dir}                     # 默认 harness/（持久真值 + 消息总线）
@@ -148,9 +149,25 @@ RULE.md                           # 项目根目录（钩子规则加载）
 - 四维评分（功能性、工艺质量、完整性、用户体验）+ 判定阈值
 - 工具集 + 路径白名单（只读全部；只写 `.../eval.md`）
 - 评估报告写入 `.../eval.md`
-- **内嵌 Decision 裁决者定义**：只读 `gen.md`+`eval.md` → `decision.md`（pass/retry/escalate），`rounds` 达 `{max_rounds}` 仍未过 → escalate
+- **不含裁决**：裁决已抽出为独立 `decision-role`（见下节 3.5）
 - 若 `{use_calibration}=true`：追加 2-3 个 few-shot 评分案例
 - 若 `{custom_rules}!="none"`：追加一条特殊验收规则
+
+---
+
+## 3.5 Decision Role Skill（独立裁决者）
+
+**文件路径**: `{skill_dir}decision-role/SKILL.md`
+
+**生成规则**: 基于 `templates/decision-skill-template.md`。Decision 自 v4.2 起从 evaluator-role 抽出为**独立角色**，作为**独立 SubAgent** 派发，与 G/E 上下文隔离以保证中立盲审。
+
+**核心内容（必须保留）**:
+- 定位：独立、只读、中立第三方；**不写代码、不评分**，只裁决
+- 工具集：Read（gen/eval/contract/spec/board）+ Write（仅 decision.md）
+- 输入：`gen.md`+`eval.md`+`contract.md`+ 当前 rounds
+- 输出：`decision.md`（JSON：verdict pass/retry/escalate + reasoning + retry_focus/escalation_reason）
+- 裁决规则：pass / retry（rounds < `{max_rounds}`，必给 retry_focus）/ escalate（rounds 达上限或根本分歧）
+- **交接约定**：Decision 只裁决、不执行 retry；retry 的后续（改 tasks.md + 重派 Generator）由 Orchestrator 承担；Decision 不能自我循环
 
 ---
 
@@ -165,10 +182,11 @@ RULE.md                           # 项目根目录（钩子规则加载）
 2. 读 `{harness_dir}milestones/{milestone}/milestone-plan.md` → 取该 Stage 定义
 3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套；`.trae/specs/` 产物可弃。tasklist 显式要求 subagent 把交付物**写入总线** `{harness_dir}milestones/{milestone}/stages/{stage}/`（不依赖 `/spec` 路径）
 4. **自检门**：spec 章节齐全？tasks 与 checklist 1:1 映射？否 → 停止并报告
-5. 顺序派发 `[GENERATOR]→[EVALUATOR]→[DECISION]`（顺序模拟对抗，`{max_rounds}` 上限，超限 escalate）
-6. 回写 `state-board.json`：`status / rounds / last_decision / artifacts`
+5. 派发**三个独立 SubAgent**：`[GENERATOR]`(generator-role) → `[EVALUATOR]`(evaluator-role) → `[DECISION]`(decision-role，独立盲审)。Orchestrator 只串联、不兼任任何角色
+6. 据 `decision.md` 的 verdict：pass→checklist gate；**retry→Orchestrator 改 tasks.md 追加返工任务 + 带 retry_focus 重派 Generator（rounds+1）**；escalate→暂停回写 board
+7. 回写 `state-board.json`：`status / rounds / last_decision / artifacts`（最小更新）
 
-> 强调：三件套内容由 Orchestrator 运行时推理，骨架只给章节契约。不要预生成业务内容。
+> 强调：三件套内容由 Orchestrator 运行时推理，骨架只给章节契约。不要预生成业务内容。Orchestrator 不得自己兼任 Generator/Evaluator/Decision。
 
 ---
 
@@ -281,8 +299,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 生成所有文件后执行：
 
-1. **目录检查**: `{skill_dir}` 4 个角色/playbook 目录、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建。
-2. **文件计数**: 核心 **10 个文件**（4 个 Skill：planner/generator/evaluator/stage-executor + RULE.md + 4 个骨架：spec/tasks/checklist/stage-contract + state-board.json），外加 1 段钩子规则文本（非文件）；可选 +3 个 Agent 配置。`task_type=verification` 时 generator-role 跳过 → 核心 9 个文件。
+1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建。
+2. **文件计数**: 核心 **11 个文件**（5 个 Skill：planner/generator/evaluator/decision/stage-executor + RULE.md + 4 个骨架：spec/tasks/checklist/stage-contract + state-board.json），外加 1 段钩子规则文本（非文件）；可选 +3 个 Agent 配置。`task_type=verification` 时 generator-role 跳过 → 核心 10 个文件。
 3. **引用检查**: 生成文件中的路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 

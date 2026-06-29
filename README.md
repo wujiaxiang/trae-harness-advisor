@@ -1,6 +1,6 @@
 # Trae Harness Advisor
 
-> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.1）
+> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.2）
 
 ---
 
@@ -16,11 +16,12 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.1）
-│   └── templates/                                     # 可复用模板（13 个文件）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.2）
+│   └── templates/                                     # 可复用模板（14 个文件）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
-│       ├── evaluator-skill-template.md                # Evaluator 角色 Skill 模板（含 Decision 裁决）
+│       ├── evaluator-skill-template.md                # Evaluator 角色 Skill 模板（业务质量评分）
+│       ├── decision-skill-template.md                 # Decision 独立裁决者 Skill 模板
 │       ├── stage-executor-skill-template.md           # Orchestrator 运行时 playbook Skill 模板
 │       ├── spec.skeleton.md                           # Stage 规格骨架
 │       ├── tasks.skeleton.md                          # Stage 任务骨架（G/E/D 顺序步骤）
@@ -34,21 +35,22 @@
 ├── conversation-context-and-design-decisions.md       # 会话上下文与设计决策记录
 │
 │   # ↓↓↓ 以下为「自检 PoC 实例化环境」——由模板实例化，供真机 TRAE Work 跑 harness-selftest ↓↓↓
-├── .trae/skills/                                      # 已实例化的 4 个角色/playbook Skill（可被云端加载）
+├── .trae/skills/                                      # 已实例化的 5 个角色/playbook Skill（可被云端加载）
 │   ├── planner-role/SKILL.md
 │   ├── generator-role/SKILL.md
-│   ├── evaluator-role/SKILL.md                        # 含 Decision 裁决者
-│   └── stage-executor/SKILL.md                        # Orchestrator 运行时 playbook
+│   ├── evaluator-role/SKILL.md                        # 业务质量四维评分（不含裁决）
+│   ├── decision-role/SKILL.md                         # 独立中立裁决者（独立 SubAgent）
+│   └── stage-executor/SKILL.md                        # Orchestrator 运行时 playbook（只串联）
 ├── RULE.md                                            # 项目规范（钩子规则加载目标）
 ├── harness/                                           # 持久真值 + 消息总线
 │   ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
 │   ├── state-board.json                               # 已 seed: harness-selftest/probe
-│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP9）
+│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP10）
 ├── poc/                                               # 平台能力自检 PoC（人类可读测试套件）
 │   └── harness-selftest/
 │       ├── README.md                                  # 如何运行与判读
 │       ├── test-prompt.md                             # ★ 复制粘贴到 TRAE Work 的测试提示词
-│       └── expected-outcome.md                        # AP1–AP9 判读表 + 结果记录
+│       └── expected-outcome.md                        # AP1–AP10 判读表 + 结果记录
 ├── archive/                                           # 过程档案
 │   ├── harness-engineering-on-trae-work-plan.md       # v1.0 编写计划
 │   └── supplement-and-alignment-plan.md               # v2.0 补充对齐计划
@@ -68,14 +70,14 @@
 
 | 层级 | 角色 | 职责 | 输出 |
 |------|------|------|------|
-| L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 4 个 Skill + RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
+| L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 5 个 Skill + RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
 | L1 | **Planner** | 将需求规划为 Milestone，并拆成可独立验收的 Stage | milestone-plan.md + 初始化 state-board.json |
-| L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产出三件套并调度对抗 | Stage 级 spec.md / tasks.md / checklist.md + 状态回写 |
-| 执行层 | **Generator/Evaluator/Decision** | 顺序模拟对抗：实现、业务质量评估、中立裁决 | gen.md + eval.md + decision.md |
+| L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产三件套并**串联**对抗（自己不兼任角色） | Stage 级 spec/tasks/checklist + 据裁决决定下一步（retry 改 tasks.md+重派）+ 状态回写 |
+| 执行层 | **Generator/Evaluator/Decision**（各为独立 SubAgent） | 顺序模拟对抗：实现、业务质量评分、**独立中立裁决** | gen.md + eval.md + decision.md |
 
 **TRAE Work 能力映射**：
 
-| 配置项 | 云端支持？ | v4.0 处理方式 |
+| 配置项 | 云端支持？ | 处理方式 |
 |--------|-----------|--------------|
 | `.trae/skills/` | 是，自动按需加载 | 角色 Skill + stage-executor 的唯一云端自动加载通道 |
 | `.trae/rules/` | 否 | 不使用；改为 RULE.md + 钩子规则 |
@@ -83,9 +85,9 @@
 | `.trae/specs/` | 原生临时区 | 仅作 /spec scratch，gitignored，不作为消息总线 |
 | `harness/` | 普通项目目录 | 持久真值与跨 session 消息总线 |
 
-**生成的文件**（10 个核心文件 + 1 段钩子规则文本；可选 3 个 Agent 配置）：
+**生成的文件**（11 个核心文件 + 1 段钩子规则文本；可选 3 个 Agent 配置）：
 
-- 4 个 Skill：Planner、Generator、Evaluator（含 Decision）、stage-executor
+- 5 个 Skill：Planner、Generator、Evaluator（业务质量评分）、**Decision（独立裁决者）**、stage-executor
 - RULE.md（项目根目录，TRAE Work 云端通过钩子规则加载）
 - 4 个结构骨架：spec.skeleton.md、tasks.skeleton.md、checklist.skeleton.md、stage-contract.skeleton.md
 - state-board.json v2（动态状态机唯一真值）
@@ -116,12 +118,12 @@
 
 如果你是一个被要求继续优化此 Skill 的 Agent，请按以下顺序阅读：
 
-1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.1；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架）
-2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0/v4.1 概念重构记录）
+1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.2；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架）
+2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0/v4.1/v4.2 概念重构记录）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
-4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（10 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
-5. **`trae-harness-advisor/templates/`** — 13 个模板文件，尤其是 stage-executor 与四个 skeleton
-6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP9 假设
+4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（11 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
+5. **`trae-harness-advisor/templates/`** — 14 个模板文件，尤其是 stage-executor、decision-role 与四个 skeleton
+6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP10 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。

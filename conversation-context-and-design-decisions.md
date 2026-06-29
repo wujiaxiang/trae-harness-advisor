@@ -1,8 +1,8 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v4.1  
+> **版本**: v4.2  
 > **日期**: 2026-06-29  
-> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源；v3.x 增加三层推理与 RULE.md 钩子方案；v4.0 增加 Milestone/Stage/Task 概念重构、Stage 级 SPEC 三件套、stage-executor、两类验收分工与 state-board v2；v4.1 见决策 13（引用核实、.trae/specs 降级、Contract 简化、board 写协议、约束强度、PoC 自检集）  
+> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源；v3.x 增加三层推理与 RULE.md 钩子方案；v4.0 增加 Milestone/Stage/Task 概念重构、Stage 级 SPEC 三件套、stage-executor、两类验收分工与 state-board v2；v4.1 见决策 13；v4.2 见决策 14（真机自检结果、Decision 独立 SubAgent、retry 闭环 AP10）  
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -215,6 +215,21 @@
 6. **PoC 自检集 + 实例化环境**：新增 `poc/harness-selftest/`（测试套件）并在仓库**实例化** `.trae/skills/`+`RULE.md`+`harness/` 运行环境，喂给真机 TRAE Work 验证 AP1–AP9（Skill 自动加载、SubAgent 加载角色 Skill、上下文隔离、MCP、路径白名单、harness 总线写入、原生 checklist 语义、RULE.md 钩子、SubAgent 可并行可串行但无自动循环）。
 
 **影响**：方法论主张更稳健、措辞更诚实；平台假设从"纸面"转为"可真机验证"。
+
+---
+
+### 决策 14：真机自检结果 + Decision 独立 + retry 闭环（v4.2）
+
+**日期**：2026-06-29
+
+**背景**：`poc/harness-selftest` 在真实 TRAE Work 云端跑通一轮（commit a6c5de1 + followup 55be15e）。结果：AP1/2/3/5/6/7/8 硬验证 PASS（自动加载、子代理加载角色 Skill、子代理间隔离、白名单拒绝越权、harness 总线、checklist 完成性、RULE.md 钩子）；AP9 串行+无自动循环已证、真并行待补；AP4 MCP 全平台未注册（连主 Agent 都无 mcp__ 工具）。followup 还诚实暴露：首轮 **[DECISION] 由主 Orchestrator 自己执行**且能看到双方摘要，非盲审。
+
+**决策（用户拍板）**：
+1. **Decision 独立**：把 Decision 从 evaluator-role 抽出为独立 `decision-role` Skill，作为**独立 SubAgent** 派发（与 G/E 上下文隔离，中立盲审）。**Orchestrator 只串联流程，不兼任任何角色**。核心 Skill 4→5、核心文件 10→11、模板 13→14。
+2. **retry 闭环（新增 AP10）**：明确 Orchestrator 收到 `retry` 后可**编辑 tasks.md 追加返工任务 + 带 retry_focus 重新派发 Generator**（rounds+1），多轮返工靠手动重派（无自动 loop）。新增自检点 AP10 验证此能力。
+3. **MCP**：AP4 FAIL 是平台未配置；用户可在 TRAE Work「MCP > 云端 > 创建」添加 MCP server（如 Playwright）后，按 `followup-prompt.md` 补证 SubAgent 是否继承 mcp__ 工具。
+
+**影响**：中立裁决从"名义"变"真盲审"；retry 闭环明确为人工驱动的有限重派；建议按更新后的 `test-prompt.md` 重跑一次以确认 Decision 独立 + AP10 + AP9 真并行。
 
 ---
 

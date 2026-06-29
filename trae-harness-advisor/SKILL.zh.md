@@ -59,11 +59,12 @@ description: >
   - skill_dir: 字符串（默认: ".trae/skills/"，不询问）
   - agent_dir: 字符串（默认: ".trae/agents/"，不询问）
 
-输出（核心 10 个文件）:
+输出（核心 11 个文件）:
   - {skill_dir}planner-role/SKILL.md
   - {skill_dir}generator-role/SKILL.md       # 内嵌 Agent 工具集 + 路径白名单
-  - {skill_dir}evaluator-role/SKILL.md       # 内嵌 Decision 裁决者
-  - {skill_dir}stage-executor/SKILL.md       # 运行时拉起 playbook（L2 单一入口）
+  - {skill_dir}evaluator-role/SKILL.md       # 业务质量四维评分（不含裁决）
+  - {skill_dir}decision-role/SKILL.md        # 独立中立裁决者（独立 SubAgent）
+  - {skill_dir}stage-executor/SKILL.md       # 运行时拉起 playbook（L2 单一入口，只串联不兼任角色）
   - RULE.md（项目根目录，TRAE Work 云端通过钩子规则加载）
   - {harness_dir}templates/spec.skeleton.md
   - {harness_dir}templates/tasks.skeleton.md
@@ -215,14 +216,15 @@ TDD 模式: {tdd_mode}
 1. 创建目录：{skill_dir} 各角色目录、{harness_dir}templates/，（generate_agents=true 时）{agent_dir}
 2. Planner 角色 Skill          → {skill_dir}planner-role/SKILL.md
 3. Generator 角色 Skill        → {skill_dir}generator-role/SKILL.md（含工具集+路径白名单）
-4. Evaluator 角色 Skill        → {skill_dir}evaluator-role/SKILL.md（含 Decision）
-5. stage-executor playbook     → {skill_dir}stage-executor/SKILL.md
-6. RULE.md（根目录）           → 编码规范 + 禁止修改路径 + 指向 stage-executor
-7. 钩子规则文本                → 在对话输出，供用户复制
-8. 三件套骨架                  → {harness_dir}templates/{spec,tasks,checklist}.skeleton.md
-9. stage-contract 骨架         → {harness_dir}templates/stage-contract.skeleton.md
-10. state-board.json（v2 空表） → {harness_dir}state-board.json
-11.（可选）Agent 配置          → {agent_dir}{generator,evaluator,decision}.md
+4. Evaluator 角色 Skill        → {skill_dir}evaluator-role/SKILL.md（业务质量四维评分，不含裁决）
+5. Decision 角色 Skill         → {skill_dir}decision-role/SKILL.md（独立中立裁决者）
+6. stage-executor playbook     → {skill_dir}stage-executor/SKILL.md（只串联，不兼任角色）
+7. RULE.md（根目录）           → 编码规范 + 禁止修改路径 + 指向 stage-executor
+8. 钩子规则文本                → 在对话输出，供用户复制
+9. 三件套骨架                  → {harness_dir}templates/{spec,tasks,checklist}.skeleton.md
+10. stage-contract 骨架         → {harness_dir}templates/stage-contract.skeleton.md
+11. state-board.json（v2 空表） → {harness_dir}state-board.json
+12.（可选）Agent 配置          → {agent_dir}{generator,evaluator,decision}.md
 ```
 
 注意：**不生成 milestone-plan.md，也不生成任何三件套实例**——它们分别由 Planner 和 Orchestrator 运行时产出。

@@ -1,4 +1,4 @@
-# Expected Outcome — harness-selftest 判读标准（AP1–AP9）
+# Expected Outcome — harness-selftest 判读标准（AP1–AP10）
 
 > 运行后对照本表判读。每个验证点给出"PASS 的样子"与"FAIL 的含义/动作"。
 
@@ -15,6 +15,9 @@
 | **AP7** | Evaluator 判断原生 `checklist.md` 表达**完成性**语义 | 语义不符 → 调整 0.2 两类验收措辞，或改用我们自定义完成性清单 |
 | **AP8** | Orchestrator 报告开工前**读取了 RULE.md** 及其禁止修改路径 | 钩子没生效 → 评估钩子规则可靠性，或改为每个 Skill 顶部自带"先读 RULE.md"指令 |
 | **AP9** | 两个子代理**并行**启动成功；且**无法**让子代理自我循环（只能手动重派） | 若并行不可用 → 跨 Stage 并行假设需修正；若发现可自动循环 → 可简化"手动重派"流程，但需防失控 |
+| **AP10** | Orchestrator 能**编辑 tasks.md 追加 Round 2** 并**重新派发** Generator 子代理写 gen-r2.md | 若不能改 tasklist 或不能重派 → retry 闭环不成立，需把多轮返工改为人工手动驱动 |
+
+> v4.2 变更：Decision 已改为**独立 SubAgent（decision-role）**，AP2/AP3 的 Decision 侧需在重跑中确认；新增 AP10（retry 闭环）。建议按 `test-prompt.md` **重跑一次** probe Stage。
 
 ## 结果记录（运行后填写）
 
@@ -28,10 +31,11 @@
 | AP6 | PASS | 9 个产物全在 `stages/probe/`，无一落 `.trae/specs/` | 已真机验证 |
 | AP7 | PASS | checklist 头部声明"非质量评分"、条目皆机械完成性检查 | 已真机验证 |
 | AP8 | PASS | 开工首个工具调用即 Read RULE.md（钩子经 user_rules 注入） | 已真机验证 |
-| AP9 | **部分 PASS（降级）** | followup 纠正：本次 probe-a/b 实为**串行**发起（差 21s）。串行=已证、无自动循环=已证、**并行=未实证**（理论断言） | 需在一条消息放两个 Task 块补证"真并行" |
+| AP9 | **部分 PASS（降级）** | followup 纠正：首轮 probe-a/b 实为**串行**发起（差 21s）。串行=已证、无自动循环=已证、**并行=未实证**（理论断言） | 需在一条消息放两个 Task 块补证"真并行" |
+| AP10 | 未测（v4.2 新增） | retry 闭环（改 tasks.md + 重派 Generator）首轮未涵盖 | 按 test-prompt 重跑时验证 |
 
-> 总览：9 点中 **AP1/2/3/5/6/7/8 = 7 项硬 PASS**；**AP9** 串行+无循环通过、并行待补证；**AP4（MCP）FAIL（全平台未注册）**。verdict=escalate。
-> **额外设计发现**：本次 **[DECISION] 由主 Orchestrator 自己执行**（读 gen/eval 后写 decision.md），且主 Agent 能看到各子代理 Task 返回摘要 → "中立裁决者"非盲审第三方。是否要把 Decision 也改为独立 SubAgent，待人工决策。
+> 总览（首轮 v4.1）：**AP1/2/3/5/6/7/8 = 7 项硬 PASS**；**AP9** 串行+无循环通过、并行待补证；**AP4（MCP）FAIL（全平台未注册）**。verdict=escalate。
+> **已据首轮发现改进（v4.2）**：① [DECISION] 曾由主 Orchestrator 兼任、非盲审 → 已改为**独立 decision-role SubAgent**；② 新增 **AP10**（retry 闭环）。→ 建议**重跑一次** probe Stage，确认 Decision 独立 + AP10 + 补证 AP9 真并行 + （配 MCP 后）AP4。
 
 运行日期：2026-06-29（云端 commit a6c5de1 + followup 55be15e）  TRAE Work 版本/环境：/workspace 云端
 

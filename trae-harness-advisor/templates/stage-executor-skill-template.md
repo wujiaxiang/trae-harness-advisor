@@ -47,12 +47,18 @@ description: >
 
 ### 5. 标注 Contract 并顺序派发对抗步骤
 先由你（Orchestrator）标注关键 Contract 点 → `contract.md`（目标/验收要点/边界，一次标注，非多轮协商；若 force_contract=false 则跳过，Generator 直接按 spec 实现）。
+你（Orchestrator）只负责**串联流程**：派发子代理、读裁决、决定下一步；**不亲自实现、不评分、不裁决**。
 然后按 tasks.md 顺序执行，最多 {max_adversarial_rounds} 轮：
-1. [GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
-2. [EVALUATOR] 进行四维业务质量评估 → `eval.md`。
-3. [DECISION] 读取 gen.md + eval.md → `decision.md`，裁决 pass/retry/escalate。
+1. 【派发独立 SubAgent，加载 @generator-role】[GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
+2. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估 → `eval.md`。
+3. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
+   - Decision 必须是独立子代理（与 G/E 隔离、看不到双方对话），保证中立盲审；**你（Orchestrator）不得自己兼任裁决**。
 
-若 verdict=retry 且 rounds 未达上限，带 retry_focus 重新派发 [GENERATOR]。若达到上限仍未通过，必须转 escalate 并暂停等待人类裁决。
+**根据 decision.md 的 verdict 决定下一步（这是你的核心编排职责）**：
+- `pass` → 进入 checklist 完成性 gate，回写 board=passed。
+- `retry`（且 rounds < {max_adversarial_rounds}）→ 你**有权修改 tasks.md**：在其中追加一轮返工任务（标注 round N+1 与 Decision 给的 `retry_focus`），然后**重新派发 [GENERATOR]**（带 retry_focus），rounds+1，再走 E→D。
+- `escalate`（或 rounds 达上限仍未过）→ 暂停，回写 board=escalated，请求人类裁决。
+- 你**不能**让任何子代理自我循环；多轮返工只能由你**手动重新派发**（无自动 loop）。
 
 ### 6. 回写 state-board.json
 根据 decision.md 回写 `{harness_dir}state-board.json`（**最小更新原则**：只改当前 Stage 那一条记录的字段，不整体重写、不动其它 Stage，确保 git 合并不冲突）：
