@@ -20,17 +20,19 @@
 
 | 编号 | 实际结果 (PASS/FAIL/未启用) | 证据摘要 | 后续动作 |
 |------|------------------------------|----------|----------|
-| AP1 |  |  |  |
-| AP2 |  |  |  |
-| AP3 |  |  |  |
-| AP4 |  |  |  |
-| AP5 |  |  |  |
-| AP6 |  |  |  |
-| AP7 |  |  |  |
-| AP8 |  |  |  |
-| AP9 |  |  |  |
+| AP1 | PASS | 仅凭触发短语自动 load stage-executor 并走完 6 步 | 标注"已真机验证" |
+| AP2 | PASS*（待硬证） | gen/eval 自述加载并复述 generator-role/evaluator-role 准则 | 待 followup 确认"真·两个子代理"后升级 |
+| AP3 | PASS*（待硬证） | Evaluator 自述只能读 gen.md、看不到 Generator 推理 | 待 followup 确认子代理上下文独立后升级 |
+| AP4 | **FAIL** | SubAgent 工具清单无任何 `mcp__` 工具，平台未注册 MCP server | 配 Playwright MCP 后重跑 Generator 步；或降级 verification_mode 并主文档标注 MCP 未满足 |
+| AP5 | PASS | 拒绝写 `/etc/hosts`，引用白名单+RULE.md+Contract 边界三层依据 | 印证"白名单=提示词级但被遵守"，标注 |
+| AP6 | PASS | 9 个产物全在 `stages/probe/`，无一落 `.trae/specs/` | 标注"已真机验证" |
+| AP7 | PASS | checklist 头部声明"非质量评分"、条目皆机械完成性检查 | 标注"已真机验证" |
+| AP8 | PASS | 开工首个工具调用即 Read RULE.md（钩子经 user_rules 注入） | 标注"已真机验证" |
+| AP9 | PASS | ap9-a/b 各自独立时间戳；子代理完成即交还、不能自循环 | 标注"已真机验证（并行=可、串行=可、自循环=不可）" |
 
-运行日期：______  TRAE Work 版本/环境：______
+> 总览：9 点中 **8 PASS / 1 FAIL（AP4 MCP）**；verdict=escalate（任一 FAIL 即 escalate）。AP2/AP3 为子代理**自述**，需 `followup-prompt.md` 确认"确由两个独立 SubAgent 加载不同 Skill 写入"后升级为硬验证。
+
+运行日期：2026-06-29（云端 commit a6c5de1）  TRAE Work 版本/环境：/workspace 云端
 
 ## 整体结论
 
