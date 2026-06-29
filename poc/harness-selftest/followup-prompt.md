@@ -44,8 +44,13 @@ harness/milestones/harness-selftest/stages/probe/ap9-c.md 和 ap9-d.md。
 
 ### 补证 2 — AP4「SubAgent 是否继承 MCP」（需先配 MCP server）
 
-> 前提：在 TRAE Work 配置一个 MCP server（如 Playwright MCP）。配好后：
+> 前提：在 TRAE Work「MCP > 云端 > 创建」配置 Playwright MCP（如 `@executeautomation/playwright-mcp-server`，命令 `npx -y`）并启用。
+> **判定标准**：AP4 PASS 的核心是 **SubAgent 的工具清单里出现 `mcp__Playwright__*`（或任意 `mcp__` 前缀）工具**；浏览器能否真的导航是次要（云端可能缺浏览器二进制，需 `npx playwright install`）。
 
 ```
-现在我已为 TRAE Work 配置了 MCP server。请重跑 probe Stage 的 [GENERATOR] 步骤：派发一个加载 @generator-role 的 SubAgent，让它列出自己的完整工具清单，确认是否出现 mcp__ 前缀工具；若有，尝试调用一次（如 Playwright 打开 about:blank）并报告。把结论（SubAgent 是否继承 MCP）追加到 followup.md 并推 main。
+我已在 TRAE Work 配置并启用了 Playwright MCP（@executeautomation/playwright-mcp-server）。请做 AP4 补证：
+1. 先由你（主 Orchestrator）列出自己的完整工具清单，报告是否出现 mcp__ 前缀工具（这验证主 Agent 侧 MCP 是否注册成功）。
+2. 派发一个加载 @generator-role 的独立 SubAgent，让它列出**自己的**完整工具清单，明确报告是否出现 mcp__Playwright__* 工具（这验证 SubAgent 是否继承 MCP）。
+3. 若 SubAgent 有该工具，尝试调用一次（如 navigate about:blank 或 list tools）；若报 browser not found，照实记录——工具可见即 AP4 PASS，浏览器二进制问题单列。
+把结论（主 Agent 是否有 MCP / SubAgent 是否继承 / 浏览器是否可用）追加到 harness/milestones/harness-selftest/stages/probe/followup.md 并推 main。
 ```
