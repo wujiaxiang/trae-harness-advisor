@@ -59,7 +59,7 @@
 | `.trae/rules/` | 否 | 删除，改为 RULE.md + 钩子规则 |
 | `.trae/agents/` | 否（当前） | 保留为可选，角色行为内嵌到 Skill 中 |
 
-**生成的文件**（核心 7 个 + 可选 3 个）：
+**生成的文件**（核心 6 个文件 + 1 段钩子规则文本 + 可选 3 个）：
 
 - 3 个角色 Skill（Planner、Generator、Evaluator）— Generator 含 Agent 工具集和路径白名单，Evaluator 含 Decision 角色定义
 - RULE.md（项目根目录，TRAE Work 云端通过钩子规则加载）
@@ -86,7 +86,7 @@
 1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v3.1，含 Claude Code 对标分析、三层推理流程、TRAE Work 兼容性）
 2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含三层推理、目录解耦、RULE.md 钩子方案等决策）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程（7 步，含三层推理 I/O 契约）
-4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（核心 7 个 + 可选 3 个交付物）
+4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（核心 6 个文件 + 钩子规则文本 + 可选 3 个交付物）
 5. **`trae-harness-advisor/templates/`** — 10 个模板文件
 
 **关键架构要点**（请勿回退）：

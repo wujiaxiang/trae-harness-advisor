@@ -55,7 +55,7 @@ Input:
   - max_adversarial_rounds: integer (default: 3)
   - eval_strictness: "standard" | "relaxed" | "strict"
   - max_contract_rounds: integer (default: 3)
-  - force_contract: boolean
+  - force_contract: boolean (default: true)
   - tdd_mode: "standard" | "relaxed" | "strict"
   - verification_mode: "full" | "automated" | "quick"
   - use_calibration: boolean
@@ -167,7 +167,7 @@ Now for the adversarial flow configuration:
     B. Custom: you specify a number
 
 11. Require mandatory Contract negotiation before coding?
-    A. Yes — Generator must propose Contract, Evaluator must approve before coding begins
+    A. Yes (default) — Generator must propose Contract, Evaluator must approve before coding begins
     B. No — Generator implements directly from spec, Evaluator evaluates after
 
 12. Do you need a global task board (global_task_board.json) for cross-session tracking?

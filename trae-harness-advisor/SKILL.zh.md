@@ -54,7 +54,7 @@ description: >
   - max_adversarial_rounds: 整数（默认: 3）
   - eval_strictness: "standard" | "relaxed" | "strict"
   - max_contract_rounds: 整数（默认: 3）
-  - force_contract: 布尔值
+  - force_contract: 布尔值（默认: true）
   - tdd_mode: "standard" | "relaxed" | "strict"
   - verification_mode: "full" | "automated" | "quick"
   - use_calibration: 布尔值
@@ -166,7 +166,7 @@ Read resources/harness-engineering-on-trae-work.md
     B. 自定义: 你来指定数字
 
 11. 是否要求强制 Contract 协商（编码前必须达成一致）？
-    A. 是 — Generator 必须先提出 Contract，Evaluator 批准后才能开始编码
+    A. 是（默认） — Generator 必须先提出 Contract，Evaluator 批准后才能开始编码
     B. 否 — Generator 直接从 spec 实现，Evaluator 在实现后评估
 
 12. 是否需要全局任务看板（global_task_board.json）用于跨会话追踪？

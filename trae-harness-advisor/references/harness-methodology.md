@@ -51,7 +51,7 @@ L0: Context Layer      — Rules、Skills、AGENTS.md、知识库
 
 ## Sprint Contract 协议
 
-10 步流程（含 Decision 裁决）：
+端到端 10 步流程（步骤 1-2 为 Planner/编排准备，步骤 10 为全局收尾；步骤 3-9 是单 Sprint 的对抗循环，对应 tasks-pattern.md 中压缩后的"6 个可执行步骤"：Contract 草案→Contract 审查→实现→总结→评估→Decision 裁决，其中 Decision 裁决即第 9 步）：
 1. Planner 输出 spec.md（Sprint 级战略分解）
 2. 云端 Agent 读取 spec.md + tasks-pattern.md，动态生成 tasks.md
 3. Generator 提出 Sprint Contract 草案

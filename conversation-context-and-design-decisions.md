@@ -158,7 +158,7 @@
 
 **影响**：
 - `rules_dir` 变量删除，`project_rules.md` 改为 `RULE.md`
-- 交付物：3 个 Skill + RULE.md + 钩子规则文本 + tasks-pattern.md + sprint-N.md（核心 7 个）+ 可选 3 个 Agent 配置
+- 交付物：核心 6 个文件（3 个 Skill + RULE.md + tasks-pattern.md + sprint-N.md）+ 1 段钩子规则文本（非文件）+ 可选 3 个 Agent 配置
 - Generator 和 Evaluator Skill 内容大幅扩展（合并了 Agent 工具集和 Decision 角色）
 - 主文档版本号：v3.0 → v3.1
 

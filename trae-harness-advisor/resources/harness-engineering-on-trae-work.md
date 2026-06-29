@@ -285,13 +285,14 @@ Skills 与 Rules 的本质区别：
 
 ### 2.4 Rules 体系
 
-Rules 提供三层配置：
+> **v3.1 重要修正**：TRAE Work 云端**不支持** `.trae/rules/` 文件驱动的规则目录。规则体系是 UI 驱动的全局规则（在「设置 > 规则」中维护），与 IDE 的文件驱动体系不同。因此项目级规范改用 **`RULE.md`（项目根目录）+ 一条云端钩子规则**实现（详见 2.1 节和决策 10）。
 
-- **project_rules.md**（项目规则）：全团队共享的编码规范、技术栈约束、安全策略
-- **user_rules.md**（个人规则）：个人偏好，如语言、代码风格、交互方式
-- **path-based rules**（按路径生效）：仅对特定目录生效的规则，减少无关噪音
+在概念上，Rules 仍可分为两层职责：
 
-在 Harness 体系中，Rules 是 **Computational Feedforward 控制**的核心手段。规则在模型执行前注入约束，从源头防止越权操作。
+- **全局规则**（「设置 > 规则」）：跨项目的个人偏好与通用约束；本方案仅用其中一条作为"钩子"——让每个 Task 启动时自动读取项目根目录的 `RULE.md`
+- **项目规范 `RULE.md`**：全团队共享的编码规范、技术栈约束、安全策略、禁止修改路径；随 git 同步，由钩子规则加载
+
+在 Harness 体系中，Rules 是 **Computational Feedforward 控制**的核心手段。规则在模型执行前注入约束，从源头防止越权操作。需要注意：这类约束是**提示词级（建议性）**的，依赖模型遵守，并非沙箱强制隔离。
 
 规则编写原则：
 - 控制在 200 行以内，避免上下文膨胀
@@ -560,7 +561,7 @@ Decision 通过"只读两份报告 → 输出裁决"的方式，模拟 Orchestra
 
 - 创建 `decision` SubAgent（`.trae/agents/decision.md`）
 - 工具集：仅 Read（只读，不写代码）
-- 路径白名单：允许读取 eval/、.trae/contracts/、.trae/specs/；允许写入仅 eval/xxx-decision-N.md
+- 路径白名单：允许读取 eval/、harness-contracts/、harness-specs/；允许写入仅 eval/xxx-decision-N.md
 - 裁决逻辑：
 
 ```
@@ -837,7 +838,7 @@ description: >
 6. Sprint 粒度适中：每个 Sprint 的工作量应该在 1-3 个 SubAgent 会话内完成
 
 ## 输出格式
-- 输出到 .trae/specs/{feature}/spec.md
+- 输出到 harness-specs/{feature}/spec.md
 - 更新 global_task_board.json（如果存在）
 - 不输出 tasks.md 和 checklist.md
 - 必须包含"产品概述""技术栈""Sprint 分解""非功能性需求""开放问题"
@@ -867,7 +868,7 @@ description: >
 根据 Planner 的规格说明和 Evaluator 认可的 Sprint Contract，按 Sprint 实现功能。
 
 ## 行为准则
-1. 必须先读取 .trae/specs/{feature}/ 下的所有文档
+1. 必须先读取 harness-specs/{feature}/ 下的所有文档
 2. 严格遵循 TDD：先写测试 → 确认测试失败 → 再写实现
 3. 每次代码改动后立即运行测试，确认全部通过
 4. 完成一个 Sprint 后立即 git commit，commit message 格式: "feat({scope}): {描述}"
@@ -933,9 +934,11 @@ description: >
 
 ### 4.3 Rules 模板
 
-#### 项目级规则
+> TRAE Work 云端不支持 `.trae/rules/` 目录。项目规范统一写入项目根目录的 `RULE.md`，由「设置 > 规则」中的一条云端钩子规则加载（见 2.1 / 2.4 节）。按路径生效的细分规则也合并进 `RULE.md` 的分节中。
 
-文件路径：`.trae/rules/project_rules.md`
+#### 项目规范 RULE.md
+
+文件路径：`RULE.md`（项目根目录）
 
 ```markdown
 # 项目规则
@@ -950,8 +953,8 @@ description: >
 - src/ — 源代码
 - tests/ — 测试文件
 - eval/ — 评估报告（Generator 和 Evaluator 写入）
-- .trae/specs/ — SPEC 文档
-- .trae/contracts/ — Sprint Contract
+- harness-specs/ — SPEC 文档（默认路径，可配置）
+- harness-contracts/ — Sprint Contract（默认路径，可配置）
 
 ## 编码约定
 - 禁止使用 `any` 类型
@@ -967,30 +970,17 @@ description: >
 - .git/
 - .env 文件
 - package.json（除非 Sprint Contract 明确授权）
-```
 
-#### 按路径生效的规则
-
-文件路径：`.trae/rules/api.md`
-
-```markdown
----
-paths:
-  - src/api/**
-  - src/services/**
----
-# API 层规则
-
-## 强制约束
+## API 层约束（对应 src/api/**、src/services/**）
 - 所有 API 路由必须有输入验证
 - 所有 API 响应必须包含统一的错误格式
 - 数据库查询必须使用参数化查询，禁止字符串拼接
 - 每个 API 端点必须有对应的集成测试
-
-## 禁止
 - 禁止在路由处理函数中直接操作数据库（必须通过 Service 层）
 - 禁止返回原始数据库错误给客户端
 ```
+
+> 说明：旧版（v3.0 及之前）曾使用 `.trae/rules/project_rules.md` + `.trae/rules/{name}.md` 按路径生效的独立规则文件。v3.1 起这些内容统一合并进 `RULE.md`，按章节区分作用范围。
 
 ### 4.4 Sprint Contract 流程
 
@@ -1002,7 +992,7 @@ paths:
 | 2 | 云端 Agent | spec.md + tasks-pattern.md | tasks.md（对抗循环编排） | 动态生成任务列表 |
 | 3 | Generator | spec.md, tasks.md | Sprint Contract 草案 | 提出本轮构建内容 |
 | 4 | Evaluator | Contract 草案 | 审查意见 | 最多 3 轮迭代 |
-| 5 | 双方 | 审查意见 | 达成一致的 Contract | 写入 .trae/contracts/ |
+| 5 | 双方 | 审查意见 | 达成一致的 Contract | 写入 harness-contracts/ |
 | 6 | Generator | Contract | 代码实现 + 测试 | TDD 驱动 |
 | 7 | Generator | 代码 | 自检 + git commit | 实现总结写入 eval/ |
 | 8 | Evaluator | 代码 + Contract | 评估报告 | 测试 + 浏览器验证 |
@@ -1069,16 +1059,16 @@ paths:
 - eval/
 
 ### 禁止修改
-- .trae/specs/
-- .trae/contracts/
-- .trae/rules/
+- harness-specs/
+- harness-contracts/
+- RULE.md
 - .trae/skills/
 - package.json（除非 Sprint Contract 明确授权）
 - .env 文件
 
 ## 行为规则
-1. 读取 .trae/specs/{feature}/ 下的所有文档
-2. 读取 .trae/contracts/{feature}/sprint-{n}.md 获取当前 Sprint Contract
+1. 读取 harness-specs/{feature}/ 下的所有文档
+2. 读取 harness-contracts/{feature}/sprint-{n}.md 获取当前 Sprint Contract
 3. 严格遵循 TDD
 4. 完成后写入 eval/{feature}-gen-{n}.md
 5. 禁止评价自己的代码质量
@@ -1115,7 +1105,7 @@ paths:
 - 任何代码文件
 
 ## 行为规则
-1. 读取 .trae/contracts/{feature}/sprint-{n}.md 获取验收标准
+1. 读取 harness-contracts/{feature}/sprint-{n}.md 获取验收标准
 2. 读取 eval/{feature}-gen-{n}.md 了解实现内容
 3. 必须实际启动应用并通过浏览器测试
 4. 按四维评分标准打分
@@ -1140,8 +1130,8 @@ paths:
 ## 路径白名单
 ### 允许读取
 - eval/（实现总结和评估报告）
-- .trae/contracts/（Sprint Contract）
-- .trae/specs/（产品规格说明）
+- harness-contracts/（Sprint Contract）
+- harness-specs/（产品规格说明）
 
 ### 允许写入
 - eval/（仅 xxx-decision-N.md 裁决文件）
@@ -1339,18 +1329,17 @@ Generator 收到失败报告后，逐一修复问题，重新提交。Evaluator 
 
 | 配置文件 | 路径 | 作用 |
 |----------|------|------|
-| 项目规则 | `.trae/rules/project_rules.md` | 全团队共享的编码规范和安全策略 |
-| 个人规则 | `.trae/rules/user_rules.md` | 个人偏好 |
-| 路径规则 | `.trae/rules/{name}.md` | 对特定目录生效的规则 |
+| 项目规范 | `RULE.md`（项目根目录） | 全团队共享的编码规范、安全策略、禁止修改路径（由云端钩子规则加载） |
+| 钩子规则 | 「设置 > 规则」中的一条云端规则 | 让每个 Task 启动时自动读取 `RULE.md`（一次性配置） |
 | Planner Skill | `.trae/skills/planner-role/SKILL.md` | Planner 角色行为规范 |
-| Generator Skill | `.trae/skills/generator-role/SKILL.md` | Generator 角色行为规范 |
-| Evaluator Skill | `.trae/skills/evaluator-role/SKILL.md` | Evaluator 角色行为规范 |
-| Generator Agent | `.trae/agents/generator.md` | Generator SubAgent 配置 |
-| Evaluator Agent | `.trae/agents/evaluator.md` | Evaluator SubAgent 配置 |
-| Decision Agent | `.trae/agents/decision.md` | Decision SubAgent 配置（中立裁决者） |
-| SPEC 规格 | `.trae/specs/{feature}/spec.md` | Planner 输出的产品规格（Sprint 级分解） |
-| 编排模式 | `.trae/specs/{feature}/tasks-pattern.md` | 编排模式参考（云端 Agent 据此生成 tasks.md） |
-| Sprint Contract | `.trae/contracts/{feature}/sprint-{n}.md` | Sprint N 的验收协议 |
+| Generator Skill | `.trae/skills/generator-role/SKILL.md` | Generator 角色行为规范（内嵌 Agent 工具集与路径白名单） |
+| Evaluator Skill | `.trae/skills/evaluator-role/SKILL.md` | Evaluator 角色行为规范（内嵌 Decision 裁决者定义） |
+| Generator Agent | `.trae/agents/generator.md` | Generator SubAgent 配置（可选，当前云端不支持，未来兼容） |
+| Evaluator Agent | `.trae/agents/evaluator.md` | Evaluator SubAgent 配置（可选，当前云端不支持，未来兼容） |
+| Decision Agent | `.trae/agents/decision.md` | Decision SubAgent 配置（可选，当前云端不支持，未来兼容） |
+| SPEC 规格 | `harness-specs/{feature}/spec.md` | Planner 输出的产品规格（Sprint 级分解） |
+| 编排模式 | `harness-specs/{feature}/tasks-pattern.md` | 编排模式参考（云端 Agent 据此生成 tasks.md） |
+| Sprint Contract | `harness-contracts/{feature}/sprint-{n}.md` | Sprint N 的验收协议 |
 | 评估报告 | `eval/{feature}-eval-{n}.md` | Evaluator 对 Sprint N 的评估 |
 | 实现总结 | `eval/{feature}-gen-{n}.md` | Generator 对 Sprint N 的实现总结 |
 | 裁决记录 | `eval/{feature}-decision-{n}.md` | Decision 对 Sprint N 的裁决（pass/retry/escalate） |
