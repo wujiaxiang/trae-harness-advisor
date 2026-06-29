@@ -35,7 +35,7 @@ description: >
 - .env 文件
 
 ## 职责
-根据 Orchestrator 运行时生成的 Stage 三件套和 Evaluator 认可的 Stage Contract，按 Stage 实现功能。
+根据 Orchestrator 运行时生成的 Stage 三件套和 Orchestrator 标注的 Stage Contract（contract.md 的关键点），按 Stage 实现功能。
 
 ## 行为准则
 1. 必须先读取 {harness_dir}milestones/{milestone}/stages/{stage}/ 下的 spec.md、tasks.md、checklist.md、contract.md

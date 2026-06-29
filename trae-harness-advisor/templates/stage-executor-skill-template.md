@@ -12,8 +12,8 @@ description: >
 
 ## 强约束
 - {harness_dir} 是唯一持久真值与消息总线。
-- .trae/specs/ 仅是原生 /spec 临时 scratch，不得作为跨 session 依赖。
-- SPEC 三件套必须持久化到 {harness_dir}milestones/{milestone}/stages/{stage}/。
+- .trae/specs/ 完全可弃：原生 /spec 临时 scratch，不读取、不依赖、不传消息。
+- subagent 执行 tasklist 时，必须把我们关心的交付物主动写入 {harness_dir}milestones/{milestone}/stages/{stage}/。
 - skeleton 文件只提供结构，不包含业务内容；业务内容由 Orchestrator 在当前 Stage 对话中推理填充。
 - 对抗流程是顺序模拟，不是自动控制流循环；最多 {max_adversarial_rounds} 轮，超限 escalate。
 
@@ -30,11 +30,11 @@ description: >
 2. 提取当前 Stage 的目标、范围、验收标准要点、depends_on、技术栈与非功能性需求。
 3. 不把动态状态写回 milestone-plan.md；动态状态只写 state-board.json。
 
-### 3. 运行 /spec 并持久化三件套
+### 3. 运行 /spec 并把交付物写入总线
 1. 读取 `{harness_dir}templates/spec.skeleton.md`、`tasks.skeleton.md`、`checklist.skeleton.md`。
 2. 运行 `/spec`，按骨架生成当前 Stage 的 spec.md、tasks.md、checklist.md。
-3. 将三件套持久化到 `{harness_dir}milestones/{milestone}/stages/{stage}/`。
-4. 不依赖 `.trae/specs/` 中的副本；如平台生成了临时文件，仅将其视为 scratch。
+3. `.trae/specs/` 下的原生产物**完全可弃**：不读取、不依赖其路径。
+4. 在 tasks.md 中显式约定：每个 subagent 执行时，把"我们关心的交付物"**主动写入** `{harness_dir}milestones/{milestone}/stages/{stage}/`（spec/checklist 关键信息 + contract.md/gen.md/eval.md/decision.md）。总线 = harness/，不是 .trae/specs/。
 
 ### 4. 自检门
 继续前必须同时满足：
@@ -45,22 +45,23 @@ description: >
 
 任一失败：停止执行，报告缺口，不派发子角色。
 
-### 5. 顺序派发对抗步骤
-按 tasks.md 顺序执行，最多 {max_adversarial_rounds} 轮：
-1. [GENERATOR] 提出或更新 Stage Contract → `contract.md`。
-2. [EVALUATOR] 审查 Contract，批准或要求修改。
-3. [GENERATOR] 按 Contract 进行 TDD 实现 → `gen.md`。
-4. [EVALUATOR] 进行四维业务质量评估 → `eval.md`。
-5. [DECISION] 读取 gen.md + eval.md → `decision.md`，裁决 pass/retry/escalate。
+### 5. 标注 Contract 并顺序派发对抗步骤
+先由你（Orchestrator）标注关键 Contract 点 → `contract.md`（目标/验收要点/边界，一次标注，非多轮协商；若 force_contract=false 则跳过，Generator 直接按 spec 实现）。
+然后按 tasks.md 顺序执行，最多 {max_adversarial_rounds} 轮：
+1. [GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
+2. [EVALUATOR] 进行四维业务质量评估 → `eval.md`。
+3. [DECISION] 读取 gen.md + eval.md → `decision.md`，裁决 pass/retry/escalate。
 
 若 verdict=retry 且 rounds 未达上限，带 retry_focus 重新派发 [GENERATOR]。若达到上限仍未通过，必须转 escalate 并暂停等待人类裁决。
 
 ### 6. 回写 state-board.json
-根据 decision.md 回写 `{harness_dir}state-board.json`：
+根据 decision.md 回写 `{harness_dir}state-board.json`（**最小更新原则**：只改当前 Stage 那一条记录的字段，不整体重写、不动其它 Stage，确保 git 合并不冲突）：
 - status: spec_ready / in_progress / passed / failed / escalated
 - rounds
 - last_decision: pass | retry | escalate | null
 - artifacts: spec/tasks/checklist/contract/gen/eval/decision 的实际路径
+
+> 并发说明：Stage 并发 = 人类开多个独立对话推进，非自动调度。投递某 Stage 前须确认其 `depends_on` 全部 passed，且与在途 Stage 无源文件交集（代码冲突由人工把关）。
 
 ## 完成条件
 - checklist.md 的完成性 gate 通过。

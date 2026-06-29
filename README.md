@@ -1,6 +1,6 @@
 # Trae Harness Advisor
 
-> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.0）
+> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.1）
 
 ---
 
@@ -16,7 +16,7 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.0）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.1）
 │   └── templates/                                     # 可复用模板（13 个文件）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
@@ -32,6 +32,8 @@
 │       ├── project-rules-template.md                  # RULE.md 模板（项目根目录，钩子规则加载）
 │       └── eval-report-template.md                    # 业务质量评估报告模板
 ├── conversation-context-and-design-decisions.md       # 会话上下文与设计决策记录
+├── poc/                                               # 平台能力自检 PoC
+│   └── harness-selftest/                              # 喂给真机 TRAE Work 验证 AP1–AP5 假设
 ├── archive/                                           # 过程档案
 │   ├── harness-engineering-on-trae-work-plan.md       # v1.0 编写计划
 │   └── supplement-and-alignment-plan.md               # v2.0 补充对齐计划
@@ -80,7 +82,10 @@
 - `harness/` 是唯一持久真值与消息总线；`.trae/specs/` 只是原生临时 scratch。
 - 两类验收分工：checklist.md 是底层完成性 gate；Evaluator 是业务质量四维评估。
 - 对抗流程为顺序模拟，最多 3 轮返工，超限 escalate 给人类。
-- milestone-plan.md 是静态定义；state-board.json v2 是动态状态机唯一真值。
+- Contract 简化为 Orchestrator 起 Stage 时一次标注关键点（非多轮协商）。
+- milestone-plan.md 是静态定义；state-board.json v2 是动态状态机唯一真值（最小更新，git 合并友好）。
+- 并发 = 人类开多个独立对话推进；depends_on 是人工投递前的冲突规避依据，非自动调度。
+- 约束强度：路径白名单/RULE.md 钩子/playbook 均为提示词级（best-effort），非沙箱强制，需 CI/评审兜底。
 
 **与 Claude Code 的差异**：见主文档 1.4 节和 3.x 节。简言之：Claude Code 是“全自动挡汽车”，我们是在“手动挡汽车”上安装了“辅助驾驶系统”。
 
@@ -94,12 +99,12 @@
 
 如果你是一个被要求继续优化此 Skill 的 Agent，请按以下顺序阅读：
 
-1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.0；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架）
-2. **`/Users/wujiaxiang/.copilot/session-state/755d60bc-cc35-46cd-a77c-39a43b60ec2c/plan.md`** — v4.0 锁定设计契约（如可访问）
-3. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0 概念重构记录）
-4. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
-5. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（10 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
-6. **`trae-harness-advisor/templates/`** — 13 个模板文件，尤其是 stage-executor 与四个 skeleton
+1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.1；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架）
+2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0/v4.1 概念重构记录）
+3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
+4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（10 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
+5. **`trae-harness-advisor/templates/`** — 13 个模板文件，尤其是 stage-executor 与四个 skeleton
+6. **`poc/harness-selftest/`** — 平台能力自检集，真机验证 AP1–AP5 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。

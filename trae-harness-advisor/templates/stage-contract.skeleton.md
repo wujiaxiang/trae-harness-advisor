@@ -1,31 +1,23 @@
-# Stage {N} Contract — {Milestone Name}
+# Stage {id} Contract — {Milestone Name}
 
-> Generator 将本骨架复制为 `{harness_dir}milestones/{milestone}/stages/{stage}/contract.md` 后填写。
-> 如果 force_contract=false，本文件为可选模式；若 Stage 风险低且 Orchestrator 明确批准，可跳过 Contract 审查，但仍需在 gen.md 中说明验证依据。
+> 由 Orchestrator 在起 Stage 时标注关键点（一次标注，非 Generator↔Evaluator 多轮协商）。
+> Generator 据此实现，Evaluator 据此验收。
+> 若 force_contract=false：跳过本标注，Generator 直接按 spec.md 实现，并在 gen.md 说明验证依据。
 
 ## 本轮目标
 {一句话描述}
 
-## 实现范围
-### 新增文件
-- {文件路径} — {用途}
+## 验收要点（可机械检查）
+1. {条件 1}
+2. {条件 2}
+3. {条件 3}
 
-### 修改文件
-- {文件路径} — {修改内容}
-
-## 验收标准
-1. {可机械检查的条件 1}
-2. {可机械检查的条件 2}
-3. {可机械检查的条件 3}
+## 边界
+- 包含：{范围内}
+- 不包含：{范围外，避免越权}
 
 ## 依赖
 - {依赖的 Stage 或外部条件}
 
 ## 预估风险
 - {潜在风险点}
-
----
-
-## Evaluator 审查（由 Evaluator 填写）
-- 审查状态: {同意 / 需修改}
-- 修改意见: {如有}

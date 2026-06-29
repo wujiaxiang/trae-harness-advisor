@@ -1,4 +1,4 @@
-# Deliverable Specifications (v4.0)
+# Deliverable Specifications (v4.1)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
 > 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
@@ -24,7 +24,7 @@
 
 ## 配置变量映射
 
-问题编号与 `SKILL.md` 工作流 Step 1-4 的 13 个问题严格对应。`skill_dir`、`agent_dir` 不在问答中询问，使用默认值：
+问题编号与 `SKILL.md` 工作流 Step 1-4 的 12 个问题严格对应。`skill_dir`、`agent_dir` 不在问答中询问，使用默认值：
 
 | 问题 | 变量名 | 默认值 |
 |------|--------|--------|
@@ -35,16 +35,15 @@
 | Q5: generate_agents | `{generate_agents}` | `false` |
 | Q6: max_adversarial_rounds | `{max_rounds}` | `3` |
 | Q7: eval_strictness | `{eval_strictness}` | `"standard"` |
-| Q8: max_contract_rounds | `{contract_rounds}` | `3` |
-| Q9: force_contract | `{force_contract}` | `true` |
-| Q10: tdd_mode | `{tdd_mode}` | `"standard"` |
-| Q11: verification_mode | `{verification_mode}` | `"full"` |
-| Q12: use_calibration | `{use_calibration}` | `false` |
-| Q13: custom_acceptance_rules | `{custom_rules}` | `"none"` |
+| Q8: force_contract | `{force_contract}` | `true`（Orchestrator 标注关键 Contract 点；false 则跳过） |
+| Q9: tdd_mode | `{tdd_mode}` | `"standard"` |
+| Q10: verification_mode | `{verification_mode}` | `"full"` |
+| Q11: use_calibration | `{use_calibration}` | `false` |
+| Q12: custom_acceptance_rules | `{custom_rules}` | `"none"` |
 | （不询问）skill_dir | `{skill_dir}` | `".trae/skills/"` |
 | （不询问）agent_dir | `{agent_dir}` | `".trae/agents/"` |
 
-> 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成（不再作为可选项）。
+> 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成。**Contract 已简化为 Orchestrator 一次标注关键点（见 stage-executor），不再有多轮协商，故无 `max_contract_rounds`。**
 
 ### 评分严格度映射
 
@@ -134,7 +133,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 - 职责：按 Stage 实现功能，不评价自己代码
 - 工具集（Read/Write/Edit/Glob/Grep/Bash）+ 路径白名单（可改 `src/`、`tests/`；禁改 `{harness_dir}`、`{skill_dir}`、`RULE.md`）
 - 行为准则；实现总结写入 `{harness_dir}milestones/{milestone}/stages/{stage}/gen.md`
-- 若 `{force_contract}=true`：追加"必须等待 Stage Contract 被 Evaluator 批准后才能编码"
+- 若 `{force_contract}=true`：Generator 实现前先读取 Orchestrator 标注的 `contract.md` 关键点（目标/验收要点/边界）
 
 ---
 
@@ -164,7 +163,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 **核心内容（必须保留，确定性过程）**:
 1. 读 `{harness_dir}state-board.json` → 定位当前 Stage，校验 `depends_on` 全部 `passed`
 2. 读 `{harness_dir}milestones/{milestone}/milestone-plan.md` → 取该 Stage 定义
-3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套 → **持久化到** `{harness_dir}milestones/{milestone}/stages/{stage}/`（不依赖 `.trae/specs/`）
+3. 运行 `/spec`，按 `{harness_dir}templates/*.skeleton.md` 产出三件套；`.trae/specs/` 产物可弃。tasklist 显式要求 subagent 把交付物**写入总线** `{harness_dir}milestones/{milestone}/stages/{stage}/`（不依赖 `/spec` 路径）
 4. **自检门**：spec 章节齐全？tasks 与 checklist 1:1 映射？否 → 停止并报告
 5. 顺序派发 `[GENERATOR]→[EVALUATOR]→[DECISION]`（顺序模拟对抗，`{max_rounds}` 上限，超限 escalate）
 6. 回写 `state-board.json`：`status / rounds / last_decision / artifacts`
@@ -217,8 +216,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 **文件路径**: `{harness_dir}templates/stage-contract.skeleton.md`
 
-**生成规则**: 基于 `templates/stage-contract.skeleton.md`（含本轮目标、实现范围、验收标准、依赖、风险、Evaluator 审查区）。顶部注明"每个 Stage 开始时由 Generator 复制填充为 `stages/{stage}/contract.md`"。
-- 若 `{force_contract}=false`：追加注释"当前为可选 Contract 模式，Generator 可直接实现"。
+**生成规则**: 基于 `templates/stage-contract.skeleton.md`（含本轮目标、验收要点、边界、依赖、风险）。顶部注明"由 **Orchestrator** 在起 Stage 时标注关键点，复制填充为 `stages/{stage}/contract.md`；非 Generator↔Evaluator 多轮协商"。
+- 若 `{force_contract}=false`：追加注释"当前为跳过模式，Generator 直接按 spec 实现，无需 Contract 标注"。
 
 ---
 
@@ -259,6 +258,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 ```
 
 - `milestone-plan.md` = 定义（静态只读）；`state-board.json` = 状态机（动态唯一真值）。两者不重复：plan 描述"是什么"，board 记录"到哪一步"。
+- **写协议（最小更新）**：无引擎锁；每次只对当前 Stage 那一条记录做最小字段更新，不整体重写、不动其它 Stage → 不相交小改动，git 合并不冲突。
+- **并发语义**：Stage 并发 = 人类开多个独立云端对话，非自动调度；`depends_on` 是人工投递前的代码冲突规避依据（确认依赖已 passed 且无源文件交集），非自动门控。
 
 ---
 

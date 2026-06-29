@@ -1,8 +1,8 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v4.0  
+> **版本**: v4.1  
 > **日期**: 2026-06-29  
-> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源；v3.x 增加三层推理与 RULE.md 钩子方案；v4.0 增加 Milestone/Stage/Task 概念重构、Stage 级 SPEC 三件套、stage-executor、两类验收分工与 state-board v2  
+> **变更**: v2.0 新增发现 3（Claude Code Workflow 对标）、决策 6（Decision 角色引入）、决策 7（Planner 职责收窄）、更新外部参考资源；v3.x 增加三层推理与 RULE.md 钩子方案；v4.0 增加 Milestone/Stage/Task 概念重构、Stage 级 SPEC 三件套、stage-executor、两类验收分工与 state-board v2；v4.1 见决策 13（引用核实、.trae/specs 降级、Contract 简化、board 写协议、约束强度、PoC 自检集）  
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -45,7 +45,7 @@
 |------|---------|---------|
 | Mitchell Hashimoto | 6 阶段 AI 采用框架，阶段 5 = "工程化 Harness" | 《My AI Adoption Journey》 |
 | OpenAI | 零人类代码行、100 万行生成代码、1500 个 PR | Context Engineering + Architectural Constraints + Garbage Collection |
-| Anthropic | Pattern A（Initializer + Coding Agent）和 Pattern B（Planner-Generator-Evaluator） | 《Harness design for long-running application development》 |
+| Anthropic | Pattern A（Initializer + Coding Agent）和 Pattern B（Planner-Generator-Evaluator） | 《Effective harnesses for long-running agents》 |
 | Martin Fowler | Feedforward vs Feedback、Computational vs Inferential、3 种 Harness 类型 | 两篇 Harness Engineering 文章 |
 | LangChain | Agent = Model + Harness | 《The Anatomy of an Agent Harness》 |
 | Birgitta Böckeler | Keep Quality Left 理念 | Martin Fowler 博客分析 |
@@ -200,6 +200,24 @@
 
 ---
 
+### 决策 13：v4.1 健壮性与诚实性收尾
+
+**日期**：2026-06-29
+
+**背景**：v4.0 概念重构完成后，复盘出一批"待讨论项"（未验证平台假设、约束强度措辞、状态并发、复杂度、引用可信度）。本决策据用户反馈逐条落地。
+
+**内容**：
+1. **外部引用核实**：逐条 HTTP 核实参考来源。删除伪造链接（如 Qiita 哈希 URL 404）、修正失效链接（Anthropic/Fowler/LangChain），状态不确定者标"未核实"，加来源免责。
+2. **`.trae/specs/` 降级为完全可弃**：不再依赖 `/spec` 产物路径；改为 tasklist 步骤让 subagent 主动把交付物写入 `harness/` 总线。
+3. **Contract 简化**：废除 Generator↔Evaluator 多轮协商，改为 **Orchestrator 起 Stage 时一次标注关键 Contract 点**（目标/验收要点/边界）。删除 `max_contract_rounds`，问答从 13 题降为 12 题。
+4. **board 写协议**：最小更新原则（每次只改当前 Stage 那条记录）→ git 合并不冲突；代码级冲突由人工依据 `depends_on` 在投递 Stage 时把关。明确"并发=人工多对话，非自动调度"。
+5. **约束强度诚实化**：路径白名单、RULE.md 钩子、playbook、board 全部标注为"提示词级、best-effort、非沙箱强制"，需 CI/评审兜底。
+6. **PoC 自检集**：新增 `poc/harness-selftest/`，喂给真机 TRAE Work 验证 AP1–AP5（SubAgent 加载 Skill、调 MCP、白名单、写 harness 总线、checklist 语义）。
+
+**影响**：方法论主张更稳健、措辞更诚实；平台假设从"纸面"转为"可真机验证"。
+
+---
+
 ## 关键发现与纠正
 
 ### 发现 1：SubAgent 能力（重要纠正）
@@ -320,52 +338,49 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 ## 外部参考资源
 
-### 方法论来源
+> **来源核实说明（v4.1，2026-06）**：以下链接经 HTTP 核实。失效/伪造链接（404）已修正为权威地址或标注；状态不确定者标"未核实"。详见 `trae-harness-advisor/resources/...` 附录 B。
 
-1. **LangChain - The Anatomy of an Agent Harness** (2026年3月)
-   URL: https://blog.langchain.dev/the-anatomy-of-an-agent-harness/
+### 方法论来源（已核实）
+
+1. **LangChain - The Anatomy of an Agent Harness**
+   URL: https://blog.langchain.com/the-anatomy-of-an-agent-harness/
    核心贡献: Agent = Model + Harness 的定义，Harness 组件分类
+   （原 `blog.langchain.dev/...` 为 404，已修正）
 
-2. **Martin Fowler - Harness Engineering 备忘录**
-   URL: https://martinfowler.com/memo/harness-engineering.html
-   核心贡献: Feedforward vs Feedback、Computational vs Inferential、3 种 Harness 类型
-
-3. **Martin Fowler - Harness Engineering 主文章**
+2. **Martin Fowler / Birgitta Böckeler - Harness Engineering**
    URL: https://martinfowler.com/articles/harness-engineering.html
-   核心贡献: Harness Engineering 完整框架、Keep Quality Left 理念
+   核心贡献: Feedforward vs Feedback、Computational vs Inferential、Keep Quality Left、Steering Loop
+   （原"备忘录 memo/..."与"分析 harness-engineering-analysis/"均为 404；实为 Böckeler 单篇文章，已合并）
 
-4. **Birgitta Böckeler - Harness Engineering 分析**
-   URL: https://martinfowler.com/articles/harness-engineering-analysis/
-   核心贡献: 对 Martin Fowler 框架的深入解读
-
-5. **Mitchell Hashimoto - My AI Adoption Journey**
+3. **Mitchell Hashimoto - My AI Adoption Journey**
    URL: https://mitchellh.com/writing/my-ai-adoption-journey
    核心贡献: 6 阶段 AI 采用框架，阶段 5 = 工程化 Harness
 
-6. **OpenAI - Harness Engineering 实践**
-   URL: https://openai.com/index/harness-engineering/
-   核心贡献: 0 人类代码行、100 万行生成代码、Context Engineering + Architectural Constraints + Garbage Collection
-
-7. **Anthropic - Harness design for long-running application development**
-   URL: https://www.anthropic.com/engineering/harness-design-for-long-running-application-development
+4. **Anthropic - Effective harnesses for long-running agents**
+   URL: https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents
    核心贡献: Pattern A（Initializer + Coding Agent）和 Pattern B（Planner-Generator-Evaluator）
+   （原 `harness-design-for-long-running-application-development` 为 404，已修正）
 
-### TRAE Work 参考
+### 方法论来源（未核实，谨慎引用）
 
-8. **TRAE 官方论坛 - SubAgent 调度说明**
-   URL: https://trae.ai/forum/topic/1139
-   核心贡献: 确认 SubAgent 在 SOLO 模式下的调度能力
+5. **OpenAI - Harness Engineering 实践**
+   URL: https://openai.com/index/harness-engineering/ （反爬 403，无法独立核实）
+   核心贡献（待核实）: 0 人类代码行、100 万行生成代码、Context Engineering + Architectural Constraints + Garbage Collection
 
-9. **TRAE 官方文档 - Skills 编写最佳实践**
-   核心贡献: Skill 结构规范、渐进式披露模式、500 行限制
+6. **Claude Code — Dynamic Workflows 文档**
+   URL: https://docs.anthropic.com/en/docs/claude-code/workflows （文档站 soft-200，内容未独立核实）
+   核心贡献（待核实）: 内置编排模式、运行时编排
 
-10. **Claude Code — Dynamic Workflows 官方文档**
-    URL: https://docs.anthropic.com/en/docs/claude-code/workflows
-    核心贡献: 6 种内置编排模式、运行时自生成 JS 编排脚本
+### TRAE Work 参考（已核实）
 
-11. **Qiita — Claude Code で Planner/Generator/Evaluator を実装**
-    URL: https://qiita.com/kzk_maeda/items/5c3a4e2f8e1a7b9c0d6f
-    核心贡献: `.claude/agents/` 目录下的 Planner/Generator/Evaluator 角色实现示例
+7. **TRAE 官方文档 - SPEC 工作流**
+   URL: https://docs.trae.cn/solo/spec-and-plan
+
+8. **TRAE 官方社区 - SubAgent / SOLO 并行调度**
+   URL: https://forum.trae.cn/t/topic/1189 ，https://forum.trae.cn/t/topic/1139 ，https://forum.trae.cn/t/topic/2702
+   核心贡献: SubAgent 调度能力、SOLO 多任务并行零冲突、Agent 概念
+
+> 已删除：`qiita.com/kzk_maeda/items/5c3a4e2f...`（404，伪造链接）。
 
 ---
 
@@ -381,12 +396,13 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 4. **无外部触发**: 无法通过 Webhook 或 API 触发 SPEC 工作流，必须手动执行 `/spec` 命令。
 
-### 待验证
+### 待验证（已提供 PoC 自检集 `poc/harness-selftest/`，真机跑一遍即可判定）
 
-1. SubAgent 是否支持加载自定义 Skill（@generator-role、@evaluator-role）
-2. SubAgent 能否访问 MCP 工具（如 Playwright 浏览器测试）
-3. 路径白名单在 SubAgent 中的实际生效范围
-4. 长 SPEC session 中 SubAgent 的上下文窗口管理策略
+1. SubAgent 是否支持加载自定义 Skill（@generator-role、@evaluator-role）→ PoC 的 AP1
+2. SubAgent 能否访问 MCP 工具（如 Playwright 浏览器测试）→ PoC 的 AP2
+3. 路径白名单在 SubAgent 中的实际生效范围（提示词级，预期会拒绝越权写）→ PoC 的 AP3
+4. 交付物能否写入 `harness/` 总线、原生 checklist 语义 → PoC 的 AP4 / AP5
+5. 长 session 中 SubAgent 的上下文窗口管理策略（暂未纳入 PoC）
 
 ---
 

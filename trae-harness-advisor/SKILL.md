@@ -52,8 +52,7 @@ Input:
   - generate_agents: boolean (default: false; optional Agent configs, not supported in cloud now, future compat)
   - max_adversarial_rounds: integer (default: 3)
   - eval_strictness: "standard" | "relaxed" | "strict"
-  - max_contract_rounds: integer (default: 3)
-  - force_contract: boolean (default: true)
+  - force_contract: boolean (default: true; Orchestrator annotates key Contract points when starting a Stage; false skips it)
   - tdd_mode: "standard" | "relaxed" | "strict"
   - verification_mode: "full" | "automated" | "quick"
   - use_calibration: boolean (default: false)
@@ -139,7 +138,7 @@ Ask (one round, 2 questions):
 
 ### Step 3: Adversarial Flow Details
 
-Ask (one round, 4 questions):
+Ask (one round, 3 questions):
 
 ```
 6. Maximum adversarial retry rounds per Stage?
@@ -151,13 +150,9 @@ Ask (one round, 4 questions):
    B. Relaxed (total >= 14/20, no dimension < 3)
    C. Strict (total >= 18/20, no dimension < 4)
 
-8. Contract negotiation rounds per Stage?
-   A. Default: 3
-   B. Custom number
-
-9. Require mandatory Contract negotiation before coding?
-   A. Yes (default) — Generator must propose Contract, Evaluator must approve before coding
-   B. No — Generator implements directly from spec, Evaluator evaluates after
+8. Have the Orchestrator annotate key Contract points when starting a Stage (one annotation, not multi-round negotiation)?
+   A. Yes (default) — Orchestrator marks goal/acceptance points/boundaries in contract.md; Generator implements against it
+   B. No — skip annotation, Generator implements directly from spec
 ```
 
 ### Step 4: Role Behavior Customization
@@ -165,21 +160,21 @@ Ask (one round, 4 questions):
 Ask (one round, 4 questions):
 
 ```
-10. Generator TDD mode?
+9. Generator TDD mode?
     A. Standard TDD (write test → confirm failure → implement)
     B. Relaxed (implement first, add tests before Stage end)
     C. Strict TDD (red-green-refactor, coverage >= 80%)
 
-11. Evaluator verification method (business-quality acceptance)?
+10. Evaluator verification method (business-quality acceptance)?
     A. Full (code review + automated tests + browser testing + screenshots)
     B. Automated (code review + automated tests, no browser)
     C. Quick (automated tests only, no code review)
 
-12. Evaluator score calibration (few-shot examples)?
+11. Evaluator score calibration (few-shot examples)?
     A. Yes — provide 2-3 historical scoring cases as calibration reference
     B. No — use default scoring criteria
 
-13. Any special acceptance criteria?
+12. Any special acceptance criteria?
     e.g., specific Lint rulesets, security scans, performance thresholds (API < 200ms),
     accessibility (WCAG 2.1 AA). Say "none" if no special requirements.
 ```
@@ -200,8 +195,7 @@ Agent Configs: {yes/no, optional, future compat}
 
 Max Rounds: {max_rounds} (escalate on exceed)
 Strictness: {eval_strictness}
-Contract Rounds: {contract_rounds}
-Force Contract: {force_contract}
+Contract Annotation: {force_contract} (Orchestrator marks key points)
 
 TDD Mode: {tdd_mode}
 Verification: {verification_mode}
