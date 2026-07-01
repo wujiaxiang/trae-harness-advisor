@@ -60,6 +60,7 @@ Input:
   - skill_dir: string (default: ".trae/skills/", not asked)
   - agent_dir: string (default: ".trae/agents/", not asked)
   - generate_patterns: boolean (default: false; if true, also generate the multi-mode orchestration pack — 3 lightweight roles + 4 pattern playbooks, see deliverable-specs §11)
+  - generate_operator: boolean (default: false; if true, also generate the Operator playbook — the only role that runs OUTSIDE TRAE Work, driven by a human / Codex-CUA / parent agent; needed only for autonomy level B, see deliverable-specs §11b)
 
 Output (12 core files):
   - {skill_dir}planner-role/SKILL.md
@@ -141,6 +142,14 @@ Ask (one round, 3 questions):
    B. Yes — also generate the 6-mode pack: 3 lightweight roles (Classifier/Synthesizer/Selector)
       + 4 pattern playbooks (classify/fanout/generate-filter/tournament); Planner then labels each
       Stage with a `pattern` field and stage-executor routes accordingly (see deliverable-specs §11)
+
+5c. Generate the Operator playbook (autonomy level B: hand cross-Stage scheduling to a machine)?
+   A. No (default) — level A: a human is the operator (opens each Stage conversation manually)
+   B. Yes — also generate operator-playbook.md: the ONLY role that runs OUTSIDE TRAE Work, driven
+      by a human / Codex-CUA / parent agent. It mechanically schedules Stages (read board → dispatch
+      in TRAE Work → read decision → advance), while all judgment (accept escalate, correction,
+      credentials) still routes to a human supervisor. Biggest payoff on fanout/tournament/
+      generate-filter (machine batches what a human used to batch). See deliverable-specs §11b.
 ```
 
 (Role Skills are always generated under .trae/skills/; spec/contract/eval paths are fixed under harness/, so they are not asked separately. state-board.json is a core artifact, always generated.)
@@ -239,6 +248,8 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
 13. (Optional, generate_patterns=true) Multi-mode pack (7 Skills, see deliverable-specs §11):
     → {skill_dir}{classifier,synthesizer,selector}-role/SKILL.md          (3 lightweight roles)
     → {skill_dir}pattern-{classify,fanout,generate-filter,tournament}/SKILL.md  (4 playbooks)
+14. (Optional, generate_operator=true) Operator playbook (autonomy level B, see deliverable-specs §11b):
+    → {harness_dir}operator-playbook.md   (the ONLY role outside TRAE Work; NOT under {skill_dir})
 ```
 
 Note: do NOT generate milestone-plan.md or any three-piece instance — those are produced by Planner and the Orchestrator at runtime.

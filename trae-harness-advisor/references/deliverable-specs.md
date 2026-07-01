@@ -20,7 +20,8 @@
 12. [9b. 最佳实践参考文档](#9b-最佳实践参考文档)
 13. [10. 可选 Agent 配置](#10-可选-agent-配置)
 14. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
-15. [12. 生成后验证](#12-生成后验证)
+15. [11b. 可选：Operator playbook](#11b-可选operator-playbookgenerate_operator默认-false)
+16. [12. 生成后验证](#12-生成后验证)
 
 ---
 
@@ -97,6 +98,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 ├── references/
 │   └── llm-task-authoring-best-practices.md   # 共享方法论（planner/generator/evaluator/contract 引用）
 └── state-board.json              # v2 空表
+（可选）{harness_dir}operator-playbook.md   # 唯一 TRAE Work 外部角色（仅 generate_operator=true）
 （可选）{agent_dir}               # 默认 .trae/agents/（仅 generate_agents=true）
 ├── generator.md  evaluator.md  decision.md
 .trae/specs/ → 加入 .gitignore（原生临时 scratch，不生成、不依赖）
@@ -337,12 +339,32 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 ---
 
+## 11b. 可选：Operator playbook（`generate_operator`，默认 false）
+
+当 `{generate_operator}=true` 时额外生成 **1 个文件**——本框架**唯一运行在 TRAE Work 之外**的角色，对应「三档自动化」的 B 档（人 + Codex-CUA + TRAE Work）。
+
+| 文件 | 模板 | 位置说明 |
+|------|------|------|
+| `{harness_dir}operator-playbook.md` | `templates/operator-playbook-template.md` | **不放进 `{skill_dir}`**（那是 TRAE Work 内部技能目录）。它是总线里的一份外部驱动说明，供人照做 / 喂给 Codex-CUA 当指令 / 给父 agent 当编排脚本 |
+
+**生成方式**: 从模板复制，替换 `{harness_dir}`/`{max_adversarial_rounds}` 等占位符即可。
+
+**它解决什么**: 把原「人节点」拆成「操作员（机械搬运）」+「监督者（判断）」。Operator 只接管**机械调度**——读 board 找 ready Stage → 在 TRAE Work 开对话派发 stage-executor → 等完成 → 读 decision.md → pass 推进 / escalate/[BLOCKED] 上抛监督者。**一切判断仍归人**（接受 escalate、纠偏方向、给授权）。收益随模式不同：fanout/tournament/generate-filter 最大（机器分批替代人分批），adversarial/loop 有限。
+
+**三档自动化**（谁扮演 Operator）：A=人（现状）｜B=Codex-CUA（变相全自动，受可靠性/成本/平台 ToS 约束）｜C=强 LLM 父 agent 走 TRAE API（最干净，依赖平台暴露 API）。
+
+**护栏**（模板内已内置，务必保留）：只搬运不判断、状态以总线文本为准（不靠屏幕解析业务状态）、动作幂等+有界重试、事件驱动禁忌忙轮询、最小 UI 面、不改业务真值、全程写 `operator-log.md`。**CUA 特有风险**（集成面决定可靠性、成本、ToS/反滥用）须如实告知用户由其权衡。
+
+> 与多模式包正交：`generate_operator` 可单独开，也可与 `generate_patterns` 同开（后者收益最大）。未开启时默认 A 档（人当操作员）。
+
+---
+
 ## 12. 生成后验证
 
 生成所有文件后执行：
 
-1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录。
-2. **文件计数**: 核心 **12 个文件**（5 个 Skill + RULE.md + 4 个骨架 + state-board.json + best-practices 参考文档），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
+1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_operator=true` 另有 `{harness_dir}operator-playbook.md`。
+2. **文件计数**: 核心 **12 个文件**（5 个 Skill + RULE.md + 4 个骨架 + state-board.json + best-practices 参考文档），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Operator playbook。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
 3. **引用检查**: 路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 
