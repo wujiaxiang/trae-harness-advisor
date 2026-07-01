@@ -62,7 +62,7 @@
 
 > 总览：**13/14 PASS**，AP4 为已知平台限制（MCP 不下发子代理）记 known-limitation 不阻塞。board：probe=passed(rounds:1)、adaptive=passed(rounds:2, last_decision:pass)。
 > **v4.4 架构真机端到端验证成立**：Decision 独立、retry 闭环、三件套/总线分离、三方隔离、并行、浏览器代行(方案1)、codraft 共识子阶段、**真 retry→pass 自适应闭环(AP13)**、depends_on 门控。
-> **环境备注**：① AP11 真实浏览器——在「设置 > 云端运行环境」的**安装脚本**填 `{"install":"npx -y playwright install --with-deps chromium"}`（clone 后阻塞装到 `~/.cache/ms-playwright/`，与 MCP server 路径一致），即可让 AP11 从"链路通"升级为真实导航成功；文档 https://docs.trae.cn/work_set-up-the-remote-environment ；② 沙箱无预置 git identity，云端 agent 设了仓库级（非 --global）身份以满足 commit&push。
+> **环境备注**：① AP11 真实浏览器——在「设置 > 云端运行环境 > 手动配置」把「**安装命令**」填 `npx -y playwright install --with-deps chromium`（替换默认 `npm install`）、「**启动命令**」清空（本仓库无 server）；安装命令 clone 后阻塞装到 `~/.cache/ms-playwright/`，与 MCP server 路径一致，即可让 AP11 从"链路通"升级为真实导航成功；文档 https://docs.trae.cn/work_set-up-the-remote-environment ；② 沙箱无预置 git identity，云端 agent 设了仓库级（非 --global）身份以满足 commit&push。
 
 ### 本次 v4.3 重跑（commit 21e4497）
 

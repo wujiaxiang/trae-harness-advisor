@@ -56,7 +56,7 @@ harness/
 ## 如何运行（AP1–AP18）
 
 见 **`test-prompt.md`**：
-1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）+ 启用 Playwright MCP（AP4/AP11，你已配）+ **配「云端运行环境」安装脚本 `npx -y playwright install --with-deps chromium` 预装浏览器**（AP11 真实导航前提，见 test-prompt 第 0 步；不配则 AP11 降级为"链路通"）。
+1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）+ 启用 Playwright MCP（AP4/AP11，你已配）+ **在「云端运行环境 > 手动配置」把「安装命令」填 `npx -y playwright install --with-deps chromium`、「启动命令」清空**（AP11 真实导航前提，详见 test-prompt 第 0 步；不配则 AP11 降级为"链路通"）。
 2. **复制 `test-prompt.md` 第 1 步那一整段**发给 TRAE Work——一次跑完 probe + adaptive、AP1–AP14。
 3. **补测 v4.5 多模式**：`probe`/`adaptive` 已在 v4.4 通过，直接复制 **第 1b 步**那段跑 `patterns` Stage（AP15–AP18，单独可跑）。
 4. 跑完让它把 `VERIFY[APn]` 汇总成表并 push 到 main。
