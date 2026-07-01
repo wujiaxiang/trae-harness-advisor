@@ -1,4 +1,4 @@
-# Expected Outcome — harness-selftest 判读标准（AP1–AP14）
+# Expected Outcome — harness-selftest 判读标准（AP1–AP18）
 
 > 运行后对照本表判读。每个验证点给出"PASS 的样子"与"FAIL 的含义/动作"。
 
@@ -20,10 +20,26 @@
 | **AP12** | codraft：Generator 出草稿+提议标准 → **Evaluator 敲定标准 → contract.md** | codraft 链路断 → 取消 codraft，仅保留 planned |
 | **AP13** | 真 retry→pass：R1 FAIL→Decision retry→R2 修正→**PASS**（两轮、sample.json 最终达标） | 走不到 pass / 不能多轮 → 自适应闭环不成立，retry 改人工 |
 | **AP14** | Orchestrator 确认 `probe.status=passed` 后才开工 adaptive | 门控失效（不看 depends_on 就开工）→ 并发冲突风险，需强化人工投递把关 |
+| **AP15** | fanout：`@pattern-fanout` 被路由；两 `@generator-role` **真并行**产 part-a/b；`@synthesizer-role` 加载并归并 synthesis.md | 路由失败/无并行/synthesizer 未加载 → 降级为顺序 Generator+Orchestrator 手工合并 |
+| **AP16** | classify：`@pattern-classify` 被路由；`@classifier-role` 给出 `label`；Orchestrator 据标签分支 | classifier 未加载/无标签 → 分类逻辑并入 Orchestrator 自身推理，取消独立角色 |
+| **AP17** | generate-filter：`@pattern-generate-filter` 被路由；两候选并行；`@selector-role` 选出 `winner` | selector 未加载/未选优 → 由 Evaluator 兼任选优，删 selector-role |
+| **AP18** | （可选）tournament：`@pattern-tournament` 被路由；`@selector-role` 两两淘汰给冠军 | 候选少时=选优（与 AP17 重叠）；路由失败 → tournament 降级为 generate-filter |
 
 > 设计验证点（AP11–AP14）确认 v4.4 的新行为：浏览器代行（方案1）、codraft 共识子阶段、真自适应闭环、depends_on 门控。
+> **多模式验证点（AP15–AP18）**确认 v4.5 的 `pattern` 路由：stage-executor 是否据 `pattern` 加载对应 playbook，3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载调度。核心底层原语（并行=AP9、分支、有界淘汰）此前已验证，本组重点在**路由链路 + 新角色加载**。
 
 ## 结果记录
+
+### v4.5 多模式路由（AP15–AP18）— 待真机验证
+
+| 编号 | 实际结果 | 证据摘要 |
+|------|----------|----------|
+| AP15 | ⏳ 待测 | fanout 路由 + 真并行 + Synthesizer 归并 |
+| AP16 | ⏳ 待测 | classify 路由 + Classifier 标签 + 分支 |
+| AP17 | ⏳ 待测 | generate-filter 路由 + Selector 选优 |
+| AP18 | ⏳ 待测（可选） | tournament 路由 + Selector 两两淘汰 |
+
+> 说明：v4.5 多模式为**设计级落地 + 原语级已验证**（并行=AP9、分支/自修改 tasks.md=AP10、有界循环=AP13 均已真机通过）。本组用例（Stage `patterns`）专测 **`pattern` 路由链路 + 3 个新角色加载**，尚未真机跑。跑法见 `test-prompt.md` 第 1b 步（patterns 单独可跑）。
 
 ### 本次 v4.4 综合重跑（AP1–AP14，commit f76f8fc）
 

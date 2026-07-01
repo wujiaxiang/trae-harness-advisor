@@ -45,12 +45,12 @@
 ├── harness/                                           # 持久真值 + 消息总线
 │   ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
 │   ├── state-board.json                               # 已 seed: harness-selftest/probe
-│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP14）
+│   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP18）
 ├── poc/                                               # 平台能力自检 PoC（人类可读测试套件）
 │   └── harness-selftest/
 │       ├── README.md                                  # 如何运行与判读
 │       ├── test-prompt.md                             # ★ 复制粘贴到 TRAE Work 的测试提示词
-│       └── expected-outcome.md                        # AP1–AP14 判读表 + 结果记录
+│       └── expected-outcome.md                        # AP1–AP18 判读表 + 结果记录
 ├── archive/                                           # 过程档案
 │   ├── harness-engineering-on-trae-work-plan.md       # v1.0 编写计划
 │   └── supplement-and-alignment-plan.md               # v2.0 补充对齐计划
@@ -70,7 +70,7 @@
 
 | 层级 | 角色 | 职责 | 输出 |
 |------|------|------|------|
-| L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 5 个 Skill + RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
+| L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 5 个核心 Skill（+可选 7 个多模式）+ RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
 | L1 | **Planner** | 将需求规划为 Milestone，并拆成可独立验收的 Stage | milestone-plan.md + 初始化 state-board.json |
 | L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产三件套（留 .trae/specs）并**串联**对抗（自己不兼任角色） | 交付物 contract/gen/eval/decision 写 harness/ + 据裁决决定下一步（retry 改 tasks.md+重派）+ 状态回写 |
 | 执行层 | **Generator/Evaluator/Decision**（各为独立 SubAgent） | 顺序模拟对抗：实现、业务质量评分、**独立中立裁决** | gen.md + eval.md + decision.md |
@@ -85,9 +85,10 @@
 | `.trae/specs/` | 原生临时区 | 仅作 /spec scratch，gitignored，不作为消息总线 |
 | `harness/` | 普通项目目录 | 持久真值与跨 session 消息总线 |
 
-**生成的文件**（11 个核心文件 + 1 段钩子规则文本；可选 3 个 Agent 配置）：
+**生成的文件**（11 个核心文件 + 1 段钩子规则文本；可选 3 个 Agent 配置、可选 7 个多模式 Skill）：
 
-- 5 个 Skill：Planner、Generator、Evaluator（业务质量评分）、**Decision（独立裁决者）**、stage-executor
+- 5 个核心 Skill：Planner、Generator、Evaluator（业务质量评分）、**Decision（独立裁决者）**、stage-executor
+- 可选 7 个多模式 Skill（`generate_patterns=true` 时）：Classifier/Synthesizer/Selector 3 角色 + pattern-classify/fanout/generate-filter/tournament 4 个 playbook
 - RULE.md（项目根目录，TRAE Work 云端通过钩子规则加载）
 - 4 个结构骨架：spec.skeleton.md、tasks.skeleton.md、checklist.skeleton.md、stage-contract.skeleton.md
 - state-board.json v2（动态状态机唯一真值）
@@ -109,6 +110,33 @@
 
 **与 Claude Code 的差异**：见主文档 1.4 节和 3.x 节。简言之：Claude Code 是“全自动挡汽车”，我们是在“手动挡汽车”上安装了“辅助驾驶系统”。
 
+## 如何使用（面向用户）
+
+### 三步上手
+
+1. **初始化（一次）**：在项目里调用 `trae-harness-advisor` Skill，回答几轮问答（技术栈、规模、TDD/严格度、是否要多模式包等）。它会生成角色 Skill、`stage-executor` playbook、`RULE.md`、骨架模板和空 `state-board.json`。按提示把「钩子规则文本」复制到 TRAE Work「设置 > 规则」（让云端每次自动读 `RULE.md`）。
+2. **规划（每个大目标一次）**：用生成的 `planner-role` 让 Planner 把需求拆成一个 **Milestone** + 若干可独立验收的 **Stage**，产出 `milestone-plan.md`（每个 Stage 带验收标准要点、`depends_on`、`contract_mode`、`pattern`），并初始化 board。
+3. **执行（每个 Stage 一次对话）**：对 TRAE Work 说「执行 Stage / 开始阶段」触发 `stage-executor`。它自动：读 board 定位当前 Stage → 校验依赖 → 产三件套 → 按 `pattern` 路由编排 → 派发子代理对抗/比较 → 回写 board。产物落 `harness/`。
+
+### 每个 Stage 选一种编排模式（`pattern` 字段）
+
+Planner 在 `milestone-plan.md` 给每个 Stage 标 `pattern`（默认 `adversarial`）；`stage-executor` 据此路由到对应 playbook。**默认只有 `adversarial`+`loop` 可用；其余 4 种需在初始化问答第 5b 题开启「多模式包」（`generate_patterns=true`）后才生成对应 Skill。**
+
+| pattern | 一句话用途 | 何时选 | 需要多模式包 |
+|---------|-----------|--------|:---:|
+| `adversarial`（默认） | 做一件事并保证质量：Generator 实现→Evaluator 评分→Decision 裁决→retry | 绝大多数开发/联调 Stage | 否（内置） |
+| `loop` | 反复精炼直到客观标准达标（=retry 的泛化） | 有明确可机械检查的达标线（如覆盖率、Lint 零告警） | 否（内置） |
+| `classify` | 先判类型再分流处理 | 输入类型多样、不同类型走不同流程（如 bug/需求/重构分流） | 是 |
+| `fanout` | 拆成 N 个独立子任务并行、再汇总 | 可切分的独立工作（多模块、多文件），要并行加速 | 是 |
+| `generate-filter` | 生成 N 个候选方案、选最优 | 方案不唯一、想择优（多种实现/命名/架构选型） | 是 |
+| `tournament` | N 个候选两两淘汰选冠军 | 候选很多、需要更强区分度的择优 | 是 |
+
+> 模式可**嵌套**：如某 Stage 用 `classify` 路由到不同分支，某个分支内部再用 `fanout`，`fanout` 的每个子任务内部又走 `adversarial`。原则不变：执行机只跑「频繁对抗/比较的内环」，跨 Stage 由你开新对话调度（或父 Agent 上下文够时一次跑多个 Stage）。
+
+### 想先看它怎么跑？
+
+本仓库已实例化一套自检环境（`.trae/skills/`+`RULE.md`+`harness/`），可直接在真机 TRAE Work 上跑 `poc/harness-selftest/`——用一条提示词端到端验证 AP1–AP18（含 6 种模式路由）。详见 `poc/harness-selftest/README.md`。
+
 ## 安装 Skill
 
 将 `trae-harness-advisor/` 目录打包为 `.zip`，在 TRAE IDE 中通过 **设置 → 技能与命令 → 创建 → 导入外部技能** 上传即可。
@@ -120,11 +148,11 @@
 如果你是一个被要求继续优化此 Skill 的 Agent，请按以下顺序阅读：
 
 1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.5；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架，多模式编排见 3.10）
-2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0/v4.1/v4.2 概念重构记录）
+2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0–v4.5 决策记录，决策 1→17 按时间线）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
-4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（11 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
+4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（11 个核心文件 + 钩子规则文本 + 可选 Agent 配置 + 可选 7 个多模式 Skill，见 §11）
 5. **`trae-harness-advisor/templates/`** — 21 个模板（5 核心角色+stage-executor+4 骨架+3 多模式角色+4 pattern playbook）
-6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP14 假设
+6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP18 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。

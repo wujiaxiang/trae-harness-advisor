@@ -34,6 +34,15 @@
             "eval": "harness/milestones/harness-selftest/stages/adaptive/eval-r2.md",
             "decision": "harness/milestones/harness-selftest/stages/adaptive/decision-r2.md"
           }
+        },
+        {
+          "id": "patterns",
+          "title": "多模式路由 AP15-AP18（fanout/classify/generate-filter/tournament）",
+          "depends_on": ["probe"],
+          "status": "planned",
+          "rounds": 0,
+          "last_decision": null,
+          "artifacts": {}
         }
       ]
     }

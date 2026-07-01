@@ -1,16 +1,16 @@
 # harness-selftest — Milestone Plan（已实例化，可直接运行）
 
-> 自检 Milestone：在真实 TRAE Work 上一次验证 **AP1–AP14**（平台能力 + v4.4 全部设计行为）。
+> 自检 Milestone：在真实 TRAE Work 上一次验证 **AP1–AP18**（平台能力 + v4.4 设计行为 + v4.5 多模式编排路由）。
 > 它几乎不写业务代码，只让 Orchestrator + SubAgent 打印"验证点"并把交付物写入 `harness/` 总线（三件套留 `.trae/specs/`）。
 > 判读标准见 `../../../poc/harness-selftest/expected-outcome.md`。
 
 ## Milestone
 - id: `harness-selftest`
 - kind: `verification`
-- 目标：探测平台能力（Skill 自动加载/角色加载/隔离/MCP/白名单/总线/checklist/钩子/并行/无循环）+ 验证设计行为（retry 闭环、浏览器代行、codraft 共识子阶段、真 retry→pass 自适应闭环、depends_on 门控）。
-- 范围边界：只写 `harness/milestones/harness-selftest/stages/{probe,adaptive}/` 下文件；不改 `src/`、不装依赖。
+- 目标：探测平台能力（Skill 自动加载/角色加载/隔离/MCP/白名单/总线/checklist/钩子/并行/无循环）+ 验证设计行为（retry 闭环、浏览器代行、codraft 共识子阶段、真 retry→pass 自适应闭环、depends_on 门控）+ 验证 v4.5 多模式编排路由（fanout/classify/generate-filter/tournament 的 playbook 加载与新角色调度）。
+- 范围边界：只写 `harness/milestones/harness-selftest/stages/{probe,adaptive,patterns}/` 下文件；不改 `src/`、不装依赖。
 
-## 验证点清单（AP1–AP14）
+## 验证点清单（AP1–AP18）
 
 | 编号 | 假设/行为 | Stage | 谁来证 |
 |------|-----------|-------|--------|
@@ -28,8 +28,13 @@
 | AP12 | **codraft 共识子阶段**：Generator 出草稿+提议标准 → Evaluator 敲定标准 → contract.md | adaptive | G/E 子代理 |
 | AP13 | **真 retry→pass 自适应闭环**：第1轮 FAIL → Decision retry → 第2轮修正 → PASS | adaptive | Orchestrator + G/E/D |
 | AP14 | **depends_on 门控**：probe 未 passed 前不开工 adaptive | adaptive | Orchestrator |
+| AP15 | **fanout 路由**：Orchestrator 加载 `@pattern-fanout` → 2 个 `@generator-role` 子代理**真并行**产片段 → `@synthesizer-role` 归并 | patterns | Orchestrator + Synthesizer |
+| AP16 | **classify 路由**：Orchestrator 加载 `@pattern-classify` → `@classifier-role` 子代理打标签 → Orchestrator 据标签分支 | patterns | Orchestrator + Classifier |
+| AP17 | **generate-filter 路由**：Orchestrator 加载 `@pattern-generate-filter` → 2 个 `@generator-role` 候选 → `@selector-role` 选优 | patterns | Orchestrator + Selector |
+| AP18 | **tournament 路由（可选）**：Orchestrator 加载 `@pattern-tournament` → `@selector-role` 两两淘汰选冠军（log2(N) 有界） | patterns | Orchestrator + Selector |
 
-> 自检约定：**AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过**；probe 的 Stage 通过判定 = 其余 AP（AP1-3,5-11）全 PASS。这样 probe=passed，adaptive 的 depends_on 才可被满足（用于测 AP14）。
+> 自检约定：**AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过**；probe 的 Stage 通过判定 = 其余 AP（AP1-3,5-11）全 PASS。这样 probe=passed，adaptive/patterns 的 depends_on 才可被满足（用于测 AP14 门控与多模式路由）。
+> **多模式约定**：`patterns` 是**多模式路由自检 Stage**——它有意在一个 Stage 内依次驱动多个 pattern playbook（正常业务 Stage 每个只标一个 `pattern`），目的是一次验证 v4.5 路由与 3 个新角色（Classifier/Synthesizer/Selector）是否可加载调度。AP18（tournament）为可选，候选数少时其淘汰=选优，与 AP17 原语重叠。
 
 ---
 
@@ -86,6 +91,20 @@ Orchestrator 标注的 Contract 关键点（contract.md）：
   报告 `VERIFY[AP13]`：自适应闭环是否真的从 retry 走到 pass（两轮、rounds 递增、最终 sample.json 达标=PASS）。
 - [ ] [ORCHESTRATOR] 最小更新 board：新增/更新 adaptive 记录（depends_on=[probe]、status=passed、rounds=2、last_decision=pass、artifacts）。
 
+---
+
+## Stage `patterns`（多模式路由自检，depends_on: [probe]）
+
+> 验证 v4.5 的 `pattern` 路由与 3 个新角色（Classifier/Synthesizer/Selector）可加载调度。用极小"业务"输入（几个字符串/数字）跑通每个 pattern 的 playbook 骨架即可，不追求真实业务价值。产物写 `stages/patterns/`。
+> 前置：读 board 确认 `probe.status=passed`（同 AP14 门控精神）；未过则拒绝开工。
+
+### tasks
+- [ ] [ORCHESTRATOR] **AP15 fanout**：加载 `@pattern-fanout`；**一条消息**里并行派发两个 `@generator-role` 子代理，分别把片段写入 `stages/patterns/part-a.md`（内容 "A"）、`part-b.md`（内容 "B"），各带一行时间戳；再派 `@synthesizer-role` 子代理读两片段归并成 `stages/patterns/synthesis.md`。报告 `VERIFY[AP15]`：pattern-fanout 是否被加载路由、两子代理是否真并行（同消息两 Task 块）、synthesizer-role 是否加载并产出合并结果（=PASS）。
+- [ ] [ORCHESTRATOR] **AP16 classify**：加载 `@pattern-classify`；派一个 `@classifier-role` 子代理，对输入串 `"fix the login 500 error"` 打标签（从 `{bugfix, feature, refactor}` 选一，写 `stages/patterns/classify.md` 含 `label: <值>` 与理由）；你据 `label` 分支（bugfix→打印"路由到修复流程"），把分支决定写 `stages/patterns/route.md`。报告 `VERIFY[AP16]`：pattern-classify 是否路由、classifier-role 是否加载并给出标签、你是否据标签分支（=PASS）。
+- [ ] [ORCHESTRATOR] **AP17 generate-filter**：加载 `@pattern-generate-filter`；**一条消息**里并行派发两个 `@generator-role` 子代理各产一个候选写 `stages/patterns/cand-1.md`、`cand-2.md`（如两个不同的函数命名方案）；再派 `@selector-role` 子代理读两候选、按简单标准（更短/更清晰）选优写 `stages/patterns/selection.md`（含 `winner: cand-N` 与理由）。报告 `VERIFY[AP17]`：pattern-generate-filter 是否路由、selector-role 是否加载并选出 winner（=PASS）。
+- [ ] [ORCHESTRATOR]（可选）**AP18 tournament**：加载 `@pattern-tournament`；若已有 ≥2 候选，派 `@selector-role` 做一轮两两比较定冠军写 `stages/patterns/winner.md`。报告 `VERIFY[AP18]`：pattern-tournament 是否路由、Selector 两两淘汰是否给出冠军（=PASS；候选少时可复用 AP17 候选，注明淘汰=选优）。
+- [ ] [ORCHESTRATOR] 最小更新 board：新增 patterns 记录（depends_on=[probe]、status=passed、rounds=1、last_decision=pass、artifacts 记 synthesis/classify/selection）。
+
 ## 非功能性
-- 不改 `src/`、不装依赖。交付物只写两个 Stage 目录与 board；三件套留 `.trae/specs/`。
-- `sample.json` 是本自检唯一的"业务"产物，仅用于演示 codraft 与 retry→pass。
+- 不改 `src/`、不装依赖。交付物只写三个 Stage 目录与 board；三件套留 `.trae/specs/`。
+- `sample.json` 是 adaptive 的最小"业务"产物；`patterns` 的片段/候选串仅用于演示多模式路由，不追求真实价值。

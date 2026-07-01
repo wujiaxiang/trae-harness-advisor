@@ -124,7 +124,7 @@ If the user picks "B. Verification", note that Generator configuration will be s
 
 ### Step 2: Directory & Options
 
-Ask (one round, 2 questions):
+Ask (one round, 3 questions):
 
 ```
 4. Durable artifacts root (harness/ — holds milestone-plan, the three-piece set, contract, gen/eval/decision, state-board)?
@@ -134,6 +134,12 @@ Ask (one round, 2 questions):
 5. Also generate Agent config files (.trae/agents/)?
    A. No (default) — Agent role behaviors are already embedded in Skills, works in cloud now
    B. Yes — additionally generate generator.md, evaluator.md, decision.md for future compatibility
+
+5b. Generate the multi-mode orchestration pack (beyond the default adversarial/PGE mode)?
+   A. No (default) — only adversarial + loop (built into stage-executor); every Stage runs adversarial
+   B. Yes — also generate the 6-mode pack: 3 lightweight roles (Classifier/Synthesizer/Selector)
+      + 4 pattern playbooks (classify/fanout/generate-filter/tournament); Planner then labels each
+      Stage with a `pattern` field and stage-executor routes accordingly (see deliverable-specs §11)
 ```
 
 (Role Skills are always generated under .trae/skills/; spec/contract/eval paths are fixed under harness/, so they are not asked separately. state-board.json is a core artifact, always generated.)
@@ -194,6 +200,7 @@ Scale: {project_scale}
 
 Harness Dir: {harness_dir} (default: harness/)
 Agent Configs: {yes/no, optional, future compat}
+Multi-mode Pack: {yes/no; if yes: +3 roles +4 pattern playbooks, Stage `pattern` routing}
 
 Max Rounds: {max_rounds} (escalate on exceed)
 Strictness: {eval_strictness}
@@ -227,6 +234,9 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
 10. stage-contract skeleton    → {harness_dir}templates/stage-contract.skeleton.md
 11. state-board.json (empty v2) → {harness_dir}state-board.json
 12. (Optional) Agent configs   → {agent_dir}{generator,evaluator,decision}.md
+13. (Optional, generate_patterns=true) Multi-mode pack (7 Skills, see deliverable-specs §11):
+    → {skill_dir}{classifier,synthesizer,selector}-role/SKILL.md          (3 lightweight roles)
+    → {skill_dir}pattern-{classify,fanout,generate-filter,tournament}/SKILL.md  (4 playbooks)
 ```
 
 Note: do NOT generate milestone-plan.md or any three-piece instance — those are produced by Planner and the Orchestrator at runtime.
