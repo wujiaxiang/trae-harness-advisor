@@ -777,6 +777,25 @@ harness/                         # ★ 持久真值 + 消息总线
 
 **我们的选择**：在 TRAE Work 免费版的能力范围内，选择"方法论驱动 + 手动配置"的路径。这不是妥协——对于需要精细控制 Harness 行为的团队，手动配置带来的灵活性本身就是一种优势。
 
+### 3.10 多模式编排（6 种编排模式）
+
+Claude Code 的 Dynamic Workflows 内置 6 种编排模式；我们之前只实现了最经典的 **adversarial（PGE）**。基于 v4.4 已真机验证的 Orchestrator **图灵完备底座**（顺序/分支/并行/有界循环/自修改 tasks.md/持久状态）+ 独立 SubAgent + harness 总线，**其余 5 种也都能用同一套原语模拟**——无需新平台能力，只需新 playbook。
+
+每个 Stage 在 `milestone-plan.md` 标 `pattern`（Planner 选，默认 adversarial）；`stage-executor` 据 `pattern` 路由到对应 playbook。角色复用 Generator/Evaluator/Decision，新增 3 个轻量角色 **Classifier / Synthesizer / Selector**。
+
+| 模式 | 用途 | 原语映射 | 角色 | playbook | 状态 |
+|------|------|----------|------|----------|------|
+| **adversarial**（PGE） | 做一件事并保质量 | Generate→Evaluate→Decide + retry | G/E/D | stage-executor | ✅ 真机验证 |
+| **loop** | 反复精炼到达标 | 有界循环（=retry 泛化）+ 客观检查 | G + 检查 | stage-executor(loop 分支) | ✅（=AP13） |
+| **classify** | 先判类再处理 | Classifier 打标签 → Orchestrator 分支路由 | Classifier | pattern-classify | 原语已验证 |
+| **fanout** | 拆 N 独立子任务并行再合并 | 并行派发(AP9) → Synthesizer 汇总 | Generator×N + Synthesizer | pattern-fanout | 原语已验证 |
+| **generate-filter** | 多候选优中选优 | 并行 N 候选 → Selector 选优 | Generator×N + Selector | pattern-generate-filter | 原语已验证 |
+| **tournament** | 候选两两淘汰选冠军 | 并行候选 → Selector 两两比较（log2(N) 轮有界） | Generator×N + Selector | pattern-tournament | 原语已验证 |
+
+**编排原则（与对抗一致）**：执行机只跑"频繁对抗/比较的内环"；跨 pattern/Stage **由人工调度**（一个 Stage 一次对话），或父 Agent 上下文预算够时**自动一次跑完多个 Stage**；每个 pattern 的**中间态持久化到 harness/board**，上下文吃紧也能分批续跑（fanout/tournament 尤其要分批）。
+
+**组合**：模式可嵌套——如 classify 路由到 fanout，fanout 的每个子任务内部走 adversarial。Orchestrator 据各 Stage 的 pattern 逐层加载 playbook。
+
 ---
 
 ## 第四部分：实战指南

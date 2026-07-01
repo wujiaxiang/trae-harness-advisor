@@ -17,7 +17,7 @@
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
 │   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.4）
-│   └── templates/                                     # 可复用模板（14 个文件）
+│   └── templates/                                     # 可复用模板（21 个：5 核心角色+stage-executor+4 骨架+多模式包 3 角色+4 playbook）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
 │       ├── evaluator-skill-template.md                # Evaluator 角色 Skill 模板（业务质量评分）
@@ -35,7 +35,7 @@
 ├── conversation-context-and-design-decisions.md       # 会话上下文与设计决策记录
 │
 │   # ↓↓↓ 以下为「自检 PoC 实例化环境」——由模板实例化，供真机 TRAE Work 跑 harness-selftest ↓↓↓
-├── .trae/skills/                                      # 已实例化的 5 个角色/playbook Skill（可被云端加载）
+├── .trae/skills/                                      # 已实例化 12 个 Skill：5 核心 + 多模式包（3 角色+4 playbook）
 │   ├── planner-role/SKILL.md
 │   ├── generator-role/SKILL.md
 │   ├── evaluator-role/SKILL.md                        # 业务质量四维评分（不含裁决）
@@ -123,7 +123,7 @@
 2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0/v4.1/v4.2 概念重构记录）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（11 个核心文件 + 钩子规则文本 + 可选 Agent 配置）
-5. **`trae-harness-advisor/templates/`** — 14 个模板文件，尤其是 stage-executor、decision-role 与四个 skeleton
+5. **`trae-harness-advisor/templates/`** — 21 个模板（5 核心角色+stage-executor+4 骨架+3 多模式角色+4 pattern playbook）
 6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP14 假设
 
 **请勿回退**：

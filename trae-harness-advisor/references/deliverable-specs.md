@@ -42,6 +42,7 @@
 | Q12: custom_acceptance_rules | `{custom_rules}` | `"none"` |
 | （不询问）skill_dir | `{skill_dir}` | `".trae/skills/"` |
 | （不询问）agent_dir | `{agent_dir}` | `".trae/agents/"` |
+| （不询问）generate_patterns | `{generate_patterns}` | `false`（开启则额外生成多模式编排包：3 角色+4 playbook，见第 11 节） |
 
 > 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成。**Contract 已简化为 Orchestrator 一次标注关键点（见 stage-executor），不再有多轮协商，故无 `max_contract_rounds`。**
 
@@ -299,13 +300,36 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 ---
 
-## 11. 生成后验证
+## 11. 可选：多模式编排包（`generate_patterns`，默认 false）
+
+当 `{generate_patterns}=true` 时额外生成（让 Stage 可用 adversarial 之外的 5 种编排模式，见 resources 3.10）：
+
+**3 个轻量角色 Skill**：
+| 文件 | 模板 | 用途 |
+|------|------|------|
+| `{skill_dir}classifier-role/SKILL.md` | `templates/classifier-skill-template.md` | 分类/路由（classify 模式） |
+| `{skill_dir}synthesizer-role/SKILL.md` | `templates/synthesizer-skill-template.md` | 归并汇总（fanout 模式） |
+| `{skill_dir}selector-role/SKILL.md` | `templates/selector-skill-template.md` | 选优/两两比较（generate-filter / tournament） |
+
+**4 个 pattern playbook Skill**：
+| 文件 | 模板 | 模式 |
+|------|------|------|
+| `{skill_dir}pattern-classify/SKILL.md` | `templates/pattern-classify-template.md` | Classify-and-act |
+| `{skill_dir}pattern-fanout/SKILL.md` | `templates/pattern-fanout-template.md` | Fan-out-and-synthesize |
+| `{skill_dir}pattern-generate-filter/SKILL.md` | `templates/pattern-generate-filter-template.md` | Generate-and-filter |
+| `{skill_dir}pattern-tournament/SKILL.md` | `templates/pattern-tournament-template.md` | Tournament |
+
+> adversarial 与 loop 已由 stage-executor 内置（loop=retry 泛化），无需额外文件。Planner 在 milestone-plan 给每个 Stage 标 `pattern`；stage-executor 据此路由（见 resources 3.10）。未开启多模式包时，所有 Stage 走默认 adversarial。
+
+---
+
+## 12. 生成后验证
 
 生成所有文件后执行：
 
-1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建。
-2. **文件计数**: 核心 **11 个文件**（5 个 Skill：planner/generator/evaluator/decision/stage-executor + RULE.md + 4 个骨架：spec/tasks/checklist/stage-contract + state-board.json），外加 1 段钩子规则文本（非文件）；可选 +3 个 Agent 配置。`task_type=verification` 时 generator-role 跳过 → 核心 10 个文件。
-3. **引用检查**: 生成文件中的路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
+1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录。
+2. **文件计数**: 核心 **11 个文件**（5 个 Skill + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill。`task_type=verification` 时 generator-role 跳过 → 核心 10 个文件。
+3. **引用检查**: 路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 
 验证完成后，输出 Step 7 的完成摘要。

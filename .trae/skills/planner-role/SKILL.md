@@ -30,9 +30,18 @@ description: >
 ## milestone-plan.md 必须包含
 - Milestone id、名称、kind: development | verification、目标与范围边界
 - 技术栈和架构约束
-- Stage 列表：id、title、目标、验收标准要点、depends_on、预估复杂度、**contract_mode**
+- Stage 列表：id、title、目标、验收标准要点、depends_on、预估复杂度、**contract_mode**、**pattern**
 - 非功能性需求（量化指标）
 - 开放问题（如有）
+
+## pattern（每个 Stage 必标，决定编排模式）
+据 Stage 的任务形态选编排模式（默认 `adversarial`）：
+- **adversarial（默认）**：要"做一件事并保质量" → Generate→Evaluate→Decide（最经典）。
+- **loop**：要"反复精炼直到达标"（无明显对手，只有客观达标线）→ 迭代精炼（=retry 泛化）。
+- **classify**：输入形态多样、需先判类再处理 → 先分类再路由。
+- **fanout**：可拆成 N 个**互相独立**的子任务并行做再合并 → map-reduce。
+- **generate-filter**：同一目标多种实现/设计，优中选优 → 并行生成候选 + 选优。
+- **tournament**：候选多、单次打分不可靠，用两两比较更稳 → 淘汰赛。
 
 ## contract_mode（每个 Stage 必标，决定验收标准怎么来）
 - **planned（默认）**：验收标准在规划期已明确——需求清晰、或处于**联调阶段**（项目骨架与模块间契约已定，Stage 背景天然明确验收标准，如"下单接口调通、整个购买流程不报错、日志无 ERROR"）。此时 Orchestrator 直接据本要点 + 既定契约写 contract.md，不加共识子阶段。

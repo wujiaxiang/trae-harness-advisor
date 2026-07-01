@@ -59,6 +59,7 @@ Input:
   - custom_acceptance_rules: string (default: "none")
   - skill_dir: string (default: ".trae/skills/", not asked)
   - agent_dir: string (default: ".trae/agents/", not asked)
+  - generate_patterns: boolean (default: false; if true, also generate the multi-mode orchestration pack — 3 lightweight roles + 4 pattern playbooks, see deliverable-specs §11)
 
 Output (11 core files):
   - {skill_dir}planner-role/SKILL.md

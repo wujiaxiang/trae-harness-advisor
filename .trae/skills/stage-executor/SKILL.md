@@ -27,8 +27,19 @@ description: >
 
 ### 2. 读取 Milestone 静态定义
 1. 读取 `harness/milestones/{milestone}/milestone-plan.md`。
-2. 提取当前 Stage 的目标、范围、验收标准要点、depends_on、技术栈与非功能性需求。
+2. 提取当前 Stage 的目标、范围、验收标准要点、depends_on、技术栈、非功能性需求、**`pattern`**、**`contract_mode`**。
 3. 不把动态状态写回 milestone-plan.md；动态状态只写 state-board.json。
+
+### 2.5 按 pattern 路由编排模式
+读 Stage 的 `pattern`（默认 `adversarial`）。**adversarial 用本 playbook 下面的步骤 3-7**；其它模式**加载对应 pattern playbook 并按其确定性流程执行**：
+- `adversarial` → 本 playbook（Generate→Evaluate→Decide，见步骤 3-7）。
+- `loop` → 本 playbook，但把"对抗"退化为"Generator 迭代精炼 + 每轮一个客观检查（Evaluator 或 RunCommand），达标或满 3 轮即止"（即 retry 闭环的泛化）。
+- `classify` → 加载 `@pattern-classify`（Classifier 打标签 → 你分支路由）。
+- `fanout` → 加载 `@pattern-fanout`（并行 N 子任务 → Synthesizer 汇总）。
+- `generate-filter` → 加载 `@pattern-generate-filter`（并行 N 候选 → Selector 选优）。
+- `tournament` → 加载 `@pattern-tournament`（N 候选两两淘汰 → 冠军）。
+
+无论哪种模式：你只串联、交付物写 harness 总线、三件套留 .trae/specs、最小更新 board、超界/不确定 escalate。下面步骤 3-7 是 adversarial 的内置流程。
 
 ### 3. 运行 /spec 产出三件套（脚手架，留在 .trae/specs），交付物写总线
 1. 读取 `harness/templates/spec.skeleton.md`、`tasks.skeleton.md`、`checklist.skeleton.md`。

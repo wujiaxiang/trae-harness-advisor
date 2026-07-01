@@ -58,6 +58,7 @@ description: >
   - custom_acceptance_rules: 字符串（默认: "none"）
   - skill_dir: 字符串（默认: ".trae/skills/"，不询问）
   - agent_dir: 字符串（默认: ".trae/agents/"，不询问）
+  - generate_patterns: 布尔值（默认: false；开启则额外生成多模式编排包——3 个轻量角色 + 4 个 pattern playbook，见 deliverable-specs 第 11 节）
 
 输出（核心 11 个文件）:
   - {skill_dir}planner-role/SKILL.md
