@@ -1,7 +1,7 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v4.4  
-> **日期**: 2026-06-29  
+> **版本**: v4.5  
+> **日期**: 2026-07-02  
 > **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）；v4.5 决策 17（多模式编排框架——6 种编排模式全做：新增 Classifier/Synthesizer/Selector 3 角色 + 4 pattern playbook + Stage 层 pattern 字段 + generate_patterns 开关）
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
@@ -76,7 +76,141 @@
 
 ---
 
-## 决策 8：三层推理流程重构（v3.0）
+## 关键发现与纠正
+
+### 发现 1：SubAgent 能力（重要纠正）
+
+**初始错误判断**: 在对话早期，我断言 TRAE Work 的 tasks.md 执行时不能使用 SubAgent，认为 Generator 和 Evaluator 必须在同一上下文中运行。
+
+**用户纠正**: 用户分享了实际 TRAE Work Agent 的回复，证明 TRAE Work **确实有 Task 工具**，可以 spawn `general_purpose_task` 和 `search` 两种 SubAgent，每个 SubAgent 拥有独立上下文窗口，最多支持 5 个并行执行。
+
+**验证**: 通过查阅 TRAE 官方论坛（topic/1139），确认了 SubAgent 在 SOLO 模式下的调度能力。
+
+**影响**: 这个发现是架构设计的转折点——它使得 Generator 和 Evaluator 可以运行在独立 SubAgent 中，真正实现了 Anthropic Pattern B 的"上下文隔离"要求。如果没有这个能力，Generator 和 Evaluator 共用上下文会导致 Context Rot 和"自己评自己"的 bias。
+
+### 发现 2：SPEC 工作流的 Planner 角色
+
+TRAE Work 的 SPEC 工作流有三个关键文件：
+- `spec.md`：产品规格说明，由 AI 在暂停阶段生成，用户确认后固化
+- `tasks.md`：任务分解，AI 按步骤执行，可在任务间暂停
+- `checklist.md`：AI 暂停确认的检查清单
+
+**关键设计决策**: 将 Planner 角色映射到 SPEC 工作流的"暂停确认阶段"——Planner 生成 spec.md 后，用户审查确认，然后云端 Agent 根据 tasks-pattern.md 动态生成 tasks.md，其中的 Generator/Evaluator/Decision 标记引导后续 SubAgent 调度。
+
+### 发现 3：Claude Code Workflow 对标（2026-06-29）
+
+在 2026 年 6 月 29 日的调研中，发现 Claude Code 已通过两种机制将 Harness Engineering 内化为平台基础能力：
+
+**Claude Code 的静态 Harness（`.claude/agents/`）**：
+- 通过 `.claude/agents/` 目录下的 Markdown 文件静态定义角色（Planner、Generator、Evaluator）
+- 内置 Orchestrator 自动根据任务类型路由到对应角色
+- 这与我们的 `.trae/agents/` 设计高度相似——因为两者都源自 Anthropic 的 Pattern B
+
+**Claude Code 的 Dynamic Workflows**：
+- 2026 年 6 月发布，运行时自生成 JavaScript 编排脚本
+- 提供 6 种内置编排模式：Classify-and-act、Fan-out-and-synthesize、Adversarial verification、Generate-and-filter、Tournament、Loop until done
+- Adversarial verification 就是 PGE 架构的核心模式
+
+**关键洞察**：
+- Claude Code 的 Orchestrator 是**内置的、全自动的**——用户只需描述需求，Orchestrator 自动完成从角色路由到对抗循环的全过程
+- TRAE Work 没有内置 Orchestrator，但我们通过组合 SPEC + Skills + Rules + SubAgent + Decision **拼装了一个 Orchestrator**
+- 方法论效果可以追齐（角色分离、上下文隔离、对抗验证），但自动化程度无法追齐（需要人类手动触发 SPEC）
+- 类比：Claude Code 是"自动挡汽车"，我们是在"手动挡汽车"上安装了"辅助驾驶系统"
+
+**影响**：这个发现影响了两大设计决策——引入 Decision 角色作为 Orchestrator 代理（决策 6），以及收窄 Planner 职责到战略分解（决策 7）。
+
+---
+
+## 设计决策记录
+
+> 本节按决策发生的时间顺序编号（决策 1→17）。**决策 1–7 为早期（v1.0–v3.0 前）方案，部分术语（Sprint / Feature / tasks-pattern.md / global_task_board.json / `.trae/contracts`）已在决策 11（v4.0 三级模型）后被取代**，保留原文仅作演进背景；当前术语一律以主文档第零部分为准。
+
+---
+
+### 决策 1：为什么不用 TRAE CLI + Docker？
+
+**方案**: 在 Docker 容器中运行 TRAE CLI，接收外部指令，完成后销毁容器。
+
+**否决理由**: 
+- TRAE Work 免费版不提供 CLI 的远程调度 API
+- 需要额外搭建编排层（消息队列、状态管理）
+- 增加了运维复杂度和成本
+- 与 TRAE Work 的云端执行模型不兼容
+
+---
+
+### 决策 2：为什么选择 SPEC 工作流作为 Planner 角色？
+
+**理由**:
+- SPEC 是 TRAE Work 原生支持的规划机制，无需额外开发
+- 暂停确认阶段天然提供了"人类审查 Planner 输出"的 Steering 机制
+- spec.md 固化后，后续 tasks.md 步骤可以引用固定的规格文档，避免需求漂移
+
+---
+
+### 决策 3：为什么 Generator 和 Evaluator 必须用独立 SubAgent？
+
+**理由**:
+- 模型是"病态乐观主义者"（pathological optimist），无法有效自我批判——同一上下文中的 Generator 评估自己的代码会给出虚高分数
+- 上下文腐化（Context Rot）——长对话中模型性能下降，注意力分散
+- 路径白名单隔离——Generator SubAgent 只能修改 src/ 和 tests/，Evaluator SubAgent 只能写入 eval/，防止误修改
+
+---
+
+### 决策 4：Sprint Contract 的定位
+
+Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
+- Generator 提出"我打算实现什么、怎么实现、验收标准是什么"
+- Evaluator 审查"这个计划是否合理、验收标准是否可测"
+- 双方达成一致后，Generator 按 Contract 实现，Evaluator 按 Contract 验收
+- 这解决了"需求和实现不一致"的经典问题——在代码写之前就对齐预期
+
+---
+
+### 决策 5：全局任务看板（global_task_board.json）
+
+**目的**: 解决 TRAE Work 会话之间缺乏持久状态的问题。每个 SPEC session 独立运行，全局任务看板提供跨 session 的任务状态追踪。
+
+**设计**: 简单 JSON 文件，记录每个 Feature 的 SPEC 路径、Sprint 状态、评估结果。Generator 和 Evaluator 的 SubAgent 可以通过文件系统读写这个看板。
+
+---
+
+### 决策 6：引入 Decision 角色作为中立裁决者（2026-06-29）
+
+**背景**: 在三角色架构中，Generator 和 Evaluator 之间的分歧没有自动解决机制。Evaluator 给出 FAIL 后，Generator 需要修改，但如果没有第三方裁决，可能出现 Generator 过度修改（引入新问题）或双方陷入僵局（反复拉扯）。
+
+**决策**: 在三角色基础上新增第四角色——Decision（裁决者），充当 Orchestrator 代理。
+
+**Decision 的设计约束**:
+- 只读不写：只能读取 Generator 总结和 Evaluator 报告，不能修改任何代码
+- 三种裁决：pass（通过，进入下一 Sprint）、retry（重试，附带聚焦建议）、escalate（升级，人类介入）
+- 中立性：不偏向任何一方，引用证据做裁决
+- 不确定时 escalate：不强行裁决，承认不确定性
+
+**Decision 是 Orchestrator 代理，不是 Orchestrator**：TRAE Work 没有内置 Orchestrator，Decision 通过"只读两份报告 → 输出裁决"的方式模拟 Orchestrator 的决策功能。正常情况（pass/retry）自动处理，罕见情况（escalate）升级给人类。
+
+---
+
+### 决策 7：Planner 职责收窄为战略分解（2026-06-29）
+
+**背景**: 在 v1.0 设计中，Planner 输出 spec.md + tasks.md + checklist.md 三个文件。但在实际设计中，我们发现 tasks.md 的生成属于**战术编排**——它需要根据具体的 Harness 编排模式（对抗循环、角色切换、SubAgent 调度）来生成，这是编排引擎的职责，不是 Planner 的职责。
+
+**决策**: Planner 只输出 spec.md（Sprint 级战略分解），不输出 tasks.md 和 checklist.md。
+
+**tasks.md 的生成方式**:
+- 项目中预置 tasks-pattern.md（编排模式参考），定义了对抗循环的六步流程
+- 云端 Agent 启动时，读取 spec.md（Sprint 分解）+ tasks-pattern.md（编排模式），**动态生成** tasks.md
+- 这确保了：Planner 聚焦战略，编排引擎（云端 Agent）聚焦战术，职责边界清晰
+
+**Planner 与云端 Agent 的契约**:
+- spec.md 必须包含足够的信息让云端 Agent 生成 tasks.md
+- 每个 Sprint 的目标、验收标准、依赖关系
+- 技术栈和架构约束
+- 非功能性需求（量化指标）
+
+---
+
+### 决策 8：三层推理流程重构（v3.0）
 
 **日期**：2026-06-29
 
@@ -110,7 +244,7 @@
 
 ---
 
-## 决策 9：目录解耦——默认不绑定 `.trae/`
+### 决策 9：目录解耦——默认不绑定 `.trae/`
 
 **日期**：2026-06-29
 
@@ -284,124 +418,6 @@
 **交付（commit d19d398，已推 main）**：新增 3 角色模板 + 4 pattern playbook 模板（templates 增至 21 个）；实例化 7 个新 Skill 到 `.trae/skills/`（自检环境增至 12 个）；更新 stage-executor（pattern 路由）、planner-role（pattern 字段+6 模式判据）、resources §3.10、deliverable-specs §11/§12、SKILL.md/SKILL.zh.md（generate_patterns 参数）、README。
 
 **约束与注脚**：多模式为**设计级落地 + 原语级已验证**（非每种模式都跑过端到端真机）；后续可为 fanout/classify 补自检 AP15/AP16。所有 playbook 仍是提示词级 best-effort，需 CI/评审/最小权限令牌兜底。
-
----
-
-## 关键发现与纠正
-
-### 发现 1：SubAgent 能力（重要纠正）
-
-**初始错误判断**: 在对话早期，我断言 TRAE Work 的 tasks.md 执行时不能使用 SubAgent，认为 Generator 和 Evaluator 必须在同一上下文中运行。
-
-**用户纠正**: 用户分享了实际 TRAE Work Agent 的回复，证明 TRAE Work **确实有 Task 工具**，可以 spawn `general_purpose_task` 和 `search` 两种 SubAgent，每个 SubAgent 拥有独立上下文窗口，最多支持 5 个并行执行。
-
-**验证**: 通过查阅 TRAE 官方论坛（topic/1139），确认了 SubAgent 在 SOLO 模式下的调度能力。
-
-**影响**: 这个发现是架构设计的转折点——它使得 Generator 和 Evaluator 可以运行在独立 SubAgent 中，真正实现了 Anthropic Pattern B 的"上下文隔离"要求。如果没有这个能力，Generator 和 Evaluator 共用上下文会导致 Context Rot 和"自己评自己"的 bias。
-
-### 发现 2：SPEC 工作流的 Planner 角色
-
-TRAE Work 的 SPEC 工作流有三个关键文件：
-- `spec.md`：产品规格说明，由 AI 在暂停阶段生成，用户确认后固化
-- `tasks.md`：任务分解，AI 按步骤执行，可在任务间暂停
-- `checklist.md`：AI 暂停确认的检查清单
-
-**关键设计决策**: 将 Planner 角色映射到 SPEC 工作流的"暂停确认阶段"——Planner 生成 spec.md 后，用户审查确认，然后云端 Agent 根据 tasks-pattern.md 动态生成 tasks.md，其中的 Generator/Evaluator/Decision 标记引导后续 SubAgent 调度。
-
-### 发现 3：Claude Code Workflow 对标（2026-06-29）
-
-在 2026 年 6 月 29 日的调研中，发现 Claude Code 已通过两种机制将 Harness Engineering 内化为平台基础能力：
-
-**Claude Code 的静态 Harness（`.claude/agents/`）**：
-- 通过 `.claude/agents/` 目录下的 Markdown 文件静态定义角色（Planner、Generator、Evaluator）
-- 内置 Orchestrator 自动根据任务类型路由到对应角色
-- 这与我们的 `.trae/agents/` 设计高度相似——因为两者都源自 Anthropic 的 Pattern B
-
-**Claude Code 的 Dynamic Workflows**：
-- 2026 年 6 月发布，运行时自生成 JavaScript 编排脚本
-- 提供 6 种内置编排模式：Classify-and-act、Fan-out-and-synthesize、Adversarial verification、Generate-and-filter、Tournament、Loop until done
-- Adversarial verification 就是 PGE 架构的核心模式
-
-**关键洞察**：
-- Claude Code 的 Orchestrator 是**内置的、全自动的**——用户只需描述需求，Orchestrator 自动完成从角色路由到对抗循环的全过程
-- TRAE Work 没有内置 Orchestrator，但我们通过组合 SPEC + Skills + Rules + SubAgent + Decision **拼装了一个 Orchestrator**
-- 方法论效果可以追齐（角色分离、上下文隔离、对抗验证），但自动化程度无法追齐（需要人类手动触发 SPEC）
-- 类比：Claude Code 是"自动挡汽车"，我们是在"手动挡汽车"上安装了"辅助驾驶系统"
-
-**影响**：这个发现影响了两大设计决策——引入 Decision 角色作为 Orchestrator 代理（决策 6），以及收窄 Planner 职责到战略分解（决策 7）。
-
----
-
-## 设计决策记录
-
-### 决策 1：为什么不用 TRAE CLI + Docker？
-
-**方案**: 在 Docker 容器中运行 TRAE CLI，接收外部指令，完成后销毁容器。
-
-**否决理由**: 
-- TRAE Work 免费版不提供 CLI 的远程调度 API
-- 需要额外搭建编排层（消息队列、状态管理）
-- 增加了运维复杂度和成本
-- 与 TRAE Work 的云端执行模型不兼容
-
-### 决策 2：为什么选择 SPEC 工作流作为 Planner 角色？
-
-**理由**:
-- SPEC 是 TRAE Work 原生支持的规划机制，无需额外开发
-- 暂停确认阶段天然提供了"人类审查 Planner 输出"的 Steering 机制
-- spec.md 固化后，后续 tasks.md 步骤可以引用固定的规格文档，避免需求漂移
-
-### 决策 3：为什么 Generator 和 Evaluator 必须用独立 SubAgent？
-
-**理由**:
-- 模型是"病态乐观主义者"（pathological optimist），无法有效自我批判——同一上下文中的 Generator 评估自己的代码会给出虚高分数
-- 上下文腐化（Context Rot）——长对话中模型性能下降，注意力分散
-- 路径白名单隔离——Generator SubAgent 只能修改 src/ 和 tests/，Evaluator SubAgent 只能写入 eval/，防止误修改
-
-### 决策 4：Sprint Contract 的定位
-
-Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
-- Generator 提出"我打算实现什么、怎么实现、验收标准是什么"
-- Evaluator 审查"这个计划是否合理、验收标准是否可测"
-- 双方达成一致后，Generator 按 Contract 实现，Evaluator 按 Contract 验收
-- 这解决了"需求和实现不一致"的经典问题——在代码写之前就对齐预期
-
-### 决策 5：全局任务看板（global_task_board.json）
-
-**目的**: 解决 TRAE Work 会话之间缺乏持久状态的问题。每个 SPEC session 独立运行，全局任务看板提供跨 session 的任务状态追踪。
-
-**设计**: 简单 JSON 文件，记录每个 Feature 的 SPEC 路径、Sprint 状态、评估结果。Generator 和 Evaluator 的 SubAgent 可以通过文件系统读写这个看板。
-
-### 决策 6：引入 Decision 角色作为中立裁决者（2026-06-29）
-
-**背景**: 在三角色架构中，Generator 和 Evaluator 之间的分歧没有自动解决机制。Evaluator 给出 FAIL 后，Generator 需要修改，但如果没有第三方裁决，可能出现 Generator 过度修改（引入新问题）或双方陷入僵局（反复拉扯）。
-
-**决策**: 在三角色基础上新增第四角色——Decision（裁决者），充当 Orchestrator 代理。
-
-**Decision 的设计约束**:
-- 只读不写：只能读取 Generator 总结和 Evaluator 报告，不能修改任何代码
-- 三种裁决：pass（通过，进入下一 Sprint）、retry（重试，附带聚焦建议）、escalate（升级，人类介入）
-- 中立性：不偏向任何一方，引用证据做裁决
-- 不确定时 escalate：不强行裁决，承认不确定性
-
-**Decision 是 Orchestrator 代理，不是 Orchestrator**：TRAE Work 没有内置 Orchestrator，Decision 通过"只读两份报告 → 输出裁决"的方式模拟 Orchestrator 的决策功能。正常情况（pass/retry）自动处理，罕见情况（escalate）升级给人类。
-
-### 决策 7：Planner 职责收窄为战略分解（2026-06-29）
-
-**背景**: 在 v1.0 设计中，Planner 输出 spec.md + tasks.md + checklist.md 三个文件。但在实际设计中，我们发现 tasks.md 的生成属于**战术编排**——它需要根据具体的 Harness 编排模式（对抗循环、角色切换、SubAgent 调度）来生成，这是编排引擎的职责，不是 Planner 的职责。
-
-**决策**: Planner 只输出 spec.md（Sprint 级战略分解），不输出 tasks.md 和 checklist.md。
-
-**tasks.md 的生成方式**:
-- 项目中预置 tasks-pattern.md（编排模式参考），定义了对抗循环的六步流程
-- 云端 Agent 启动时，读取 spec.md（Sprint 分解）+ tasks-pattern.md（编排模式），**动态生成** tasks.md
-- 这确保了：Planner 聚焦战略，编排引擎（云端 Agent）聚焦战术，职责边界清晰
-
-**Planner 与云端 Agent 的契约**:
-- spec.md 必须包含足够的信息让云端 Agent 生成 tasks.md
-- 每个 Sprint 的目标、验收标准、依赖关系
-- 技术栈和架构约束
-- 非功能性需求（量化指标）
 
 ---
 
