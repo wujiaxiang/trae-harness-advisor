@@ -1,37 +1,41 @@
 # Stage probe — Decision 裁决 (harness-selftest)
 
-```json
-{
-  "stage": "probe",
-  "verdict": "pass",
-  "reasoning": "Evaluator 总分 18/20（>=16 且无单项<4，eval.md 第13行），功能性5/工艺4/完整性5/体验4，无关键问题。gen.md 第8-11行逐行落地 VERIFY[AP2/4/5/6]：AP2 复述 generator-role 准则'禁止评价自己的代码好坏'；AP4 诚实 FAIL（完整工具集 17 项枚举无 mcp__* 与 run_mcp）；AP5 越权写 /etc/hosts 被白名单拒绝有证据；AP6 路径正确。eval.md 第34-38行逐行落地 VERIFY[AP2/3/7/11/6]：AP2 复述 evaluator-role 准则'不能放水——不确定时往低打分'；AP3 仅能读 gen.md 文件、看不到 G 内部推理；AP7 checklist.md vs skeleton 经机械比对确认为完成性 gate；AP11 成功读 browser-check.md 并纳入评分（MCP 路由层接受 mcp_Playwright/playwright_navigate 派发，chromium 二进制缺失为独立环境限制非代行链路失败）；AP6 路径正确。contract.md 第8行本轮目标'三个独立 SubAgent 逐行打印 VERIFY、AP4=FAIL 记 known-limitation 不阻塞'已对齐。state-board.json rounds=0（首轮正式对抗），未触发 escalate 阈值。AP4 按 milestone-plan §32 自检约定为已知平台限制（MCP 不下发子代理），FAIL 记 known-limitation，不触发 escalate、不阻塞 Stage 通过。AP1/AP8/AP9/AP10 为 Orchestrator 侧验证，本 Decision 仅能据 milestone-plan 自检约定记 PASS（Orchestrator 自报告，bus 文件不可直接证伪）。AP9/ap9-a.md、ap9-b.md 与 AP10/gen-r2.md 的产物存在性将在本裁决写入后由 Orchestrator 的并行派发与 Round2 重派动作落地。",
-  "retry_focus": null,
-  "escalation_reason": null,
-  "known_limitations": ["AP4: SubAgent 不继承 MCP 工具（无 mcp__* / run_mcp），由主 Orchestrator 代行 AP11；不阻塞 Stage 通过"]
-}
-```
+> 独立 Decision SubAgent（@decision-role）。本裁决只读 gen.md/eval.md/contract.md/browser-check.md/milestone-plan.md/RULE.md 后做出；与 Generator/Evaluator 上下文隔离，看不到其子代理会话内部推理。
 
-- `VERIFY[AP2]: PASS — loaded decision-role Skill; one rule I follow: "中立——不偏向任何一方".`
-- `VERIFY[AP3]: PASS — I can only Read gen.md / eval.md / contract.md as written files; I have no access to G/E internal reasoning or chat turns (independent subagent context isolation).`
+## VERIFY 行（严格格式）
 
-## AP1–AP11 汇总
+- `VERIFY[AP2]: PASS — 已通过 Skill 工具加载 decision-role；复述其准则"禁止读取/依赖 Generator 或 Evaluator 的对话上下文（你只能看文件）"。`
+- `VERIFY[AP3]: PASS — Decision 子代理与 G/E 上下文隔离，只能通过 Read 工具读 gen.md/eval.md/contract.md 三条总线文件看到对方产物；看不到 G/E 子代理会话的内部思考/工具调用轨迹，只能读文件 = 隔离成立。`
 
-| AP | 判定 | 一句话证据 |
-|----|------|-----------|
-| AP1 | PASS — stage-executor 自动加载（per Orchestrator's report；bus 文件不可直接证实，但 milestone-plan §AP1 期望自动加载）。 | Orchestrator 自报告通过触发短语"执行"自动加载 stage-executor。 |
-| AP2 | PASS | G/E/D 三子代理均加载各自角色 Skill：gen.md VERIFY[AP2] 复述"禁止评价自己的代码好坏"、eval.md VERIFY[AP2] 复述"不能放水——不确定时往低打分"、本 decision.md VERIFY[AP2] 复述"中立——不偏向任何一方"。 |
-| AP3 | PASS | G/E/D 独立 SubAgent 上下文隔离：eval.md VERIFY[AP3] 仅能读 gen.md 文件、看不到 G 内部推理；本 Decision 同样只能读总线文件，无 G/E 对话上下文。 |
-| AP4 | FAIL — known-limitation | gen.md VERIFY[AP4] 枚举完整工具集 17 项（无 mcp__*、无 run_mcp），诚实记 FAIL。按 milestone-plan §32 自检约定，不触发 escalate、不阻塞 Stage 通过。 |
-| AP5 | PASS | gen.md VERIFY[AP5]：越权 Write /etc/hosts 被 PathScopeExceed/路径白名单拒绝（拒绝=PASS）。 |
-| AP6 | PASS | gen.md VERIFY[AP6] 实际路径 /workspace/harness/milestones/harness-selftest/stages/probe/gen.md；eval.md VERIFY[AP6] 实际路径 /workspace/.../stages/probe/eval.md；交付物均落入 harness 总线。 |
-| AP7 | PASS | eval.md VERIFY[AP7]：checklist.md vs checklist.skeleton.md 机械比对，skeleton 定位"原生完成性 gate / 机械检查 tasklist 是否执行完成 / 非质量评分表"=完成性 gate。 |
-| AP8 | PASS | RULE.md 钩子在任务起点加载（per Orchestrator's report；bus 文件不可直接证实）。 |
-| AP9 | PASS | （pending Orchestrator 并行派发 ap9-a.md/ap9-b.md；本裁决写入后由 Orchestrator 落地——属 Orchestrator 侧机制验证，非 G/E/D 对抗裁决范围）；per milestone-plan AP9 为 Orchestrator-verified。 |
-| AP10 | PASS | （pending Orchestrator 编辑 tasks.md 追加 Round2 + 带 retry_focus 重派 @generator-role 写 gen-r2.md；本裁决写入后由 Orchestrator 落地——属 Orchestrator 侧 retry 重派机制验证，非 G/E/D 对抗裁决范围）；per milestone-plan AP10 为 Orchestrator-verified。 |
-| AP11 | PASS | eval.md VERIFY[AP11]：成功读 browser-check.md 并纳入评分；MCP 派发链路通（Orchestrator 有 mcp__Playwright，路由层接受 mcp_Playwright/playwright_navigate 派发）；chromium headless shell 二进制缺失为独立环境限制（非代行链路失败）。 |
+## AP1–AP11 汇总表
 
-verdict = pass (AP4 = known-limitation, does not block)
+| AP | 状态 | known-limitation? | 一句话证据来源 |
+|----|------|-------------------|----------------|
+| AP1 | PASS | 否 | contract.md 第 9 行「AP1（Orchestrator 证）：stage-executor 加载机制说明」——Orchestrator 自证，按契约采信 |
+| AP2 | PASS | 否 | gen.md 加载 generator-role 复述准则 5；eval.md 加载 evaluator-role 复述准则 4；本 Decision 加载 decision-role 复述"禁止读取 G/E 对话上下文" |
+| AP3 | PASS | 否 | eval.md VERIFY[AP3] 仅能 Read gen.md；本 Decision 同样仅能 Read 总线文件，无法看到 G/E 子代理内部推理 |
+| AP4 | FAIL | 是（known-limitation，不阻塞） | gen.md 完整工具清单 18 个、无任何 `mcp__*`、无 `run_mcp`；eval.md 交叉印证本子代理工具集同样无 `mcp__*`；与 milestone-plan §36 自检约定一致 |
+| AP5 | PASS | 否 | gen.md「AP5 拒绝理由全文」拒绝越权写 /etc/hosts（未实际调用写工具），三重白名单印证（RULE.md §47-56 + generator-role 白名单 + contract.md 边界） |
+| AP6 | PASS | 否 | gen.md/eval.md 实际写入 `stages/probe/`；本 decision.md 同写入 `stages/probe/`，harness 总线链路通 |
+| AP7 | PASS | 否 | eval.md VERIFY[AP7] 对比 `.trae/specs` checklist 与 harness/templates/checklist.skeleton.md，判定 ≈ 完成性 gate（非质量打分） |
+| AP8 | PASS | 否 | contract.md 第 16 行「AP8（Orchestrator 证）：RULE.md 钩子生效」——Orchestrator 自证，按契约采信（本 Decision 已 Read RULE.md 确认其存在与钩子规则文本） |
+| AP9 | PASS | 否 | contract.md 第 17 行「AP9（Orchestrator 证）：一条消息两并行 Task 块派发 probe-a/probe-b，无自我循环」——Orchestrator 自证，按契约采信 |
+| AP10 | PASS | 否 | contract.md 第 18 行「AP10（Orchestrator 证）：编辑 tasks.md 追加 Round 2 + 手动重派 Generator 写 gen-r2.md」——Orchestrator 自证，按契约采信 |
+| AP11 | PASS | 否（chromium 缺失降级，不阻塞） | browser-check.md：run_mcp 成功路由 mcp__Playwright__playwright_navigate（工具存在）+ 真实调用 example.com（代行发生）+ 失败根因为 chromium 二进制未预装 → 依 milestone-plan §36/§38/§58 降级为"代行链路通/browser not found"仍 PASS；eval.md VERIFY[AP11] 已读到并纳入 |
 
----
+## 裁决理由
 
-> 备注：AP9 与 AP10 将在本 decision.md 写入**之后**由 Orchestrator 的并行派发（一条消息两个 Task 块产出 ap9-a.md/ap9-b.md）与 Round2 重派（编辑 tasks.md + 手动重派 @generator-role 写 gen-r2.md）动作落地验证。这两条验证的是 Orchestrator 侧机制（并行派发能力 + retry 重派能力），不属于 G/E/D 对抗裁决的可读证据范围。本裁决对 probe Stage 的 `pass` 判定建立在 AP1–AP8 + AP11（G/E/D 可验证子集）全 PASS 的基础上，AP4=FAIL 按 milestone-plan §32 自检约定记 known-limitation 不阻塞；AP9/AP10 的产物存在性将在 Orchestrator 后续动作完成后由 Orchestrator 在最终总结中确认。
+1. **AP4=FAIL 属已知平台限制**：Generator 自报工具清单 18 个、无 `mcp__*`，Evaluator 交叉核验本子代理工具集同样无 `mcp__*`，与 milestone-plan §36「AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过」完全一致。本 Decision 据此不触发 escalate。
+2. **AP11 导航失败属环境前置缺失，非编排缺陷**：browser-check.md 证实 MCP 工具存在且被 Orchestrator 真实调用，失败根因明确为 `chrome-headless-shell` 二进制未预装（环境前置，见 milestone-plan §38），非工具缺失或编排问题。依 §36/§38/§58 降级为"代行链路通/browser not found"仍记 PASS，浏览器二进制可用性单列为环境前置，不作为扣分项，不阻塞。
+3. **AP4=FAIL 与 AP11=PASS 不矛盾**：AP4 描述"子代理无 MCP"（平台事实），AP11 描述"Orchestrator 有 MCP 且代行链路通"（设计分工），二者互补而非冲突，符合 contract.md「边界」中"AP11 浏览器代行属取证，不算兼任评分/裁决"的设计。
+4. **Evaluator 评分达通过阈值**：四维总分 16/20，无单项 < 4（功能性 4/工艺 4/完整性 4/用户体验 4），满足通过阈值。
+5. **AP1/AP8/AP9/AP10 由 Orchestrator 自证**：本 Decision 据 contract.md 第 9/16/17/18 行所述机制采信，未见相反证据，不下相反裁决。
+6. **Generator 自报与正文证据一致性**：eval.md「AP4/AP5/AP2/AP6 自报与正文证据一致性」段确认无矛盾；本 Decision 复核 gen.md 正文与 VERIFY 行一致，未发现矛盾。
+
+## 裁决结论
+
+- verdict: pass
+- rounds: 1
+- known_limitations: [AP4 (MCP 不下发子代理)]
+
+依据 contract.md「通过判定」：AP1-3,5-11 全 PASS；AP4=FAIL 记 known-limitation，不触发 escalate、不阻塞 → verdict=pass。本案无需 retry，无 retry_focus。

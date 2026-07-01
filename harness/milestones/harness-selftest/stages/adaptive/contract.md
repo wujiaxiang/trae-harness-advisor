@@ -1,31 +1,50 @@
-# Stage adaptive Contract — harness-selftest
+# Stage Contract — adaptive（contract_mode: codraft）
 
-> 由 Orchestrator 在 codraft 共识子阶段后据 Evaluator 敲定的标准写入（contract_mode=codraft）。
-> Generator 据此实现，Evaluator 据此验收。
+> Orchestrator 据共识子阶段产物编写。codraft 模式：Generator 出草稿+提议标准 → Evaluator 敲定标准 → 本 contract.md。
+> 共识子阶段产物：gen-draft.md（草稿 sample.json + 提议标准）、eval-draft.md（敲定的最终标准 + 验证脚本）。
 
-## 本轮目标
-用一个最小真实交付物 `sample.json` 跑通"真 retry→pass 自适应闭环"：R1 故意 FAIL → Decision retry → R2 修正 PASS。
+## 目标
+用最小真实交付物 `sample.json` 跑通 codraft 共识子阶段 + 真 retry→pass 自适应闭环（AP12/AP13），并验证 depends_on 门控（AP14）。
 
-## 验收要点（可机械检查；来自 Evaluator eval-draft.md）
-1. `sample.json` 必须是合法 JSON（可被 `jq .` 或 `python -c "import json; json.load(open('sample.json'))"` 解析）。
-2. `sample.json.status == "ok"`（机械字符串比较）。
-3. `len(sample.json.items) >= 3`（数组长度机械检查）。
+## 验收标准（机械可检查，由 Evaluator 在 eval-draft.md 敲定）
+判定对象 = `harness/milestones/harness-selftest/stages/adaptive/sample.json`：
 
-**PASS 条件** = 1 AND 2 AND 3 全部满足。
-**FAIL 条件** = 任一不满足。
+| 编号 | 标准 | 机械检查表达式 |
+|------|------|----------------|
+| AC1 | sample.json 存在且为合法 JSON | `JSON.parse(text)` 不抛异常 |
+| AC2 | 顶层是普通对象 | `typeof o === "object" && o !== null && !Array.isArray(o)` |
+| AC3 | `status` 严格等于字符串字面量 `"ok"`（大小写敏感） | `o.status === "ok"` |
+| AC4 | `items` 是数组 | `Array.isArray(o.items)` |
+| AC5 | `items` 长度 ≥ 3 | `o.items.length >= 3` |
 
-## R1 / R2 计划
-- **R1（故意 FAIL 演示 retry 闭环）**：sample.json = `{"status":"ok","items":[1]}`（标准 #3 不满足 len=1<3）→ Evaluator FAIL → Decision retry，retry_focus="items 需 ≥ 3"。
-- **R2（修正 PASS）**：sample.json = `{"status":"ok","items":[1,2,3]}`（全部满足）→ Evaluator PASS → Decision pass。
+判定规则：`AC1 ∧ AC2 ∧ AC3 ∧ AC4 ∧ AC5` 全真 → PASS；任一为假 → FAIL。
+
+## 验证脚本（机械判定，供 Evaluator 各轮复用）
+```bash
+node -e "
+const fs=require('fs');
+const p='harness/milestones/harness-selftest/stages/adaptive/sample.json';
+const s=fs.readFileSync(p,'utf8');
+let o;
+try { o=JSON.parse(s); } catch(e) { console.log('FAIL — JSON 解析失败:', e.message); process.exit(1); }
+if (typeof o!=='object'||o===null||Array.isArray(o)) { console.log('FAIL — 顶层不是普通对象'); process.exit(1); }
+if (o.status!=='ok') { console.log('FAIL — status!==\"ok\" (实际: '+JSON.stringify(o.status)+')'); process.exit(1); }
+if (!Array.isArray(o.items)) { console.log('FAIL — items 不是数组'); process.exit(1); }
+if (o.items.length<3) { console.log('FAIL — items.length<3 (实际: '+o.items.length+')'); process.exit(1); }
+console.log('PASS — status==\"ok\" 且 items 是数组且 items.length='+o.items.length+'>=3');
+"
+```
 
 ## 边界
-- 包含：`harness/.../stages/adaptive/` 下所有交付物（gen-draft/eval-draft/contract/gen-r1/eval-r1/decision-r1/gen-r2/eval-r2/decision-r2/sample.json）。
-- 不包含：src/、tests/、依赖安装；不动 milestone-plan.md、RULE.md、.trae/skills/。
-- AP13 必须真两轮：R1 真的 FAIL、R2 真的 PASS，由 Orchestrator 手动重派（非自动 loop）。
+- 交付物：sample.json + gen-draft/eval-draft/gen-r1/eval-r1/decision-r1/gen-r2/eval-r2/decision-r2 → harness/milestones/harness-selftest/stages/adaptive/。
+- 三件套留 .trae/specs/（scratch）。
+- 不改 src/、不装依赖。
+- 子代理独立、上下文隔离；Orchestrator 只串联，不兼任裁决。
 
-## 依赖
-- depends_on=[probe]（已 passed，AP14 门控通过）。
+## 闭环设计（AP13）
+- R1：Generator 故意写 `{"status":"ok","items":[1]}`（items.length=1，违反 AC5）→ Evaluator 判 FAIL → Decision 裁 retry（retry_focus="items 需 ≥ 3"）。
+- R2：Orchestrator 据 retry 重派 Generator 修正为 `{"status":"ok","items":[1,2,3]}` → Evaluator 复评 PASS → Decision 裁 pass。
+- rounds=2，最终 sample.json 达标。
 
-## 预估风险
-- Generator 可能在 R1 不愿意故意写错的版本：通过强约束 prompt 兜底（明确告诉它这是演示 retry 闭环）。
-- R2 必须由 Orchestrator 重派带 retry_focus，不能让子代理自我循环。
+## 通过判定
+AP12（codraft 链路通）+ AP13（真 retry→pass 两轮）+ AP14（depends_on 门控）全 PASS → verdict=pass。
