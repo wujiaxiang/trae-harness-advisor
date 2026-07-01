@@ -1,4 +1,4 @@
-# Deliverable Specifications (v4.4)
+# Deliverable Specifications (v4.5)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
 > 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
@@ -18,7 +18,8 @@
 10. [8. stage-contract 骨架](#8-stage-contract-骨架)
 11. [9. state-board.json（v2 空表）](#9-state-boardjson-v2-空表)
 12. [10. 可选 Agent 配置](#10-可选-agent-配置)
-13. [11. 生成后验证](#11-生成后验证)
+13. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
+14. [12. 生成后验证](#12-生成后验证)
 
 ---
 

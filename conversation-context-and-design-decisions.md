@@ -2,7 +2,7 @@
 
 > **版本**: v4.4  
 > **日期**: 2026-06-29  
-> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）  ；v4.3 决策 15；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）
+> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）；v4.5 决策 17（多模式编排框架——6 种编排模式全做：新增 Classifier/Synthesizer/Selector 3 角色 + 4 pattern playbook + Stage 层 pattern 字段 + generate_patterns 开关）
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -265,6 +265,25 @@
 **影响**：方法论从"静态模拟"升级为"动态自适应编排"的定位；解决了 AP4 带来的浏览器验证缺口；改动 evaluator-role / stage-executor / verification_mode 映射 / 文档。
 
 **真机确认（commit f76f8fc）**：v4.4 综合自检（AP1–AP14，probe+adaptive 两 Stage）**13/14 PASS**——浏览器代行(AP11)、codraft(AP12)、**真 retry→pass 自适应闭环(AP13)**、depends_on 门控(AP14) 全部端到端验证成立；唯一 FAIL 为 AP4(MCP 不下发子代理) known-limitation 不阻塞。浏览器二进制需 `npx playwright install chromium` 或配置远程环境（docs.trae.cn/solo_set-up-the-remote-environment）。**至此"LLM 驱动的动态自适应 PGE 编排"在真机端到端成立。**
+
+---
+
+### 决策 17：多模式编排框架——6 种编排模式全做（v4.5）
+
+**日期**：2026-07-02
+
+**背景**：v4.4 确立 Orchestrator 图灵完备底座后，用户提出更大胆的想法——Claude Code 的 Dynamic Workflows 内置 6 种编排模式（Classify-and-act / Fan-out-and-synthesize / Adversarial / Generate-and-filter / Tournament / Loop until done），而本框架此前只落地了最经典的 **adversarial（PGE）**。能否把其余几种也在国产免费平台上模拟？原则不变：执行机只负责"频繁对抗/比较的内环"，跨 pattern/Stage 由人工调度，或父 Agent 上下文预算够时自动一次跑完。
+
+**结论与决策（全上：6 种模式全做）**：
+1. **无需新平台能力，只需新 playbook**：6 种模式都能用 v4.4 已验证的同一套原语（顺序/分支/并行派发/有界循环/自修改 tasks.md/持久 board）+ 独立 SubAgent + harness 总线组合出来。adversarial/loop 已真机验证（loop=retry 泛化=AP13）；classify/fanout/generate-filter/tournament 的底层原语（打标签分支、AP9 真并行、候选选优、有界淘汰）均已验证，以 playbook 组合模拟。
+2. **新增 3 个轻量角色**：Classifier（打标签）、Synthesizer（并行结果汇总）、Selector（候选选优/两两淘汰），复用既有 Generator/Evaluator/Decision。
+3. **新增 4 个 pattern playbook**：pattern-classify / pattern-fanout / pattern-generate-filter / pattern-tournament。
+4. **Stage 层新增 `pattern` 字段**（Planner 在 milestone-plan 标，默认 `adversarial`）：`stage-executor` step 2.5 据此路由到对应 playbook；模式可嵌套（如 classify→fanout，fanout 每个子任务内部走 adversarial）。
+5. **新增 `generate_patterns` 生成开关**（Advisor 侧，默认 `false`）：开启则额外生成多模式包（3 角色+4 playbook 共 7 个 Skill）；未开启时所有 Stage 走默认 adversarial，交付物不变。
+
+**交付（commit d19d398，已推 main）**：新增 3 角色模板 + 4 pattern playbook 模板（templates 增至 21 个）；实例化 7 个新 Skill 到 `.trae/skills/`（自检环境增至 12 个）；更新 stage-executor（pattern 路由）、planner-role（pattern 字段+6 模式判据）、resources §3.10、deliverable-specs §11/§12、SKILL.md/SKILL.zh.md（generate_patterns 参数）、README。
+
+**约束与注脚**：多模式为**设计级落地 + 原语级已验证**（非每种模式都跑过端到端真机）；后续可为 fanout/classify 补自检 AP15/AP16。所有 playbook 仍是提示词级 best-effort，需 CI/评审/最小权限令牌兜底。
 
 ---
 

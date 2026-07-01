@@ -1,6 +1,6 @@
 # Trae Harness Advisor
 
-> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.4）
+> Harness Engineering 在 TRAE Work 上的最佳实践——Advisor → Planner → Orchestrator → Generator/Evaluator/Decision 的 Milestone/Stage/Task 多智能体对抗架构（v4.5，含 6 种编排模式）
 
 ---
 
@@ -16,7 +16,7 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.4）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.5）
 │   └── templates/                                     # 可复用模板（21 个：5 核心角色+stage-executor+4 骨架+多模式包 3 角色+4 playbook）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
@@ -119,7 +119,7 @@
 
 如果你是一个被要求继续优化此 Skill 的 Agent，请按以下顺序阅读：
 
-1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.2；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架）
+1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.5；先读第零部分核心概念定义，再读 4.1 stage-executor 与三件套骨架，多模式编排见 3.10）
 2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0/v4.1/v4.2 概念重构记录）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（11 个核心文件 + 钩子规则文本 + 可选 Agent 配置）

@@ -1,8 +1,9 @@
 # Harness Engineering on TRAE Work：Planner-Generator-Evaluator 多智能体对抗架构最佳实践
 
-> **版本**: v4.4  
-> **日期**: 2026-06-29  
-> **变更**: v4.4 基于 v4.3 真机重跑：①**重要发现——动态编排=图灵完备底座**：Orchestrator 真机验证具备顺序/分支/有界循环/跳出/自修改 tasks.md/持久状态，叠加子代理 Shell(RunCommand) → 可实现**真正自适应的 PGE 流程**（注脚：推理级控制、有界、确定性不可追齐）；"顺序模拟对抗"措辞升级为"LLM 驱动的动态编排"；②**子代理工具能力实测**：17 个工具含 Web+Shell，**唯缺 MCP**；③**AP4 决定性结论 + 方案1**：SubAgent 不继承 MCP → `verification_mode=full` 浏览器验证改由 **Orchestrator 代行 MCP**，证据写 `browser-check.md` 供 Evaluator 评分；④v4.3 全部改动（Decision 独立、retry 闭环 AP10、三件套→.trae/specs）真机验证成立  
+> **版本**: v4.5  
+> **日期**: 2026-07-02  
+> **变更**: v4.5 **多模式编排框架（6 种编排模式全做）**：基于 v4.4 已真机验证的 Orchestrator 图灵完备底座 + 独立 SubAgent + harness 总线，把 Claude Code Dynamic Workflows 的 6 种模式全部用同一套原语落地——新增 3 个轻量角色（Classifier/Synthesizer/Selector）+ 4 个 pattern playbook（classify/fanout/generate-filter/tournament），Stage 层新增 `pattern` 字段由 `stage-executor` 路由；adversarial/loop 已真机验证，其余 4 种原语已验证、以 playbook 组合模拟；新增 `generate_patterns` 生成开关（默认 false，见 §3.10 与 deliverable-specs §11）  
+> **v4.4**: 基于 v4.3 真机重跑：①**重要发现——动态编排=图灵完备底座**：Orchestrator 真机验证具备顺序/分支/有界循环/跳出/自修改 tasks.md/持久状态，叠加子代理 Shell(RunCommand) → 可实现**真正自适应的 PGE 流程**（注脚：推理级控制、有界、确定性不可追齐）；"顺序模拟对抗"措辞升级为"LLM 驱动的动态编排"；②**子代理工具能力实测**：17 个工具含 Web+Shell，**唯缺 MCP**；③**AP4 决定性结论 + 方案1**：SubAgent 不继承 MCP → `verification_mode=full` 浏览器验证改由 **Orchestrator 代行 MCP**，证据写 `browser-check.md` 供 Evaluator 评分；④v4.3 全部改动（Decision 独立、retry 闭环 AP10、三件套→.trae/specs）真机验证成立  
 > **v4.3**: 验收标准来源澄清 + per-Stage `contract_mode`（planned/codraft 可选共识子阶段）  
 > **v4.2**: Decision 独立 SubAgent（decision-role）、Orchestrator 只串联不兼任角色、retry 闭环 AP10、三件套只留 .trae/specs 不入 harness、核心 Skill 5/文件 11  
 > **v4.1**: ①外部引用逐条核实；②`.trae/specs/` 降为可弃、subagent 写 `harness/` 总线；③Contract 简化为 Orchestrator 一次标注；④board 最小更新写协议、并发=人工多对话；⑤约束强度=提示词级措辞；⑥新增 `poc/harness-selftest/` 自检集  
