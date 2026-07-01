@@ -60,7 +60,7 @@ description: >
   - agent_dir: 字符串（默认: ".trae/agents/"，不询问）
   - generate_patterns: 布尔值（默认: false；开启则额外生成多模式编排包——3 个轻量角色 + 4 个 pattern playbook，见 deliverable-specs 第 11 节）
 
-输出（核心 11 个文件）:
+输出（核心 12 个文件）:
   - {skill_dir}planner-role/SKILL.md
   - {skill_dir}generator-role/SKILL.md       # 内嵌 Agent 工具集 + 路径白名单
   - {skill_dir}evaluator-role/SKILL.md       # 业务质量四维评分（不含裁决）
@@ -72,6 +72,7 @@ description: >
   - {harness_dir}templates/checklist.skeleton.md
   - {harness_dir}templates/stage-contract.skeleton.md
   - {harness_dir}state-board.json（v2 空表）
+  - {harness_dir}references/llm-task-authoring-best-practices.md（共享最佳实践，被各角色引用）
   - 钩子规则文本（非文件，复制到「设置 > 规则」的一次性配置）
 
 可选输出（generate_agents=true 时）:
@@ -232,6 +233,7 @@ TDD 模式: {tdd_mode}
 9. 三件套骨架                  → {harness_dir}templates/{spec,tasks,checklist}.skeleton.md
 10. stage-contract 骨架         → {harness_dir}templates/stage-contract.skeleton.md
 11. state-board.json（v2 空表） → {harness_dir}state-board.json
+11b. 最佳实践参考文档            → {harness_dir}references/llm-task-authoring-best-practices.md（从 advisor references/ 复制；planner/generator/evaluator/contract 共同引用的方法论）
 12.（可选）Agent 配置          → {agent_dir}{generator,evaluator,decision}.md
 13.（可选，generate_patterns=true）多模式包（7 个 Skill，见 deliverable-specs 第 11 节）：
     → {skill_dir}{classifier,synthesizer,selector}-role/SKILL.md          （3 个轻量角色）

@@ -22,6 +22,15 @@ description: >
 6. Stage 粒度适中：每个 Stage 应能在一次云端对话内完成
 7. 不生成 spec.md、tasks.md、checklist.md；不预写业务实现内容
 
+## 任务拆分方法（详见 harness/references/llm-task-authoring-best-practices.md 第二节）
+> 核心假设：执行 Stage 的是较弱的云端 SubAgent，文档质量决定结果。
+1. **先判阶段类型**再套拆分策略：**开发 Dev**（按文件分组，测试命令=验收）｜**联调 Integration**（每个外部系统一个 Stage，Key 准备独立，带失败速查表）｜**验收 Acceptance**（业务标准翻译成可查询指标，写"看到什么就算通过"）。阶段类型也指导 contract_mode/pattern 选择。
+2. **上下文预算**：`对话容量 ≈ 文档行数 + 需读代码行数 + 命令输出行数`，上限约 **3000 行**，超了就拆 Stage/拆对话。
+3. **串并行判据**（直接决定 depends_on）：B 需 A 的产物、或 A 失败则 B 无意义 → 串行标 depends_on；针对不同外部系统、互不影响 → 并行（无依赖，天然适合 pattern=fanout）。
+4. **原则 A｜一命令=一完成边界**：验收要点须能用「一个可运行命令 + ✅/❌ 输出」判定；判不了就继续拆或配验证脚本。
+5. **原则 B｜显式排除**：每个 Stage 必须写「不包含 / 不要改」——不写出来的范围就是 SubAgent 自由发挥的空间。
+6. 拆完对每个 Stage 自检 4 问：能一命令验证吗？边界（含"不做什么"）清楚吗？失败时有指引吗？人工何时介入（停止条件）写明了吗？
+
 ## 输出格式
 - 写入 harness/milestones/{milestone}/milestone-plan.md（Milestone 概述 + 各 Stage 定义）
 - 初始化/更新 harness/state-board.json（Milestone.kind + 各 Stage status=planned + depends_on）

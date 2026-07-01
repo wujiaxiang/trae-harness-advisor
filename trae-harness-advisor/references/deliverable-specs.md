@@ -17,9 +17,10 @@
 9. [7. 三件套骨架模板](#7-三件套骨架模板)
 10. [8. stage-contract 骨架](#8-stage-contract-骨架)
 11. [9. state-board.json（v2 空表）](#9-state-boardjson-v2-空表)
-12. [10. 可选 Agent 配置](#10-可选-agent-配置)
-13. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
-14. [12. 生成后验证](#12-生成后验证)
+12. [9b. 最佳实践参考文档](#9b-最佳实践参考文档)
+13. [10. 可选 Agent 配置](#10-可选-agent-配置)
+14. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
+15. [12. 生成后验证](#12-生成后验证)
 
 ---
 
@@ -93,6 +94,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 │   ├── tasks.skeleton.md
 │   ├── checklist.skeleton.md
 │   └── stage-contract.skeleton.md
+├── references/
+│   └── llm-task-authoring-best-practices.md   # 共享方法论（planner/generator/evaluator/contract 引用）
 └── state-board.json              # v2 空表
 （可选）{agent_dir}               # 默认 .trae/agents/（仅 generate_agents=true）
 ├── generator.md  evaluator.md  decision.md
@@ -287,6 +290,16 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 ---
 
+## 9b. 最佳实践参考文档
+
+**文件路径**: `{harness_dir}references/llm-task-authoring-best-practices.md`（核心产物，始终生成）
+
+**生成方式**: 直接从 advisor 包 `references/llm-task-authoring-best-practices.md` **原样复制**（无占位符替换）到目标项目 `{harness_dir}references/` 下。使其随项目仓库走，让 planner/generator/evaluator/contract 骨架内的「详见 {harness_dir}references/...」引用可解析。
+
+**内容**: 面向弱执行 LLM 的任务拆分与文档质量方法论，6 节——三原则（一命令=一边界／显式排除／停止条件）、分阶段拆分+预算+串并行判据、6 段式子任务、执行自我监控（7 必停+诊断）、状态报告格式、验收判定。各角色内联硬规则已自足，此文档为深度补充。
+
+---
+
 ## 10. 可选 Agent 配置
 
 **生成条件**: 仅当 `{generate_agents}=true`。当前云端不支持 `.trae/agents/`，角色行为已内嵌 Skill；此为未来兼容保留。
@@ -329,7 +342,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 生成所有文件后执行：
 
 1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录。
-2. **文件计数**: 核心 **11 个文件**（5 个 Skill + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill。`task_type=verification` 时 generator-role 跳过 → 核心 10 个文件。
+2. **文件计数**: 核心 **12 个文件**（5 个 Skill + RULE.md + 4 个骨架 + state-board.json + best-practices 参考文档），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
 3. **引用检查**: 路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 

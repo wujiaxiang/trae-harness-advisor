@@ -137,6 +137,89 @@ Planner 在 `milestone-plan.md` 给每个 Stage 标 `pattern`（默认 `adversar
 
 本仓库已实例化一套自检环境（`.trae/skills/`+`RULE.md`+`harness/`），可直接在真机 TRAE Work 上跑 `poc/harness-selftest/`——用一条提示词端到端验证 AP1–AP18（含 6 种模式路由）。详见 `poc/harness-selftest/README.md`。
 
+## 全自动 vs 半自动：6 种模式怎么模拟、人在哪里补位
+
+我们对标 Claude Code Dynamic Workflows 的 6 种编排模式。Claude Code 靠**平台内置 Orchestrator 全自动**跑完；我们用 TRAE Work 免费版的原语（顺序/分支/并行/有界循环/自修改 tasks.md/持久 board）+ 独立 SubAgent + `harness/` 总线**半自动**模拟——**差距不在方法论，而在「跨 Stage 调度」和「上下文预算」这两处需要人补位**。
+
+### 逐模式对比：自动到哪、差在哪
+
+| 模式 | Claude Code（全自动） | 我们（半自动模拟） | 差在哪（人补位点） |
+|------|----------------------|-------------------|-------------------|
+| **adversarial**（PGE） | 内置引擎自动 G→E→D→retry | Orchestrator 在**一次对话内**自动驱动 G/E/D + 有界 retry（≤3 轮） | Stage 内**全自动**；仅 escalate 时人裁决 |
+| **loop** | 自动迭代到达标 | Orchestrator 自动有界循环 + 客观检查 | Stage 内**全自动** |
+| **classify** | 自动判类+路由 | Classifier 打标签 → Orchestrator 分支 | Stage 内自动；若分支通向重型新 Stage，跨 Stage 由人调度 |
+| **fanout** | 自动并行+汇总 | 一条消息并行派 N 个 Generator → Synthesizer 归并 | N 小时自动；**N 大到超上下文预算**→人分批跨对话续跑 |
+| **generate-filter** | 自动生成候选+选优 | 并行 N 候选 → Selector 选优 | 同上：候选多则人分批 |
+| **tournament** | 自动多轮淘汰 | Selector 按 log2(N) 轮淘汰 | 轮次多、候选多→人驱动跨对话续跑 |
+
+> 一句话：**在「一个 Stage / 一个上下文窗口」内，我们已是 LLM 驱动的动态编排（图灵完备底座已真机验证）**。与全自动的唯一差距是——① **跨 Stage 的调度**（开新对话、边界闸门）默认由人做（父 agent 上下文预算够时也能自动一次跑多个 Stage）；② **超大 fan-out/tournament** 受上下文预算限制需人分批；③ MCP 不下发 SubAgent，浏览器验证由 Orchestrator 代行。前两者是**预算问题**、第三者是**平台限制**，都不是方法论缺陷。
+
+### 人算不算一个逻辑角色节点？——算，且是一等节点
+
+在我们的拓扑里，**人是显式的逻辑节点**，承担 Claude Code 内置 Orchestrator 自动做、而 TRAE Work 免费版尚不能全自动的三件事：
+
+1. **调度器（跨 Stage）**：读 board 决定下一个跑哪个 Stage、开哪次对话。（父 agent 上下文够时可代人自动化。）
+2. **闸门/裁决复核**：Stage 边界读 `decision.md`；`pass`→放行，`retry`→触发下一轮，**`escalate`→人拍板**；并处理 Generator 抛出的 `[BLOCKED]`。
+3. **信息供给**：提供 SubAgent 无法自取的东西——API Key、生产授权、方向性决策（对应 Generator「7 种必停」）。
+
+### 哪些节点适合强 LLM 跑、哪些该丢给 TRAE Work 跑
+
+设计原则：**把「高频、吃 token、按文档执行」的对抗内环丢给免费的 TRAE Work；把「低频、高判断、需全局」的调度判断留给强 LLM 或人。**
+
+| 层 | 节点 | 谁跑得好 | 为什么 |
+|----|------|---------|--------|
+| **决策/调度层**（低频·高判断） | 人 / 可选强 LLM 父 agent | **人 + 强 LLM** | 跨 Stage 编排、escalate 拍板、战略拆分——量小但要全局判断，token 不敏感 |
+| ↑ Planner | 战略拆分（Milestone→Stage） | **强 LLM / 人主导** | 需方法论 + 全局视野，一次性产出，值得用贵模型 |
+| **编排层**（Stage 内控制流） | Orchestrator（=stage-executor） | **TRAE Work 主 agent** | 需图灵完备控制流 + **MCP**（浏览器代行）；只串联不兼任角色 |
+| **执行/对抗层**（高频·按文档·吃 token） | Generator / Evaluator | **TRAE Work SubAgent** | 写码/跑测试/审查的频繁对抗内环——量大、重复、按文档执行，正是要卸载到免费平台的部分 |
+| ↑ Decision | 中立裁决 | **TRAE Work SubAgent** | 必须与 G/E 上下文隔离才中立；escalate 上抛给人 |
+| ↑ Classifier / Synthesizer / Selector | 打标签/归并/选优 | **TRAE Work SubAgent** | 机械比较类，轻量、可并行、按 playbook 执行 |
+
+### 串联图：人 + 各角色如何接在一起
+
+```mermaid
+flowchart TB
+    H(("👤 人 / 强LLM父agent<br/>调度·闸门·信息供给"))
+
+    subgraph LOCAL["决策/调度层（低频·高判断）"]
+        P["Planner<br/>需求→Milestone→Stage<br/>产 milestone-plan.md"]
+    end
+
+    subgraph TRAE["TRAE Work 云端（一次对话 = 一个 Stage）"]
+        O["Orchestrator / stage-executor<br/>读 board→产三件套→按 pattern 路由→串联<br/>（主 agent，持 MCP）"]
+        subgraph INNER["执行/对抗内环（SubAgent，隔离·高频）"]
+            G["Generator<br/>实现/测试"]
+            E["Evaluator<br/>四维评分"]
+            D["Decision<br/>裁决 pass/retry/escalate"]
+            X["Classifier/Synthesizer/Selector<br/>（多模式角色）"]
+        end
+        BC["browser-check.md<br/>（Orchestrator 代行 MCP）"]
+    end
+
+    BOARD[("harness/ 总线 + state-board.json<br/>持久状态·跨对话续跑")]
+
+    H -->|"1.开对话·投递需求"| P
+    P -->|milestone-plan + 初始化 board| BOARD
+    H -->|"2.开对话:执行某 Stage"| O
+    O -->|读 depends_on/pattern| BOARD
+    O -->|派发| G --> E --> D
+    O -.->|fanout/generate-filter/tournament| X
+    O -->|代行浏览器| BC --> E
+    D -->|回写| BOARD
+    D -->|"pass/retry 自动闭环(≤3轮)"| O
+    D ==>|"escalate / [BLOCKED]"| H
+    BOARD -->|"3.读 decision 决定下一个 Stage"| H
+
+    classDef human fill:#ffe8cc,stroke:#e67700,stroke-width:2px;
+    classDef trae fill:#d0ebff,stroke:#1971c2;
+    classDef bus fill:#e9ecef,stroke:#495057;
+    class H human;
+    class O,G,E,D,X,BC trae;
+    class BOARD,P bus;
+```
+
+> 读图：实线=自动数据流；`==>` 粗线=**必须回到人**的上抛（escalate/BLOCKED）；`harness/ 总线`是所有角色唯一的通信媒介（角色间不直接对话，只读写总线文件），也是上下文吃紧时**分批续跑**的持久锚点。绿框内（Stage 内对抗）已全自动；人只在 ①开对话投递需求 ②按 Stage 开执行对话 ③读裁决决定下一步 三个点补位。
+
 ## 安装 Skill
 
 将 `trae-harness-advisor/` 目录打包为 `.zip`，在 TRAE IDE 中通过 **设置 → 技能与命令 → 创建 → 导入外部技能** 上传即可。

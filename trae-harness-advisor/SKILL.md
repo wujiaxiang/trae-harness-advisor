@@ -61,7 +61,7 @@ Input:
   - agent_dir: string (default: ".trae/agents/", not asked)
   - generate_patterns: boolean (default: false; if true, also generate the multi-mode orchestration pack — 3 lightweight roles + 4 pattern playbooks, see deliverable-specs §11)
 
-Output (11 core files):
+Output (12 core files):
   - {skill_dir}planner-role/SKILL.md
   - {skill_dir}generator-role/SKILL.md       # embeds Agent toolset + path whitelist
   - {skill_dir}evaluator-role/SKILL.md       # business-quality four-dimension scoring (no verdict)
@@ -73,6 +73,7 @@ Output (11 core files):
   - {harness_dir}templates/checklist.skeleton.md
   - {harness_dir}templates/stage-contract.skeleton.md
   - {harness_dir}state-board.json (empty v2)
+  - {harness_dir}references/llm-task-authoring-best-practices.md (shared best-practices, cited by roles)
   - Hook rule text (not a file; one-time setup pasted into Settings > Rules)
 
 Optional output (when generate_agents=true):
@@ -233,6 +234,7 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
 9. Three-piece skeletons      → {harness_dir}templates/{spec,tasks,checklist}.skeleton.md
 10. stage-contract skeleton    → {harness_dir}templates/stage-contract.skeleton.md
 11. state-board.json (empty v2) → {harness_dir}state-board.json
+11b. Best-practices reference   → {harness_dir}references/llm-task-authoring-best-practices.md (copy from advisor references/; shared methodology cited by planner/generator/evaluator/contract)
 12. (Optional) Agent configs   → {agent_dir}{generator,evaluator,decision}.md
 13. (Optional, generate_patterns=true) Multi-mode pack (7 Skills, see deliverable-specs §11):
     → {skill_dir}{classifier,synthesizer,selector}-role/SKILL.md          (3 lightweight roles)

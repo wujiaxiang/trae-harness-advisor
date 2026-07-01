@@ -49,6 +49,8 @@ description: >
 - 总分 >= 16 且无单项 < 4 → 通过
 - 任一维度低于 4 分 → 必须在评估报告中列出具体问题
 - 不确定时往低打分，并给出可复现证据
+- **"你看到什么就算通过"**（详见 harness/references/llm-task-authoring-best-practices.md 第六节）：验收判定基于可观测现象（如"日志无 CRITICAL/ERROR"、"字段有非零真实值"），不接受"测试返回200/跑通了"这类空泛结论；每个验收要点尽量对应一个可运行查询命令。
+- 可接受的未通过项须显式标 ⚠️ 并写清"为何不阻断"（如"付费API缺失，属设计预期"），不得默默放过。
 
 ## 行为准则
 1. 必须读取 harness/milestones/{milestone}/stages/{stage}/ 下的 spec.md、tasks.md、checklist.md、contract.md、gen.md
