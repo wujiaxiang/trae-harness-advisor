@@ -1,8 +1,8 @@
 # 会话上下文与设计决策记录
 
-> **版本**: v4.5  
+> **版本**: v4.6  
 > **日期**: 2026-07-02  
-> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）；v4.5 决策 17（多模式编排框架——6 种编排模式全做：新增 Classifier/Synthesizer/Selector 3 角色 + 4 pattern playbook + Stage 层 pattern 字段 + generate_patterns 开关）
+> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）；v4.5 决策 17（多模式编排框架——6 种编排模式全做：新增 Classifier/Synthesizer/Selector 3 角色 + 4 pattern playbook + Stage 层 pattern 字段 + generate_patterns 开关）；v4.5+ 决策 18（弱执行 LLM 任务编写最佳实践内化——references/llm-task-authoring-best-practices.md + 四角色补充 + README 6 模式全自动 vs 半自动串联图）；v4.6 决策 19（三档自动化 A 人/B 人+Codex-CUA/C 父 agent+API + Operator 操作员角色——本框架唯一运行在 TRAE Work 之外的角色 + generate_operator 开关）
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -123,7 +123,7 @@ TRAE Work 的 SPEC 工作流有三个关键文件：
 
 ## 设计决策记录
 
-> 本节按决策发生的时间顺序编号（决策 1→17）。**决策 1–7 为早期（v1.0–v3.0 前）方案，部分术语（Sprint / Feature / tasks-pattern.md / global_task_board.json / `.trae/contracts`）已在决策 11（v4.0 三级模型）后被取代**，保留原文仅作演进背景；当前术语一律以主文档第零部分为准。
+> 本节按决策发生的时间顺序编号（决策 1→19）。**决策 1–7 为早期（v1.0–v3.0 前）方案，部分术语（Sprint / Feature / tasks-pattern.md / global_task_board.json / `.trae/contracts`）已在决策 11（v4.0 三级模型）后被取代**，保留原文仅作演进背景；当前术语一律以主文档第零部分为准。
 
 ---
 
@@ -418,6 +418,43 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 **交付（commit d19d398，已推 main）**：新增 3 角色模板 + 4 pattern playbook 模板（templates 增至 21 个）；实例化 7 个新 Skill 到 `.trae/skills/`（自检环境增至 12 个）；更新 stage-executor（pattern 路由）、planner-role（pattern 字段+6 模式判据）、resources §3.10、deliverable-specs §11/§12、SKILL.md/SKILL.zh.md（generate_patterns 参数）、README。
 
 **约束与注脚**：多模式已从"设计级落地 + 原语级已验证"升级为 **6 种模式端到端真机验证成立**（AP15–AP18 于 commit c9a5e84 通过：pattern 路由链路 + Classifier/Synthesizer/Selector 三新角色子代理加载 + fanout/generate-filter 真并行 + canonical 文件名与 Write 白名单对齐）。所有 playbook 仍是提示词级 best-effort，需 CI/评审/最小权限令牌兜底。
+
+---
+
+### 决策 18：弱执行 LLM 任务编写最佳实践内化（v4.5+）
+
+**日期**：2026-07-02
+
+**背景**：用户把与其它 LLM 讨论沉淀的"面向弱执行 LLM 的任务拆分/文档质量最佳实践"交给本项目内化。核心洞察：执行 Stage 的是较弱的云端 SubAgent，**文档质量直接决定结果**——因此拆分策略、边界表达、停止条件必须显式化。
+
+**结论与决策**：
+1. **建共享真源**：新增 `trae-harness-advisor/references/llm-task-authoring-best-practices.md`（6 节：三原则[一命令=一边界／显式排除／停止条件]、分阶段拆分+3000 行预算+串并行判据、6 段式子任务、执行自我监控[7 必停+诊断]、状态报告格式、验收判定）。
+2. **四角色内联硬规则 + 软引用**：Planner（任务拆分方法）/Generator（自我监控+[BLOCKED]）/Contract（验证命令+"不要改"边界+失败速查表）/Evaluator（"你看到什么就算通过"）——模板与 `.trae/skills/` 实例双份同步。
+3. **随项目走**：参考文档在生成时复制到目标项目 `{harness_dir}references/`，角色内引用用可解析的 `{harness_dir}references/...`（修正了一版误用的 `{advisor_dir}` 占位符——它不可解析会泄漏）；核心文件数 11→12。
+4. **README 补"全自动 vs 半自动"整节**：6 模式逐条对比表 + 人作为一等逻辑节点（调度器/闸门/信息供给）+ 节点分工 3 层表 + mermaid 串联图（已 mmdc 校验可渲染）。
+
+**交付**：commit e6fe697（AP15–18 结论）、77e02bb（最佳实践内化 + README 6 模式串联）。
+
+---
+
+### 决策 19：三档自动化 + Operator 操作员角色（v4.6）
+
+**日期**：2026-07-02
+
+**背景**：用户提出更大胆的想法——半自动方案的妥协（人补位）源于国产免费平台无内置 Orchestrator；而 Codex 的 computer-use（CUA）能力能否让 agent 替人"硬集成"TRAE Work，变相达到全自动？目的：降低人在无谓机械工作上的介入，只保留重要决策与纠偏。
+
+**查证（客观，有 benchmark 支撑）**：CUA 端到端驱动复杂桌面任务成功率仍偏低（OSWorld ~38%）、延迟分钟级、随 UI 改版脆；浏览器原生任务才可靠（WebVoyager ~87%）。故"Codex 无人值守跑全程"当前不成立。
+
+**结论与决策**：
+1. **重构人节点**：把"人节点"拆成**操作员**（开对话/贴提示/点运行/读 decision 推进——机械、可外包）+ **监督者**（接受 escalate/纠偏/给授权——判断、不可外包）。CUA 替代的是操作员，不是监督者；**escalate/纠偏/授权永远归监督者**。
+2. **三档自动化供用户自选**：A=人（现状）｜B=Codex-CUA（变相全自动，受可靠性/成本/ToS 约束）｜C=强 LLM 父 agent 走 TRAE API（最干净，依赖平台暴露 API）。B/C 只改变"谁点鼠标"，不改变"谁拍板"。
+3. **新增 Operator 角色**（本框架**唯一运行在 TRAE Work 之外**的角色）：`templates/operator-playbook-template.md` → 生成到 `{harness_dir}operator-playbook.md`，**不放进 `.trae/skills/`**（那是 TRAE Work 内部技能目录）。含护栏（只搬运不判断／状态以总线文本为准不靠截图解析／幂等+有界重试／事件驱动禁忌忙轮询／最小 UI 面／全程写 operator-log）、调度循环伪码、监督者必停清单、逐模式收益、CUA 与 ToS 风险。
+4. **收益随模式不同**：fanout/tournament/generate-filter 最大——把之前"超大 fan-out/tournament 需**人**分批"变成"**机器**分批"；adversarial/loop 本就单窗口自动化，收益有限。
+5. **新增 `generate_operator` 开关**（默认 false，仅 B 档需要），与 `generate_patterns` 正交。
+
+**交付**：commit e0a5173（Operator 模板 + 自检实例 + SKILL.md/zh 开关与问题 5c + deliverable-specs §11b + resources §1.4.5 三档自动化 + README"能不能让机器替人点鼠标"小节；resources 版本 v4.5→v4.6）。
+
+**约束与注脚**：B 档可行性**取决于 TRAE 的可驱动面**（只有桌面 IDE 则截图驱动脆；有 Web 控制台/API 才靠谱）——启用前需确认。用机器人驱动免费产品 UI 大规模取算力可能违反平台 ToS/触发反滥用，由监督者显式承担。Operator 自身也被当作"会犯错的执行器"用 PGE 护栏管（幂等/有界重试/失败上抛）。**尚未加真机自检 AP 用例**（Operator 跑在沙箱外需真开 TRAE UI，不适合现有自检环境）。
 
 ---
 
