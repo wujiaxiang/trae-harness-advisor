@@ -35,7 +35,7 @@
 
 > 自检约定：**AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过**；probe 的 Stage 通过判定 = 其余 AP（AP1-3,5-11）全 PASS。这样 probe=passed，adaptive/patterns 的 depends_on 才可被满足（用于测 AP14 门控与多模式路由）。
 > **多模式约定**：`patterns` 是**多模式路由自检 Stage**——它有意在一个 Stage 内依次驱动多个 pattern playbook（正常业务 Stage 每个只标一个 `pattern`），目的是一次验证 v4.5 路由与 3 个新角色（Classifier/Synthesizer/Selector）是否可加载调度。AP18（tournament）为可选，候选数少时其淘汰=选优，与 AP17 原语重叠。
-> **环境约定（AP11 真实浏览器前提）**：Playwright MCP server 只暴露工具，浏览器二进制需另装。云端跑真实导航前，在「设置 > 云端运行环境 > 手动配置」把「**安装命令**」填 `npx -y playwright install --with-deps chromium`（替换默认 `npm install`）、「**启动命令**」清空（本仓库无 server）；安装命令 clone 后阻塞装到 `~/.cache/ms-playwright/`。未装则 AP11 降级为"代行链路通/browser not found"，仍不阻塞 probe 通过。
+> **环境约定（AP11 真实浏览器前提）**：Playwright MCP server 只暴露工具，浏览器二进制需另装。云端跑真实导航前，在「设置 > 云端运行环境 > 手动配置」把「**安装命令**」填 `npx -y playwright@1.57.0 install --with-deps chromium`（**版本 pin 到 MCP 内置 playwright**；不 pin 会拉最新版装错修订目录 → binary-not-found，排障见方法论附录 D）、「**启动命令**」清空（本仓库无 server）。未装/版本错则 AP11 降级为"代行链路通/browser not found"，仍不阻塞 probe 通过。
 
 ---
 
