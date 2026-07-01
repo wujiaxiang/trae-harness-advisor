@@ -8,7 +8,7 @@
 ## 第 0 步（一次性）
 - 「设置 > 规则」加钩子规则（AP8 前提，配过跳过）：`在开始执行任何任务之前，必须先读取当前项目根目录的 RULE.md 文件……如果 RULE.md 不存在，则跳过此步骤。`
 - 「MCP > 云端」启用 Playwright（AP4/AP11，已配）。
-- 「设置 > 云端运行环境 > 创建」预装浏览器二进制（AP11 真实导航前提）：**预装依赖**选 Node.js；**运行方式 > 手动配置**里，**安装命令**填 `npx -y playwright install --with-deps chromium`（把默认的 `npm install` 替换掉），**启动命令**清空（本仓库无 server，填 `npm start` 会报错）。安装命令在代码 clone 后阻塞执行，把 chromium + 系统依赖装到 `~/.cache/ms-playwright/`，与 Playwright MCP server 运行时找的路径一致。**不配此项 AP11 只能证"链路通/browser not found"；配了才能证真实导航成功。**（若 `--with-deps` 报权限错，退为 `npx -y playwright install chromium`。）
+- 「设置 > 云端运行环境 > 创建」预装浏览器二进制（AP11 真实导航前提）：**预装依赖**选 Node.js；**运行方式 > 手动配置**里，**安装命令**填 `npx -y playwright@1.57.0 install --with-deps chromium`（把默认的 `npm install` 替换掉；**版本号须 pin 到 Playwright MCP server 内置的 playwright 版本**——本次真机 MCP 用 1.57.0；不 pin 会拉最新版装错修订目录导致 binary-not-found，排障见方法论附录 D），**启动命令**清空（本仓库无 server，填 `npm start` 会报错）。安装命令 clone 后阻塞执行，把 chromium + 系统依赖装到 `~/.cache/ms-playwright/`。**不配此项 AP11 只能证"链路通/browser not found"；配对版本才能证真实导航成功。**（若 `--with-deps` 报权限错，退为 `npx -y playwright@1.57.0 install chromium`。）
 
 ## 第 1 步：把下面整段复制发给 TRAE Work
 

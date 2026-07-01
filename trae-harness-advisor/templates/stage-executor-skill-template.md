@@ -70,7 +70,7 @@ description: >
 ### 6. 顺序派发对抗步骤
 按 tasks.md 顺序执行，最多 {max_adversarial_rounds} 轮：
 1. 【派发独立 SubAgent，加载 @generator-role】[GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
-2. **（仅 verification_mode=full 且该 Stage 需浏览器验证）** 由**你（Orchestrator）代行 MCP 浏览器验证**：子代理拿不到 MCP，但你有 `mcp__*`（如 Playwright）。你用 MCP 跑浏览器检查，把截图/日志/结论写入 `browser-check.md`。这属"取证"，不算你兼任评分。
+2. **（仅 verification_mode=full 且该 Stage 需浏览器验证）** 由**你（Orchestrator）代行 MCP 浏览器验证**：子代理拿不到 MCP，但你有 `mcp__*`（如 Playwright）。你用 MCP 跑浏览器检查，把截图/日志/结论写入 `browser-check.md`。这属"取证"，不算你兼任评分。**若 MCP 报 `Executable doesn't exist at .../chromium_headless_shell-XXXX/...`（binary-not-found）**：不是没装，而是云端预装的浏览器修订与 MCP 内置 playwright 版本不匹配——按方法论附录 D 排障（查 MCP 的 playwright-core 版本，用 `npx -y playwright@<该版本> install --with-deps chromium` 重装期望修订），修好后取真实 `document.title` 存证；确实装不上时才降级为"代行链路通"（返回 `browser not found` 而非 `tool-not-found` 即链路通、不阻塞）。
 3. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估（用 RunCommand 跑测试/Lint，并 Read `browser-check.md` 纳入浏览器证据）→ `eval.md`。
 4. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
    - Decision 必须是独立子代理（与 G/E 隔离、看不到双方对话），保证中立盲审；**你（Orchestrator）不得自己兼任裁决**。
