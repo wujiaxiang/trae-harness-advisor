@@ -16,7 +16,7 @@
 | **AP8** | Orchestrator 开工前**读取 RULE.md** | 钩子没生效 → 改每个 Skill 顶部自带"先读 RULE.md" |
 | **AP9** | 两子代理**同消息两 Task 块真并行**；不能自我循环 | 并行不可用→修正；可自动循环→可简化但防失控 |
 | **AP10** | Orchestrator 能**改 tasks.md + 重派**一轮 → gen-r2.md | 不能改/重派 → retry 改人工驱动 |
-| **AP11** | Orchestrator 代行 MCP 写 `browser-check.md` → **Evaluator 读到并纳入评分**（链路通=PASS，浏览器二进制可用性单列） | 代行链路断 → 浏览器验证缺，降级 `automated` 或重设计 |
+| **AP11** | Orchestrator 代行 MCP **真实导航 example.com**（取回页面标题证据）写 `browser-check.md` → **Evaluator 读到并纳入评分**（已装 chromium=真实导航 PASS；未装=链路通/browser not found 降级但不阻塞） | 代行链路断（tool-not-found，非 browser-not-found）→ 浏览器验证缺，降级 `automated` 或重设计 |
 | **AP12** | codraft：Generator 出草稿+提议标准 → **Evaluator 敲定标准 → contract.md** | codraft 链路断 → 取消 codraft，仅保留 planned |
 | **AP13** | 真 retry→pass：R1 FAIL→Decision retry→R2 修正→**PASS**（两轮、sample.json 最终达标） | 走不到 pass / 不能多轮 → 自适应闭环不成立，retry 改人工 |
 | **AP14** | Orchestrator 确认 `probe.status=passed` 后才开工 adaptive | 门控失效（不看 depends_on 就开工）→ 并发冲突风险，需强化人工投递把关 |
@@ -62,7 +62,7 @@
 
 > 总览：**13/14 PASS**，AP4 为已知平台限制（MCP 不下发子代理）记 known-limitation 不阻塞。board：probe=passed(rounds:1)、adaptive=passed(rounds:2, last_decision:pass)。
 > **v4.4 架构真机端到端验证成立**：Decision 独立、retry 闭环、三件套/总线分离、三方隔离、并行、浏览器代行(方案1)、codraft 共识子阶段、**真 retry→pass 自适应闭环(AP13)**、depends_on 门控。
-> **环境备注**：① AP11 的浏览器二进制缺失——云端需预装 chromium（`npx playwright install chromium`）或配置远程环境（https://docs.trae.cn/solo_set-up-the-remote-environment）；② 沙箱无预置 git identity，云端 agent 设了仓库级（非 --global）身份以满足 commit&push。
+> **环境备注**：① AP11 真实浏览器——在「设置 > 云端运行环境」的**安装脚本**填 `{"install":"npx -y playwright install --with-deps chromium"}`（clone 后阻塞装到 `~/.cache/ms-playwright/`，与 MCP server 路径一致），即可让 AP11 从"链路通"升级为真实导航成功；文档 https://docs.trae.cn/work_set-up-the-remote-environment ；② 沙箱无预置 git identity，云端 agent 设了仓库级（非 --global）身份以满足 commit&push。
 
 ### 本次 v4.3 重跑（commit 21e4497）
 

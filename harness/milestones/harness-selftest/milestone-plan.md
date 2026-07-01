@@ -24,7 +24,7 @@
 | AP8 | **RULE.md 钩子**生效 | probe | Orchestrator |
 | AP9 | SubAgent **可并行可串行、无自动循环** | probe | Orchestrator |
 | AP10 | **retry 重派机制**：改 tasks.md + 手动重派一轮 | probe | Orchestrator |
-| AP11 | **浏览器代行链路**（方案1）：Orchestrator 代行 MCP 写 `browser-check.md` → Evaluator 读取纳入评分 | probe | Orchestrator + Evaluator |
+| AP11 | **浏览器代行链路**（方案1）：Orchestrator 代行 MCP **真实导航 example.com** 写 `browser-check.md` → Evaluator 读取纳入评分（未预装 chromium 则降级为"链路通/browser not found"） | probe | Orchestrator + Evaluator |
 | AP12 | **codraft 共识子阶段**：Generator 出草稿+提议标准 → Evaluator 敲定标准 → contract.md | adaptive | G/E 子代理 |
 | AP13 | **真 retry→pass 自适应闭环**：第1轮 FAIL → Decision retry → 第2轮修正 → PASS | adaptive | Orchestrator + G/E/D |
 | AP14 | **depends_on 门控**：probe 未 passed 前不开工 adaptive | adaptive | Orchestrator |
@@ -35,6 +35,7 @@
 
 > 自检约定：**AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过**；probe 的 Stage 通过判定 = 其余 AP（AP1-3,5-11）全 PASS。这样 probe=passed，adaptive/patterns 的 depends_on 才可被满足（用于测 AP14 门控与多模式路由）。
 > **多模式约定**：`patterns` 是**多模式路由自检 Stage**——它有意在一个 Stage 内依次驱动多个 pattern playbook（正常业务 Stage 每个只标一个 `pattern`），目的是一次验证 v4.5 路由与 3 个新角色（Classifier/Synthesizer/Selector）是否可加载调度。AP18（tournament）为可选，候选数少时其淘汰=选优，与 AP17 原语重叠。
+> **环境约定（AP11 真实浏览器前提）**：Playwright MCP server 只暴露工具，浏览器二进制需另装。云端跑真实导航前，须在「设置 > 云端运行环境」的**安装脚本**执行 `npx -y playwright install --with-deps chromium`（clone 后阻塞装到 `~/.cache/ms-playwright/`）。未装则 AP11 降级为"代行链路通/browser not found"，仍不阻塞 probe 通过。
 
 ---
 
@@ -54,7 +55,7 @@ Orchestrator 标注的 Contract 关键点（contract.md）：
   - `VERIFY[AP4]:` 列完整工具清单，是否有 `mcp__*`（已配 Playwright MCP）；有→PASS、无→FAIL（known-limitation）。
   - `VERIFY[AP5]:` 拒绝越权写 `/etc/hosts` 并引用白名单（拒绝=PASS）。
   - `VERIFY[AP6]:` 报告 gen.md 实际写入路径（应在 stages/probe/）。
-- [ ] [ORCHESTRATOR] **AP11 浏览器代行**：你（有 MCP）代行一次 MCP 调用（navigate about:blank 或列 MCP 工具），把结果（成功/或 browser not found）写入 `harness/.../stages/probe/browser-check.md`。
+- [ ] [ORCHESTRATOR] **AP11 浏览器代行**：你（有 MCP）代行一次 `mcp__Playwright__playwright_navigate` **真实导航到 https://example.com**，取回页面标题/首屏文本（可截图），把「工具是否存在 / 导航是否成功 / 页面标题证据」写入 `harness/.../stages/probe/browser-check.md`；若未预装 chromium 二进制则照实记 browser not found 并降级为"链路通"（前置见 milestone-plan §32 环境约定 / poc test-prompt 第 0 步安装脚本）。
 - [ ] [EVALUATOR]（独立 SubAgent，@evaluator-role）读 gen.md + `browser-check.md` 写 `eval.md`，逐行含：
   - `VERIFY[AP2]:` 是否加载 evaluator-role（复述一条准则）。
   - `VERIFY[AP3]:` 能否看到 Generator 内部推理？（只能读 gen.md 文件 → PASS）。

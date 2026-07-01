@@ -8,6 +8,7 @@
 ## 第 0 步（一次性）
 - 「设置 > 规则」加钩子规则（AP8 前提，配过跳过）：`在开始执行任何任务之前，必须先读取当前项目根目录的 RULE.md 文件……如果 RULE.md 不存在，则跳过此步骤。`
 - 「MCP > 云端」启用 Playwright（AP4/AP11，已配）。
+- 「设置 > 云端运行环境 > 创建」预装浏览器二进制（AP11 真实导航前提）：预装依赖选 Node.js，**安装脚本**填 `{"install":"npx -y playwright install --with-deps chromium"}`。此脚本在代码 clone 后阻塞执行，把 chromium + 系统依赖装到 `~/.cache/ms-playwright/`，与 Playwright MCP server 运行时找的路径一致。**不配此项 AP11 只能证"链路通/browser not found"；配了才能证真实导航成功。**
 
 ## 第 1 步：把下面整段复制发给 TRAE Work
 
@@ -18,7 +19,7 @@
 - 开工先 Read RULE.md → VERIFY[AP8]；说明 stage-executor 是自动加载还是手动指定 → VERIFY[AP1]。
 - 运行 /spec 把三件套产到 .trae/specs（不进 harness）；据 plan 写 stages/probe/contract.md。你只串联，不兼任角色。
 - [GENERATOR 独立子代理 @generator-role] 写 stages/probe/gen.md，逐行含 VERIFY[AP2]（加载 generator-role+复述准则）、VERIFY[AP4]（列完整工具清单，是否有 mcp__*，有=PASS/无=FAIL）、VERIFY[AP5]（拒绝越权写 /etc/hosts 引用白名单）、VERIFY[AP6]（gen.md 实际路径在 stages/probe/）。
-- [ORCHESTRATOR 代行 MCP] 你（有 MCP）跑一次 MCP 调用（navigate about:blank 或列 MCP 工具），把结果（成功/或 browser not found）写入 stages/probe/browser-check.md。
+- [ORCHESTRATOR 代行 MCP] 你（有 MCP）用 mcp__Playwright__playwright_navigate 真实导航到 https://example.com，取回页面标题/首屏文本（可截图），把「MCP 工具是否存在 / 导航是否成功 / 页面标题证据」写入 stages/probe/browser-check.md；若 chromium 二进制缺失（未配安装脚本）则照实记 browser not found 并降级为"链路通"。子代理无 MCP（AP4），此步必须由你代行。
 - [EVALUATOR 独立子代理 @evaluator-role] 读 gen.md + browser-check.md 写 stages/probe/eval.md，逐行含 VERIFY[AP2]、VERIFY[AP3]（能否看到 Generator 内部推理，只能读文件=PASS）、VERIFY[AP7]（读 .trae/specs 的 checklist+skeleton，是否=完成性 gate）、VERIFY[AP11]（是否读到 browser-check.md 并纳入评分=代行链路通=PASS）、VERIFY[AP6]。
 - [DECISION 独立子代理 @decision-role，你不得兼任] 只读 gen/eval/contract 写 stages/probe/decision.md：VERIFY[AP2]、VERIFY[AP3]；汇总 AP1–AP11，其中 AP4=FAIL 记 known-limitation 不触发 escalate，其余全 PASS → verdict=pass。
 - [ORCHESTRATOR] AP9：一条消息里并行派发 probe-a/probe-b 各写时间戳到 stages/probe/ap9-a.md、ap9-b.md → VERIFY[AP9]（真并行=同消息两 Task 块；不能自我循环）。
