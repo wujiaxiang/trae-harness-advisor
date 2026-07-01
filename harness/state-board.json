@@ -39,10 +39,15 @@
           "id": "patterns",
           "title": "多模式路由 AP15-AP18（fanout/classify/generate-filter/tournament）",
           "depends_on": ["probe"],
-          "status": "planned",
-          "rounds": 0,
-          "last_decision": null,
-          "artifacts": {}
+          "status": "passed",
+          "rounds": 1,
+          "last_decision": "pass",
+          "artifacts": {
+            "contract": "harness/milestones/harness-selftest/stages/patterns/contract.md",
+            "synthesis": "harness/milestones/harness-selftest/stages/patterns/synthesis.md",
+            "classify": "harness/milestones/harness-selftest/stages/patterns/classify.md",
+            "selection": "harness/milestones/harness-selftest/stages/patterns/selection.md"
+          }
         }
       ]
     }
