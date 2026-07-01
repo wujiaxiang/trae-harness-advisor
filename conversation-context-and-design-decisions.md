@@ -409,7 +409,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 **背景**：v4.4 确立 Orchestrator 图灵完备底座后，用户提出更大胆的想法——Claude Code 的 Dynamic Workflows 内置 6 种编排模式（Classify-and-act / Fan-out-and-synthesize / Adversarial / Generate-and-filter / Tournament / Loop until done），而本框架此前只落地了最经典的 **adversarial（PGE）**。能否把其余几种也在国产免费平台上模拟？原则不变：执行机只负责"频繁对抗/比较的内环"，跨 pattern/Stage 由人工调度，或父 Agent 上下文预算够时自动一次跑完。
 
 **结论与决策（全上：6 种模式全做）**：
-1. **无需新平台能力，只需新 playbook**：6 种模式都能用 v4.4 已验证的同一套原语（顺序/分支/并行派发/有界循环/自修改 tasks.md/持久 board）+ 独立 SubAgent + harness 总线组合出来。adversarial/loop 已真机验证（loop=retry 泛化=AP13）；classify/fanout/generate-filter/tournament 的底层原语（打标签分支、AP9 真并行、候选选优、有界淘汰）均已验证，以 playbook 组合模拟。
+1. **无需新平台能力，只需新 playbook**：6 种模式都能用 v4.4 已验证的同一套原语（顺序/分支/并行派发/有界循环/自修改 tasks.md/持久 board）+ 独立 SubAgent + harness 总线组合出来。**6 种模式现均已真机端到端验证**：adversarial/loop=AP1–AP14（loop=retry 泛化=AP13）；classify/fanout/generate-filter/tournament=AP15–AP18（commit c9a5e84）。
 2. **新增 3 个轻量角色**：Classifier（打标签）、Synthesizer（并行结果汇总）、Selector（候选选优/两两淘汰），复用既有 Generator/Evaluator/Decision。
 3. **新增 4 个 pattern playbook**：pattern-classify / pattern-fanout / pattern-generate-filter / pattern-tournament。
 4. **Stage 层新增 `pattern` 字段**（Planner 在 milestone-plan 标，默认 `adversarial`）：`stage-executor` step 2.5 据此路由到对应 playbook；模式可嵌套（如 classify→fanout，fanout 每个子任务内部走 adversarial）。
@@ -417,7 +417,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 **交付（commit d19d398，已推 main）**：新增 3 角色模板 + 4 pattern playbook 模板（templates 增至 21 个）；实例化 7 个新 Skill 到 `.trae/skills/`（自检环境增至 12 个）；更新 stage-executor（pattern 路由）、planner-role（pattern 字段+6 模式判据）、resources §3.10、deliverable-specs §11/§12、SKILL.md/SKILL.zh.md（generate_patterns 参数）、README。
 
-**约束与注脚**：多模式为**设计级落地 + 原语级已验证**（非每种模式都跑过端到端真机）；后续可为 fanout/classify 补自检 AP15/AP16。所有 playbook 仍是提示词级 best-effort，需 CI/评审/最小权限令牌兜底。
+**约束与注脚**：多模式已从"设计级落地 + 原语级已验证"升级为 **6 种模式端到端真机验证成立**（AP15–AP18 于 commit c9a5e84 通过：pattern 路由链路 + Classifier/Synthesizer/Selector 三新角色子代理加载 + fanout/generate-filter 真并行 + canonical 文件名与 Write 白名单对齐）。所有 playbook 仍是提示词级 best-effort，需 CI/评审/最小权限令牌兜底。
 
 ---
 

@@ -30,16 +30,16 @@
 
 ## 结果记录
 
-### v4.5 多模式路由（AP15–AP18）— 待真机验证
+### v4.5 多模式路由（AP15–AP18）— ✅ 真机已验证（commit c9a5e84）
 
 | 编号 | 实际结果 | 证据摘要 |
 |------|----------|----------|
-| AP15 | ⏳ 待测 | fanout 路由 + 真并行 + Synthesizer 归并 |
-| AP16 | ⏳ 待测 | classify 路由 + Classifier 标签 + 分支 |
-| AP17 | ⏳ 待测 | generate-filter 路由 + Selector 选优 |
-| AP18 | ⏳ 待测（可选） | tournament 路由 + Selector 两两淘汰 |
+| AP15 | **PASS** | fanout：`@pattern-fanout` 被路由；一条消息两 `@generator-role` Task 块**真并行**产 part-a.md/part-b.md（时间戳 18:45:04 / 18:45:01）；`@synthesizer-role` 加载并归并 → synthesis.md（覆盖矩阵完整、无冲突） |
+| AP16 | **PASS** | classify：`@pattern-classify` 被路由；`@classifier-role` 对 "fix the login 500 error" 判 `label=bugfix`（confidence=high，证据 "fix"+"500 error"）→ classify.md；Orchestrator 据标签分支 → route.md（路由到修复流程） |
+| AP17 | **PASS** | generate-filter：`@pattern-generate-filter` 被路由；两 `@generator-role` 并行产 cand-1.md（loginUser, char=8）/cand-2.md（validate_user_credentials, char=27）；`@selector-role` 按 char_count 机械比较选 `winner=cand-1` → selection.md |
+| AP18 | **PASS**（可选） | tournament：`@pattern-tournament` 被路由；`@selector-role` 单轮 bracket（N=2, ceil(log2 2)=1）cand-1 vs cand-2 → champion=cand-1 → winner.md。N=2 时淘汰=选优，与 AP17 原语重叠（milestone-plan §37 已注） |
 
-> 说明：v4.5 多模式为**设计级落地 + 原语级已验证**（并行=AP9、分支/自修改 tasks.md=AP10、有界循环=AP13 均已真机通过）。本组用例（Stage `patterns`）专测 **`pattern` 路由链路 + 3 个新角色加载**，尚未真机跑。跑法见 `test-prompt.md` 第 1b 步（patterns 单独可跑）。
+> 结论：v4.5 多模式从"设计级落地 + 原语级已验证"升级为 **端到端真机验证成立**——`pattern` 路由链路（stage-executor 据 `pattern` 加载对应 playbook）与 3 个新角色（Synthesizer/Classifier/Selector）子代理加载调度均已通过；canonical 文件名（part-a/b、synthesis.md、classify.md、cand-1/2、selection.md、winner.md）与角色 Write 白名单对齐无违规。board：patterns.status=passed, rounds=1, last_decision=pass。
 
 ### 本次 v4.4 综合重跑（AP1–AP14，commit f76f8fc）
 

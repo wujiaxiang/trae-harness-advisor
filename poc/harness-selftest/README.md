@@ -29,7 +29,7 @@
 | AP13 | **真 retry→pass 自适应闭环**（R1 FAIL→retry→R2 PASS） |
 | AP14 | **depends_on 门控**（probe 未 passed 不开工 adaptive） |
 
-**Stage patterns（v4.5 多模式路由 AP15–AP18，待真机验证）**
+**Stage patterns（v4.5 多模式路由 AP15–AP18，✅ 真机已验证 commit c9a5e84）**
 
 | 编号 | 行为 |
 |------|------|
@@ -63,4 +63,4 @@ harness/
 
 ## 如何判读
 
-对照 `expected-outcome.md`：v4.4 的 AP1–AP14 见"综合重跑"表（13/14 PASS）；v4.5 的 AP15–AP18 见"多模式路由"表（待真机填写）。多模式重点确认：每个 `@pattern-*` playbook 是否被 stage-executor **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载、fanout/generate-filter 是否真并行。任一 FAIL → 按主文档对应章节降级/调整。
+对照 `expected-outcome.md`：v4.4 的 AP1–AP14 见"综合重跑"表（13/14 PASS，AP11 已升级为真实导航成功）；v4.5 的 AP15–AP18 见"多模式路由"表（**✅ 真机 4/4 PASS，commit c9a5e84**）。多模式已确认：每个 `@pattern-*` playbook 被 stage-executor **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）可被子代理加载、fanout/generate-filter 真并行、canonical 文件名与 Write 白名单对齐无违规。
