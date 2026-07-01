@@ -73,7 +73,7 @@
 | L0 | **Advisor Skill** | 一次性初始化 Harness 基础设施 | 5 个核心 Skill（+可选 7 个多模式）+ RULE.md + 4 个 skeleton + state-board.json + 钩子规则文本 |
 | L1 | **Planner** | 将需求规划为 Milestone，并拆成可独立验收的 Stage | milestone-plan.md + 初始化 state-board.json |
 | L2 | **Orchestrator** | 每个 Stage 加载 stage-executor，运行 /spec 产三件套（留 .trae/specs）并**串联**对抗（自己不兼任角色） | 交付物 contract/gen/eval/decision 写 harness/ + 据裁决决定下一步（retry 改 tasks.md+重派）+ 状态回写 |
-| 执行层 | **Generator/Evaluator/Decision**（各为独立 SubAgent） | 顺序模拟对抗：实现、业务质量评分、**独立中立裁决** | gen.md + eval.md + decision.md |
+| 执行层 | **Generator/Evaluator/Decision**（各为独立 SubAgent） | 动态编排对抗：实现、业务质量评分、**独立中立裁决** | gen.md + eval.md + decision.md |
 
 **TRAE Work 能力映射**：
 

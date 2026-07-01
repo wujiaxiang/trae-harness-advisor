@@ -160,7 +160,7 @@ Ask (one round, 3 questions):
 
 ```
 6. Maximum adversarial retry rounds per Stage?
-   A. Default: 3 (sequential simulation; on exceed → escalate to human)
+   A. Default: 3 (dynamic adversarial orchestration; on exceed → escalate to human)
    B. Custom number
 
 7. Evaluator strictness?

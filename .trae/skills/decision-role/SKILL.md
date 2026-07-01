@@ -64,4 +64,4 @@ description: >
 - 你只输出裁决，**不执行 retry**。retry 的后续动作由 Orchestrator 承担：
   - Orchestrator 读你的 `verdict`；若 = retry，则**可修改 tasks.md**（追加一轮返工任务）并带 `retry_focus` **重新派发 Generator**（rounds+1）。
   - 若 = escalate，Orchestrator 暂停并回写 board=escalated，请求人类。
-- 你自己**不能**自我循环、不能重派他人——这是顺序模拟对抗（无自动 loop）的体现。
+- 你自己**不能**自我循环、不能重派他人——你作为 SubAgent 无控制流循环；返工的有界循环由 Orchestrator 驱动（见上）。
