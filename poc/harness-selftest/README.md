@@ -1,7 +1,7 @@
 # Harness Self-Test（平台能力 PoC 自检集）
 
 > 目的：在**真实 TRAE Work** 上一次验证本设计依赖的平台能力 + v4.4 设计行为 + v4.5 多模式路由 **AP1–AP18**，避免"纸面设计、真机跑不通"。
-> 环境**已在本仓库实例化**（无需先跑 advisor）：`.trae/skills/` 12 个 Skill、根目录 `RULE.md`、`harness/`（templates + state-board + 自检 Milestone 三个 Stage）都已就绪。
+> 环境**已在本仓库实例化**（无需先跑 advisor）：`.trae/skills/` 13 个 Skill（含 stage-executor 旧名 shim）、根目录 `RULE.md`、`harness/`（templates + state-board + 自检 Milestone 三个 Stage）都已就绪。
 
 ## 它验证什么（AP1–AP18，三个 Stage）
 
@@ -9,7 +9,7 @@
 
 | 编号 | 假设 |
 |------|------|
-| AP1 | stage-executor 触发短语**自动加载** |
+| AP1 | stage-orchestrator 触发短语**自动加载**（stage-executor 旧名兼容） |
 | AP2 | SubAgent 加载**指定角色 Skill**（generator/evaluator/decision-role） |
 | AP3 | SubAgent **独立上下文隔离** |
 | AP4 | SubAgent 调 **MCP**（已知=不继承，仅主 Orchestrator 有；known-limitation） |
@@ -34,12 +34,13 @@
 | 编号 | 行为 |
 |------|------|
 | AP15 | **fanout 路由**（@pattern-fanout→2 Generator 真并行→@synthesizer-role 归并） |
-| AP16 | **classify 路由**（@pattern-classify→@classifier-role 打标签→Orchestrator 分支） |
+| AP16 | **classify 路由**（@pattern-classify→@classifier-role 打标签→root Orchestrator 分支；SubAgent 不递归启动 Orchestrator） |
 | AP17 | **generate-filter 路由**（@pattern-generate-filter→2 候选→@selector-role 选优） |
 | AP18 | **tournament 路由（可选）**（@pattern-tournament→@selector-role 两两淘汰选冠军） |
 
 ```
-.trae/skills/{planner-role,generator-role,evaluator-role,decision-role,stage-executor}/SKILL.md   # 5 核心
+.trae/skills/{planner-role,generator-role,evaluator-role,decision-role,stage-orchestrator}/SKILL.md # 5 核心
+.trae/skills/stage-executor/SKILL.md                                                              # 旧名兼容 shim
 .trae/skills/{classifier-role,synthesizer-role,selector-role}/SKILL.md                            # 3 多模式角色
 .trae/skills/pattern-{classify,fanout,generate-filter,tournament}/SKILL.md                        # 4 pattern playbook
 RULE.md                                                                              # 钩子目标
@@ -63,4 +64,4 @@ harness/
 
 ## 如何判读
 
-对照 `expected-outcome.md`：v4.4 的 AP1–AP14 见"综合重跑"表（13/14 PASS，AP11 已升级为真实导航成功）；v4.5 的 AP15–AP18 见"多模式路由"表（**✅ 真机 4/4 PASS，commit c9a5e84**）。多模式已确认：每个 `@pattern-*` playbook 被 stage-executor **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）可被子代理加载、fanout/generate-filter 真并行、canonical 文件名与 Write 白名单对齐无违规。
+对照 `expected-outcome.md`：v4.4 的 AP1–AP14 见"综合重跑"表（13/14 PASS，AP11 已升级为真实导航成功）；v4.5 的 AP15–AP18 见"多模式路由"表（**✅ 真机 4/4 PASS，commit c9a5e84**）。多模式已确认：每个 `@pattern-*` playbook 被 Stage Orchestrator **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）可被子代理加载、fanout/generate-filter 真并行、canonical 文件名与 Write 白名单对齐无违规。

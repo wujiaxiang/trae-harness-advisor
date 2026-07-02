@@ -30,7 +30,6 @@ description: >
 
 ### 允许写入
 - {harness_dir}milestones/{milestone}/stages/{stage}/eval.md（仅评估报告）
-- {harness_dir}milestones/{milestone}/stages/{stage}/decision.md（仅 Decision 裁决）
 
 ### 禁止修改
 - src/
@@ -49,11 +48,11 @@ description: >
 - 总分 >= 16 且无单项 < 4 → 通过
 - 任一维度低于 4 分 → 必须在评估报告中列出具体问题
 - 不确定时往低打分，并给出可复现证据
-- **"你看到什么就算通过"**（详见 {harness_dir}references/llm-task-authoring-best-practices.md 第六节）：验收判定基于可观测现象（如"日志无 CRITICAL/ERROR"、"字段有非零真实值"），不接受"测试返回200/跑通了"这类空泛结论；每个验收要点尽量对应一个可运行查询命令。
+- **"你看到什么就算通过"**：验收判定基于可观测现象（如"日志无 CRITICAL/ERROR"、"字段有非零真实值"），不接受"测试返回200/跑通了"这类空泛结论；每个验收要点尽量对应一个可运行查询命令，并在 30 秒内给出可复现结果。
 - 可接受的未通过项须显式标 ⚠️ 并写清"为何不阻断"（如"付费API缺失，属设计预期"），不得默默放过。
 
 ## 行为准则
-1. 必须读取 {harness_dir}milestones/{milestone}/stages/{stage}/ 下的 spec.md、tasks.md、checklist.md、contract.md、gen.md
+1. 必须读取 Orchestrator 指定的当前 Stage 三件套上下文，并读取 {harness_dir}milestones/{milestone}/stages/{stage}/contract.md 与 gen.md
 2. 必须实际运行可用的测试（用 RunCommand）；面向 UI 的 Stage 的浏览器验证由 Orchestrator 代行并写入 `browser-check.md`，你必须 Read 它纳入评分，不能仅凭代码审查判断
 3. 必须保留证据：命令、截图路径、日志摘要或复现步骤
 4. 不能“放水”——不确定时往低打分

@@ -2,7 +2,7 @@
 
 > **版本**: v4.6  
 > **日期**: 2026-07-02  
-> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）；v4.5 决策 17（多模式编排框架——6 种编排模式全做：新增 Classifier/Synthesizer/Selector 3 角色 + 4 pattern playbook + Stage 层 pattern 字段 + generate_patterns 开关）；v4.5+ 决策 18（弱执行 LLM 任务编写最佳实践内化——references/llm-task-authoring-best-practices.md + 四角色补充 + README 6 模式全自动 vs 半自动串联图）；v4.6 决策 19（三档自动化 A 人/B 人+Codex-CUA/C 父 agent+API + Operator 操作员角色——本框架唯一运行在 TRAE Work 之外的角色 + generate_operator 开关）
+> **变更**: v2.0 决策 6/7；v3.x 三层推理与 RULE.md 钩子；v4.0 Milestone/Stage/Task 重构、Stage 级三件套、stage-executor、两类验收、state-board v2；v4.1 决策 13；v4.2 决策 14（Decision 独立、retry 闭环、三件套只留 .trae/specs）；v4.3 决策 15（验收标准来源澄清 + 可选 codraft 共识子阶段）；v4.4 决策 16（动态编排=图灵完备、子代理工具实测、方案1 MCP 代行）；v4.5 决策 17（多模式编排框架——6 种编排模式全做：新增 Classifier/Synthesizer/Selector 3 角色 + 4 pattern playbook + Stage 层 pattern 字段 + generate_patterns 开关）；v4.5+ 决策 18（弱执行 LLM 任务编写最佳实践内化，后续已内联进各 Skill/skeleton）；v4.6 决策 19（三档自动化，早期称 Operator）；v4.6.1 决策 20（将 Operator 拆分为 Supervisor/Lead + External Stage Dispatcher）；v4.6.2 决策 21（Dispatcher 文件改名为 `stage-dispatcher.md`，删除旧 Operator shim 与独立最佳实践文件）
 > **目标读者**: LLM/Agent——读完后能理解本项目的来龙去脉、关键决策及其理由，从而在现有基础上继续迭代优化  
 > **关联文档**: `trae-harness-advisor/resources/harness-engineering-on-trae-work.md`（方法论与架构主文档）  
 > **过程档案**: `archive/harness-engineering-on-trae-work-plan.md`（v1.0 编写计划）、`archive/supplement-and-alignment-plan.md`（v2.0 补充对齐计划）
@@ -117,7 +117,7 @@ TRAE Work 的 SPEC 工作流有三个关键文件：
 - 方法论效果可以追齐（角色分离、上下文隔离、对抗验证），但自动化程度无法追齐（需要人类手动触发 SPEC）
 - 类比：Claude Code 是"自动挡汽车"，我们是在"手动挡汽车"上安装了"辅助驾驶系统"
 
-**影响**：这个发现影响了两大设计决策——引入 Decision 角色作为 Orchestrator 代理（决策 6），以及收窄 Planner 职责到战略分解（决策 7）。
+**影响**：这个发现影响了两大设计决策——早期曾引入 Decision 角色作为 Orchestrator 代理（决策 6，已被 v4.6 的 Stage Orchestrator + 独立 Decision 口径取代），以及收窄 Planner 职责到战略分解（决策 7）。
 
 ---
 
@@ -153,7 +153,7 @@ TRAE Work 的 SPEC 工作流有三个关键文件：
 **理由**:
 - 模型是"病态乐观主义者"（pathological optimist），无法有效自我批判——同一上下文中的 Generator 评估自己的代码会给出虚高分数
 - 上下文腐化（Context Rot）——长对话中模型性能下降，注意力分散
-- 路径白名单隔离——Generator SubAgent 只能修改 src/ 和 tests/，Evaluator SubAgent 只能写入 eval/，防止误修改
+- 路径白名单隔离——Generator SubAgent 只能修改业务授权目录，Evaluator SubAgent 只能写入当前 Stage 的 eval.md，防止误修改
 
 ---
 
@@ -179,7 +179,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 **背景**: 在三角色架构中，Generator 和 Evaluator 之间的分歧没有自动解决机制。Evaluator 给出 FAIL 后，Generator 需要修改，但如果没有第三方裁决，可能出现 Generator 过度修改（引入新问题）或双方陷入僵局（反复拉扯）。
 
-**决策**: 在三角色基础上新增第四角色——Decision（裁决者），充当 Orchestrator 代理。
+**决策（历史口径）**: 在三角色基础上新增第四角色——Decision（裁决者），早期曾充当 Orchestrator 代理。当前 v4.6 口径中，Stage Orchestrator 是 root 控制流，Decision 是独立中立裁决者。
 
 **Decision 的设计约束**:
 - 只读不写：只能读取 Generator 总结和 Evaluator 报告，不能修改任何代码
@@ -187,7 +187,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 - 中立性：不偏向任何一方，引用证据做裁决
 - 不确定时 escalate：不强行裁决，承认不确定性
 
-**Decision 是 Orchestrator 代理，不是 Orchestrator**：TRAE Work 没有内置 Orchestrator，Decision 通过"只读两份报告 → 输出裁决"的方式模拟 Orchestrator 的决策功能。正常情况（pass/retry）自动处理，罕见情况（escalate）升级给人类。
+**Superseded by v4.6**：上述早期“代理 Orchestrator”的说法已被取代。当前口径改为：Stage Orchestrator 负责 root 控制流和路由，Decision 只读 `contract.md + gen.md + eval.md + state-board rounds` 并输出 pass/retry/escalate。
 
 ---
 
@@ -319,6 +319,8 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 **日期**：2026-06-29
 
+> **Superseded note**：本决策中的“SPEC 三件套持久化到 `harness/milestones/{milestone}/stages/{stage}/`”是 v4.0 旧口径，已被决策 14 / v4.2 收紧：三件套只留 `.trae/specs/` 作为当前 Stage 对话内过程脚手架；`harness/` 只持久化 contract/gen/eval/decision/browser-check 与 board。保留本节原文仅用于理解演进背景，当前实现以主文档第零部分 0.3 的权威产物矩阵为准。
+
 **背景**：用户进一步澄清：Advisor 和 Planner 都不应预先生成业务内容；SPEC 三件套需要由执行当下的 Orchestrator 根据最新上下文推理生成。同时，TRAE Work 的 SubAgent 能力支持顺序执行，但不等价于真实自动控制流循环；旧状态文件也混合了定义与运行状态。
 
 **决策**：
@@ -428,7 +430,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 **背景**：用户把与其它 LLM 讨论沉淀的"面向弱执行 LLM 的任务拆分/文档质量最佳实践"交给本项目内化。核心洞察：执行 Stage 的是较弱的云端 SubAgent，**文档质量直接决定结果**——因此拆分策略、边界表达、停止条件必须显式化。
 
 **结论与决策**：
-1. **建共享真源**：新增 `trae-harness-advisor/references/llm-task-authoring-best-practices.md`（6 节：三原则[一命令=一边界／显式排除／停止条件]、分阶段拆分+3000 行预算+串并行判据、6 段式子任务、执行自我监控[7 必停+诊断]、状态报告格式、验收判定）。
+1. **历史口径**：曾新增独立最佳实践文件（6 节：三原则、拆分预算、6 段式子任务、执行自我监控、状态报告、验收判定）。v4.6.2 已删除独立文件，并将必要规则内联进各 Skill/skeleton，避免双源漂移。
 2. **四角色内联硬规则 + 软引用**：Planner（任务拆分方法）/Generator（自我监控+[BLOCKED]）/Contract（验证命令+"不要改"边界+失败速查表）/Evaluator（"你看到什么就算通过"）——模板与 `.trae/skills/` 实例双份同步。
 3. **随项目走**：参考文档在生成时复制到目标项目 `{harness_dir}references/`，角色内引用用可解析的 `{harness_dir}references/...`（修正了一版误用的 `{advisor_dir}` 占位符——它不可解析会泄漏）；核心文件数 11→12。
 4. **README 补"全自动 vs 半自动"整节**：6 模式逐条对比表 + 人作为一等逻辑节点（调度器/闸门/信息供给）+ 节点分工 3 层表 + mermaid 串联图（已 mmdc 校验可渲染）。
@@ -437,7 +439,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 ---
 
-### 决策 19：三档自动化 + Operator 操作员角色（v4.6）
+### 决策 19：三档自动化 + Operator 操作员角色（v4.6，已被决策 20 修正命名）
 
 **日期**：2026-07-02
 
@@ -448,11 +450,35 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 **结论与决策**：
 1. **重构人节点**：把"人节点"拆成**操作员**（开对话/贴提示/点运行/读 decision 推进——机械、可外包）+ **监督者**（接受 escalate/纠偏/给授权——判断、不可外包）。CUA 替代的是操作员，不是监督者；**escalate/纠偏/授权永远归监督者**。
 2. **三档自动化供用户自选**：A=人（现状）｜B=Codex-CUA（变相全自动，受可靠性/成本/ToS 约束）｜C=强 LLM 父 agent 走 TRAE API（最干净，依赖平台暴露 API）。B/C 只改变"谁点鼠标"，不改变"谁拍板"。
-3. **新增 Operator 角色**（本框架**唯一运行在 TRAE Work 之外**的角色）：`templates/operator-playbook-template.md` → 生成到 `{harness_dir}operator-playbook.md`，**不放进 `.trae/skills/`**（那是 TRAE Work 内部技能目录）。含护栏（只搬运不判断／状态以总线文本为准不靠截图解析／幂等+有界重试／事件驱动禁忌忙轮询／最小 UI 面／全程写 operator-log）、调度循环伪码、监督者必停清单、逐模式收益、CUA 与 ToS 风险。
+3. **Superseded**：早期曾新增 Operator 角色与外部 playbook；v4.6.1 起改为 Supervisor/Lead + Stage Dispatcher，v4.6.2 删除旧 shim 与旧开关。
 4. **收益随模式不同**：fanout/tournament/generate-filter 最大——把之前"超大 fan-out/tournament 需**人**分批"变成"**机器**分批"；adversarial/loop 本就单窗口自动化，收益有限。
-5. **新增 `generate_operator` 开关**（默认 false，仅 B 档需要），与 `generate_patterns` 正交。
 
 **交付**：commit e0a5173（Operator 模板 + 自检实例 + SKILL.md/zh 开关与问题 5c + deliverable-specs §11b + resources §1.4.5 三档自动化 + README"能不能让机器替人点鼠标"小节；resources 版本 v4.5→v4.6）。
+
+---
+
+### 决策 20：将 Operator 拆分为 Supervisor/Lead + External Stage Dispatcher（v4.6.1）
+
+**日期**：2026-07-02
+
+**背景**：用户指出 `Operator` 仍然混淆了规划组长、执行派发、过程 review 与最终仲裁。真正可由外部 Agent 替代的只有“搬运 Stage 上下文并发起执行对话”这段机械工作；规划对话、review、escalate/BLOCKED、授权和最终仲裁仍应由人处理。
+
+**结论与决策**：
+1. **Supervisor / Lead**：人类判断角色，负责发起 Planner 规划对话、确认 `milestone-plan.md`、处理 review/escalate/BLOCKED/授权/最终仲裁。
+2. **External Stage Dispatcher**：外部机械派发器，只负责执行阶段搬运 Stage 上下文、打开 TRAE Work 执行对话、调用 `@stage-orchestrator`、读取 `decision.md`/board 并把异常上抛。
+3. canonical 文件先改为 Stage Dispatcher 外部派发器；v4.6.2 进一步收敛为 `{harness_dir}stage-dispatcher.md` 与 `templates/stage-dispatcher-template.md`。
+4. 旧 Operator shim 与旧开关在 v4.6.2 删除，不再作为可用路径引用。
+
+---
+
+### 决策 21：删除兼容残留并内联 best-practices（v4.6.2）
+
+**日期**：2026-07-02
+
+**结论与决策**：
+1. Dispatcher 模板采用 `templates/stage-dispatcher-template.md`，生成物采用 `{harness_dir}stage-dispatcher.md`，不再使用 playbook/skill 后缀，避免误解。
+2. 删除旧 Operator shim、旧开关与旧路径引用，只在历史决策里保留 superseded 说明。
+3. 删除独立最佳实践文件；Planner/Generator/Evaluator/stage-contract 所需规则直接内联到对应模板和实例，避免双源维护。
 
 **约束与注脚**：B 档可行性**取决于 TRAE 的可驱动面**（只有桌面 IDE 则截图驱动脆；有 Web 控制台/API 才靠谱）——启用前需确认。用机器人驱动免费产品 UI 大规模取算力可能违反平台 ToS/触发反滥用，由监督者显式承担。Operator 自身也被当作"会犯错的执行器"用 PGE 护栏管（幂等/有界重试/失败上抛）。**尚未加真机自检 AP 用例**（Operator 跑在沙箱外需真开 TRAE UI，不适合现有自检环境）。
 

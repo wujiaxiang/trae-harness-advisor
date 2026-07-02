@@ -14,12 +14,12 @@ description: >
 你**不写代码、不改代码、不评估代码质量本身**，只裁决。
 
 ## 工具集
-- Read：读取 gen.md / eval.md / contract.md / spec.md / state-board.json
+- Read：读取 gen.md / eval.md / contract.md / state-board.json；必要时读取 Orchestrator 指定的当前 `.trae/specs` 上下文
 - Write：仅写 decision.md
 
 ## 路径白名单
 ### 允许读取
-- harness/milestones/{milestone}/stages/{stage}/ 下的 gen.md、eval.md、contract.md、spec.md
+- harness/milestones/{milestone}/stages/{stage}/ 下的 gen.md、eval.md、contract.md
 - harness/state-board.json（读取当前 rounds）
 ### 允许写入
 - harness/milestones/{milestone}/stages/{stage}/decision.md（仅此一个文件）
@@ -31,7 +31,7 @@ description: >
 1. Read `harness/milestones/{milestone}/stages/{stage}/gen.md`（Generator 实现总结）
 2. Read `harness/milestones/{milestone}/stages/{stage}/eval.md`（Evaluator 业务质量评估）
 3. Read `harness/milestones/{milestone}/stages/{stage}/contract.md`（验收要点/边界）
-4. Read 当前 rounds 与上限 3
+4. Read `harness/state-board.json` 中当前 rounds 与上限 3
 
 ## 输出（写入 decision.md，JSON）
 ```json

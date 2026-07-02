@@ -53,7 +53,7 @@
 
 **内容**：
 - 更新为四角色：Planner、Generator、Evaluator、Decision
-- 新增 Decision 角色定义：中立裁决者，Orchestrator 代理
+- 新增 Decision 角色定义：中立裁决者（历史口径曾称 Orchestrator 代理；当前口径为独立 Decision + root Stage Orchestrator）
 - 新增四角色流程图（ASCII art）
 - 明确 Planner 只输出 spec.md + 更新全局任务表
 - 明确 tasks.md 由云端 Agent 运行时动态生成

@@ -18,7 +18,8 @@
             "contract": "harness/milestones/harness-selftest/stages/probe/contract.md",
             "gen": "harness/milestones/harness-selftest/stages/probe/gen.md",
             "eval": "harness/milestones/harness-selftest/stages/probe/eval.md",
-            "decision": "harness/milestones/harness-selftest/stages/probe/decision.md"
+            "decision": "harness/milestones/harness-selftest/stages/probe/decision.md",
+            "browser_check": "harness/milestones/harness-selftest/stages/probe/browser-check.md"
           }
         },
         {
@@ -32,7 +33,8 @@
             "contract": "harness/milestones/harness-selftest/stages/adaptive/contract.md",
             "gen": "harness/milestones/harness-selftest/stages/adaptive/gen-r2.md",
             "eval": "harness/milestones/harness-selftest/stages/adaptive/eval-r2.md",
-            "decision": "harness/milestones/harness-selftest/stages/adaptive/decision-r2.md"
+            "decision": "harness/milestones/harness-selftest/stages/adaptive/decision-r2.md",
+            "browser_check": ""
           }
         },
         {
@@ -44,9 +46,26 @@
           "last_decision": "pass",
           "artifacts": {
             "contract": "harness/milestones/harness-selftest/stages/patterns/contract.md",
-            "synthesis": "harness/milestones/harness-selftest/stages/patterns/synthesis.md",
             "classify": "harness/milestones/harness-selftest/stages/patterns/classify.md",
-            "selection": "harness/milestones/harness-selftest/stages/patterns/selection.md"
+            "routes": {
+              "bugfix": {
+                "route": "harness/milestones/harness-selftest/stages/patterns/route.md"
+              }
+            },
+            "parts": {
+              "part-a": "harness/milestones/harness-selftest/stages/patterns/part-a.md",
+              "part-b": "harness/milestones/harness-selftest/stages/patterns/part-b.md"
+            },
+            "synthesis": "harness/milestones/harness-selftest/stages/patterns/synthesis.md",
+            "candidates": {
+              "cand-1": "harness/milestones/harness-selftest/stages/patterns/cand-1.md",
+              "cand-2": "harness/milestones/harness-selftest/stages/patterns/cand-2.md"
+            },
+            "selection": "harness/milestones/harness-selftest/stages/patterns/selection.md",
+            "brackets": {
+              "round-1": "harness/milestones/harness-selftest/stages/patterns/winner.md"
+            },
+            "winner": "harness/milestones/harness-selftest/stages/patterns/winner.md"
           }
         }
       ]

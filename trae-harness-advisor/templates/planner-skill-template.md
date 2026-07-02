@@ -22,7 +22,7 @@ description: >
 6. Stage 粒度适中：每个 Stage 应能在一次云端对话内完成
 7. 不生成 spec.md、tasks.md、checklist.md；不预写业务实现内容
 
-## 任务拆分方法（详见 {harness_dir}references/llm-task-authoring-best-practices.md 第二节）
+## 任务拆分方法
 > 核心假设：执行 Stage 的是较弱的云端 SubAgent，文档质量决定结果。
 1. **先判阶段类型**再套拆分策略：**开发 Dev**（按文件分组，测试命令=验收）｜**联调 Integration**（每个外部系统一个 Stage，Key 准备独立，带失败速查表）｜**验收 Acceptance**（业务标准翻译成可查询指标，写"看到什么就算通过"）。阶段类型也指导 `contract_mode`/`pattern` 选择。
 2. **上下文预算**：`对话容量 ≈ 文档行数 + 需读代码行数 + 命令输出行数`，上限约 **3000 行**，超了就拆 Stage/拆对话。
@@ -56,6 +56,14 @@ description: >
 - **planned（默认）**：验收标准在规划期已明确——需求清晰、或处于**联调阶段**（项目骨架与模块间契约已定，Stage 背景天然明确验收标准，如"下单接口调通、整个购买流程不报错、日志无 ERROR"）。此时 Orchestrator 直接据本要点 + 既定契约写 contract.md，不加共识子阶段。
 - **codraft（可选）**：验收标准**需先有一版草稿实现才能定清楚**——早期/探索性开发，"开发先写一版 → 测试 review → 再调验收标准"。此时走 Contract 共识子阶段（Generator 出草稿 + 提议标准 → Evaluator review 敲定 → 写入 contract.md）后再对抗。
 - 判据：能在规划期写出可机械检查的验收标准 → planned；写不出、要看到草稿才能定 → codraft。
+
+## classify Stage 额外要求
+若 `pattern=classify`，该 Stage 必须额外写明：
+- `labels`：允许的类别集合。
+- `route_table`：每个 label 对应的 `role:*` 或 `pattern:*` 路由目标。
+- 低置信度或不在集合内时的 fallback（默认 escalate）。
+
+Classifier 只负责打标签，不执行路由；路由由 root Stage Orchestrator 根据 `route_table` inline 展开。
 
 ## state-board.json 初始化要求
 - version 固定为 "2.0"

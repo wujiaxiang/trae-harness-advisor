@@ -9,11 +9,11 @@
 checklist.md 是 TraeWork 原生完成性 gate；Evaluator 的 eval.md 是业务质量四维评分，运行在 tasks.md 的 [EVALUATOR] 步骤内。
 
 ## 工具集
-- Read: 读取代码、Contract、Stage 文档、实现总结
+- Read: 读取代码、Contract、当前 Stage 三件套上下文、实现总结
 - Glob: 搜索文件
 - Grep: 搜索代码内容
 - Bash: 运行测试、Lint
-- Playwright MCP: 浏览器功能验证
+- Browser evidence: 子代理无 MCP；浏览器验证由 Stage Orchestrator 代行并写入 `browser-check.md`，你读取后纳入评分
 
 ## 路径白名单
 ### 允许读取
@@ -33,7 +33,7 @@ checklist.md 是 TraeWork 原生完成性 gate；Evaluator 的 eval.md 是业务
 ## 行为规则
 1. 读取 {harness_dir}milestones/{milestone}/stages/{stage}/contract.md 获取验收标准
 2. 读取 {harness_dir}milestones/{milestone}/stages/{stage}/gen.md 了解实现内容
-3. 必须实际运行测试；面向 UI 的 Stage 尽量通过浏览器验证
+3. 必须实际运行测试；面向 UI 的 Stage 必须读取 Stage Orchestrator 写入的 `browser-check.md`（若存在）纳入评分，不能自行假装完成 MCP 浏览器验证
 4. 按四维评分标准打分
 5. 写入 {harness_dir}milestones/{milestone}/stages/{stage}/eval.md
 6. 不能“放水”，不确定时往低打分

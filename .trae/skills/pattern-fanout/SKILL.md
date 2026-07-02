@@ -6,7 +6,7 @@ description: >
 ---
 # pattern-fanout playbook（Fan-out-and-synthesize）
 
-> 你是 Orchestrator，只串联。交付物写 harness 总线，三件套留 .trae/specs。
+> 你是 root Stage Orchestrator，只串联。交付物写 harness 总线，三件套留 .trae/specs。
 
 ## 适用场景
 可拆成**互相独立**的 N 份子任务（如：并行实现 N 个模块、并行研究 N 个主题、并行扫描 N 个目录）。
@@ -18,7 +18,7 @@ description: >
    - 若 N 大于平台并行上限（实测约 5），分批并行。
 4. 【派发独立 SubAgent @synthesizer-role】读全部 part-* → 归并 → `synthesis.md`（含覆盖矩阵、冲突取舍）。
 5. （可选）对 synthesis.md 走一次 Evaluator+Decision 质量门。
-6. 回写 board（artifacts: parts + synthesis）。
+6. 回写 board（artifacts: `parts` + `synthesis`；part 路径按 `parts.{part_id}` 命名空间记录）。
 
 ## 注意
 - 子任务必须真独立（无源文件交集），否则并行会冲突——拆分时由你把关。

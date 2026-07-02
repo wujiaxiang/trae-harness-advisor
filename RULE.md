@@ -2,7 +2,7 @@
 
 > 本文件位于项目根目录，通过 TRAE Work 云端钩子规则自动加载。
 > 钩子规则文本：`在开始执行任何任务之前，必须先读取当前项目根目录的 RULE.md 文件，将其内容作为当前项目的编码规范、约束条件和行为准则。如果 RULE.md 不存在，则跳过此步骤。`
-> 当执行某个 Stage 时，加载 stage-executor playbook 并遵循其确定性流程。
+> 当执行某个 Stage 时，加载 stage-orchestrator playbook 并遵循其确定性流程；stage-executor 仅为旧名兼容入口。
 > 约束强度：本文件的禁止修改路径、白名单等均为**提示词级约束**（依赖模型遵守，非沙箱强制）；请严格遵守，但团队应辅以 CI/评审等硬手段兜底。
 > 用户需将此钩子规则复制到 TRAE Work「设置 > 规则」中（仅需操作一次）。
 
@@ -29,11 +29,11 @@
 ## 关键目录结构
 - src/ — 源代码
 - tests/ — 测试文件
-- harness/ — 持久真值与消息总线（milestone-plan、三件套、contract、gen/eval/decision、state-board.json）
+- harness/ — 持久真值与消息总线（milestone-plan、contract、gen/eval/decision、browser-check、state-board.json）
 - harness/templates/ — 三件套与 Stage Contract 的结构骨架，只含章节契约，无业务内容
 - harness/milestones/{milestone}/stages/{stage}/ — Stage 级持久产物目录
 - .trae/specs/ — 原生 /spec 临时 scratch（gitignored，不依赖，不做消息传递）
-- .trae/skills/ — 角色 Skill 与 stage-executor playbook（静态配置，git 同步）
+- .trae/skills/ — 角色 Skill 与 stage-orchestrator playbook（静态配置，git 同步）
 - .trae/agents/ — 可选 Agent 配置（未来兼容）
 
 ## 编码约定
@@ -45,7 +45,7 @@
 - 新增逻辑必须包含对应测试或在 gen.md 中说明无法自动化测试的原因
 
 ## 全局禁止修改
-- harness/（除 Orchestrator 回写状态、三件套与 gen/eval/decision 产物外）
+- harness/（除 Orchestrator 回写状态、contract/browser-check 与 gen/eval/decision 产物外）
 - .trae/skills/
 - RULE.md
 - node_modules/

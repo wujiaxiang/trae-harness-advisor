@@ -6,7 +6,7 @@
 
 | 编号 | 预期（PASS 的样子） | 若 FAIL 的含义与动作 |
 |------|--------------------|---------------------|
-| **AP1** | 仅凭触发短语，主 Agent 自动加载并遵循 stage-executor 流程 | 自动加载不可靠 → 改"显式加载"或在 RULE.md 钩子固化加载 |
+| **AP1** | 仅凭触发短语，主 Agent 自动加载并遵循 stage-orchestrator 流程；旧名 stage-executor 仅作为兼容 shim | 自动加载不可靠 → 改"显式加载"或在 RULE.md 钩子固化加载 |
 | **AP2** | G/E/D 三子代理各自报告**成功加载**对应角色 Skill 并复述准则 | 角色分离不成立 → 退化为"单上下文分阶段提示"或其它隔离 |
 | **AP3** | Evaluator/Decision 报告**看不到**对方内部思考，只能读总线文件 | 无隔离 → "杜绝自评偏差"破产，需更强隔离 |
 | **AP4** | （已知）子代理工具清单**无** `mcp__*`；MCP 仅主 Orchestrator 可见 | known-limitation，不阻塞；浏览器验证走 AP11 代行 |
@@ -21,12 +21,24 @@
 | **AP13** | 真 retry→pass：R1 FAIL→Decision retry→R2 修正→**PASS**（两轮、sample.json 最终达标） | 走不到 pass / 不能多轮 → 自适应闭环不成立，retry 改人工 |
 | **AP14** | Orchestrator 确认 `probe.status=passed` 后才开工 adaptive | 门控失效（不看 depends_on 就开工）→ 并发冲突风险，需强化人工投递把关 |
 | **AP15** | fanout：`@pattern-fanout` 被路由；两 `@generator-role` **真并行**产 part-a/b；`@synthesizer-role` 加载并归并 synthesis.md | 路由失败/无并行/synthesizer 未加载 → 降级为顺序 Generator+Orchestrator 手工合并 |
-| **AP16** | classify：`@pattern-classify` 被路由；`@classifier-role` 给出 `label`；Orchestrator 据标签分支 | classifier 未加载/无标签 → 分类逻辑并入 Orchestrator 自身推理，取消独立角色 |
+| **AP16** | classify：`@pattern-classify` 被路由；`@classifier-role` 给出 `label`；root Orchestrator 据标签分支；SubAgent 不递归启动 Orchestrator | classifier 未加载/无标签 → 分类逻辑并入 Orchestrator 自身推理，取消独立角色 |
 | **AP17** | generate-filter：`@pattern-generate-filter` 被路由；两候选并行；`@selector-role` 选出 `winner` | selector 未加载/未选优 → 由 Evaluator 兼任选优，删 selector-role |
 | **AP18** | （可选）tournament：`@pattern-tournament` 被路由；`@selector-role` 两两淘汰给冠军 | 候选少时=选优（与 AP17 重叠）；路由失败 → tournament 降级为 generate-filter |
 
 > 设计验证点（AP11–AP14）确认 v4.4 的新行为：浏览器代行（方案1）、codraft 共识子阶段、真自适应闭环、depends_on 门控。
-> **多模式验证点（AP15–AP18）**确认 v4.5 的 `pattern` 路由：stage-executor 是否据 `pattern` 加载对应 playbook，3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载调度。核心底层原语（并行=AP9、分支、有界淘汰）此前已验证，本组重点在**路由链路 + 新角色加载**。
+> **多模式验证点（AP15–AP18）**确认 v4.5 的 `pattern` 路由：Stage Orchestrator 是否据 `pattern` 加载对应 playbook，3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载调度。核心底层原语（并行=AP9、分支、有界淘汰）此前已验证，本组重点在**路由链路 + 新角色加载**。
+
+## 新增审计断言（v4.6+）
+
+| 编号 | 预期 |
+|------|------|
+| AUDIT1 | `spec.md/tasks.md/checklist.md` 只出现在 `.trae/specs/` 当前对话 scratch，不进入 `harness/` artifacts |
+| AUDIT2 | Evaluator 只写 `eval.md`，不得写 `decision.md` |
+| AUDIT3 | Decision 只强依赖 `contract.md + gen.md + eval.md + state-board rounds`，不强依赖 harness 下 `spec.md` |
+| AUDIT4 | `classify -> pattern:adversarial` 由 root Stage Orchestrator inline 展开，不由 Classifier/SubAgent 递归调度 |
+| AUDIT5 | 可选 Agent 模板与角色 Skill 口径一致：Evaluator Agent 不声称拥有 MCP，Decision Agent 不内嵌在 evaluator-role |
+| AUDIT6 | Stage Dispatcher 只派发 `stage-orchestrator` 执行对话，且只读 `harness/` 持久交付物和 board；规划确认、review、escalate/BLOCKED、授权和最终仲裁必须上抛 Supervisor/Lead |
+| AUDIT7 | `state-board.json` artifacts 使用统一 schema：adversarial/loop 包含 `browser_check`，pattern 使用 namespaced `routes/parts/candidates/brackets` |
 
 ## 结果记录
 
@@ -45,7 +57,7 @@
 
 | 编号 | 实际结果 (PASS/FAIL) | 证据摘要 |
 |------|----------------------|----------|
-| AP1 | PASS | 触发短语自动加载 stage-executor |
+| AP1 | PASS | 触发短语自动加载 stage-orchestrator（当时旧名为 stage-executor） |
 | AP2 | PASS | G/E/D 三子代理各加载角色 Skill 并复述准则 |
 | AP3 | PASS | G/E/D 三方隔离，各自只读总线文件 |
 | AP4 | FAIL（known-limitation） | 子代理 17 工具无 `mcp__*`/`run_mcp`；仅主 Orchestrator 有 MCP；不阻塞 |
@@ -68,7 +80,7 @@
 
 | 编号 | 实际结果 | 证据摘要 |
 |------|----------|----------|
-| AP1 | PASS | 触发短语自动加载 stage-executor（诚实注：加载需显式调 Skill 工具，非完全静默注入） |
+| AP1 | PASS | 触发短语自动加载 stage-orchestrator（当时旧名为 stage-executor；诚实注：加载需显式调 Skill 工具，非完全静默注入） |
 | AP2 | PASS（硬） | 三角色全加载并复述准则，**含 decision-role**（Decision 已独立） |
 | AP3 | PASS（硬） | G/E/**D 三方隔离**：各自只能 Read 总线文件，看不到对方推理/对话 |
 | AP4 | **FAIL（决定性）** | MCP 配置后**仅主 Orchestrator 可见**，**不下发给 SubAgent**：子代理工具清单 17 个无任何 `mcp__*` |

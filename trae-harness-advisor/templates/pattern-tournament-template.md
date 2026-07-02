@@ -6,7 +6,7 @@ description: >
 ---
 # pattern-tournament playbook（Tournament）
 
-> 你是 Orchestrator，只串联。交付物写 harness 总线，三件套留 .trae/specs。
+> 你是 root Stage Orchestrator，只串联。交付物写 harness 总线，三件套留 .trae/specs。
 
 ## 适用场景
 候选多、单次绝对打分不可靠，用**相对两两比较**更稳（如：从 4-8 个文案/设计/实现里选最佳）。
@@ -16,10 +16,10 @@ description: >
 2. 运行 /spec 产三件套到 .trae/specs。
 3. **并行派发 N 个 @generator-role** 产候选 → `cand-1.md`..`cand-N.md`。
 4. **Bracket 淘汰**（最多 ceil(log2(N)) 轮，有界）：
-   - 每轮把存活候选两两配对，【派发 @selector-role】逐对比较出 winner → 写 `bracket-r{N}.md`。
+   - 每轮把存活候选两两配对，【派发 @selector-role】逐对比较出 winner → 写入 `brackets.round-{n}` 对应文件。
    - winners 进入下一轮，直到剩 1 个。
 5. 输出 `winner.md`（冠军 + 每场对决依据）。
-6. 回写 board（artifacts: cands + bracket-r* + winner）。
+6. 回写 board（artifacts: `candidates` + `brackets` + `winner`；候选路径按 `candidates.{candidate_id}`，轮次按 `brackets.round-{n}` 命名空间记录）。
 
 ## 注意
 - 轮数有界（log2(N)），防失控；每轮持久化 bracket，爆上下文也能续。

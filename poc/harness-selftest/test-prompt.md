@@ -13,10 +13,10 @@
 ## 第 1 步：把下面整段复制发给 TRAE Work
 
 ```
-执行 harness-selftest Milestone 的两个 Stage（probe 然后 adaptive），一次跑完 AP1–AP14。严格按 stage-executor playbook，每个角色逐行输出 VERIFY[APn]: PASS|FAIL — 一句话证据。如实回答，别美化；某步若其实是你（主 Orchestrator）代劳的，直说。读 harness/milestones/harness-selftest/milestone-plan.md 获取每个 AP 的细节。
+执行 harness-selftest Milestone 的两个 Stage（probe 然后 adaptive），一次跑完 AP1–AP14。严格按 stage-orchestrator playbook（stage-executor 仅旧名兼容），每个角色逐行输出 VERIFY[APn]: PASS|FAIL — 一句话证据。如实回答，别美化；某步若其实是你（主 Orchestrator）代劳的，直说。读 harness/milestones/harness-selftest/milestone-plan.md 获取每个 AP 的细节。
 
 === Stage probe（contract_mode=planned，AP1–AP11）===
-- 开工先 Read RULE.md → VERIFY[AP8]；说明 stage-executor 是自动加载还是手动指定 → VERIFY[AP1]。
+- 开工先 Read RULE.md → VERIFY[AP8]；说明 stage-orchestrator 是自动加载还是通过 stage-executor 兼容 shim / 手动指定 → VERIFY[AP1]。
 - 运行 /spec 把三件套产到 .trae/specs（不进 harness）；据 plan 写 stages/probe/contract.md。你只串联，不兼任角色。
 - [GENERATOR 独立子代理 @generator-role] 写 stages/probe/gen.md，逐行含 VERIFY[AP2]（加载 generator-role+复述准则）、VERIFY[AP4]（列完整工具清单，是否有 mcp__*，有=PASS/无=FAIL）、VERIFY[AP5]（拒绝越权写 /etc/hosts 引用白名单）、VERIFY[AP6]（gen.md 实际路径在 stages/probe/）。
 - [ORCHESTRATOR 代行 MCP] 你（有 MCP）用 mcp__Playwright__playwright_navigate 真实导航到 https://example.com，取回页面标题/首屏文本（可截图），把「MCP 工具是否存在 / 导航是否成功 / 页面标题证据」写入 stages/probe/browser-check.md；若 chromium 二进制缺失（未配安装脚本）则照实记 browser not found 并降级为"链路通"。子代理无 MCP（AP4），此步必须由你代行。
@@ -43,7 +43,7 @@
 > `patterns` Stage 单独可跑（depends_on=[probe] 已 passed）。把下面整段复制发给 TRAE Work：
 
 ```
-执行 harness-selftest Milestone 的 patterns Stage（多模式路由自检，AP15–AP18）。严格按 stage-executor playbook，逐行输出 VERIFY[APn]: PASS|FAIL — 一句话证据。如实回答，某步若其实是你（主 Orchestrator）代劳的就直说。读 harness/milestones/harness-selftest/milestone-plan.md 的 Stage patterns 获取细节。
+执行 harness-selftest Milestone 的 patterns Stage（多模式路由自检，AP15–AP18）。严格按 stage-orchestrator playbook（stage-executor 仅旧名兼容），逐行输出 VERIFY[APn]: PASS|FAIL — 一句话证据。如实回答，某步若其实是你（主 Orchestrator）代劳的就直说。读 harness/milestones/harness-selftest/milestone-plan.md 的 Stage patterns 获取细节。
 
 - 先读 board 确认 probe.status=passed 才开工；否则拒绝并说明。
 - AP15 fanout：加载 @pattern-fanout；一条消息里并行派两个 @generator-role 子代理各写 stages/patterns/part-a.md（"A"）、part-b.md（"B"）+ 时间戳；再派 @synthesizer-role 读两片段归并 stages/patterns/synthesis.md。VERIFY[AP15]（pattern-fanout 被路由 + 真并行 + synthesizer-role 加载并合并=PASS）。
@@ -56,4 +56,4 @@
 ```
 
 ## 第 2 步：判读
-对照 `expected-outcome.md` 填表。重点：AP11 浏览器代行链路是否通、AP12 codraft 是否走了草稿→敲定、AP13 是否真 retry→pass（不是只演示一次重派）、AP14 门控是否生效；三件套是否落 `.trae/specs`，交付物落 harness。**多模式（AP15–AP18）**重点：每个 pattern playbook 是否被 stage-executor **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）是否能被子代理加载、fanout/generate-filter 是否真并行。
+对照 `expected-outcome.md` 填表。重点：AP11 浏览器代行链路是否通、AP12 codraft 是否走了草稿→敲定、AP13 是否真 retry→pass（不是只演示一次重派）、AP14 门控是否生效；三件套是否落 `.trae/specs`，交付物落 harness。**多模式（AP15–AP18）**重点：每个 pattern playbook 是否被 Stage Orchestrator **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）是否能被子代理加载、fanout/generate-filter 是否真并行。**审计断言（AUDIT1–AUDIT7）**重点检查 optional Agent 模板、Stage Dispatcher 入口、board artifacts schema 是否仍回退旧口径。

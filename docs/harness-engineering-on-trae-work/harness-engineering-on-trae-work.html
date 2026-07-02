@@ -284,7 +284,7 @@ sup a:hover { text-decoration: underline; }
 <blockquote>
 <p><strong>版本</strong>: v4.6<br>
 <strong>日期</strong>: 2026-07-02<br>
-<strong>变更</strong>: v4.6 <strong>三档自动化 + Operator 操作员角色</strong>：把原「人节点」拆成「操作员（机械搬运）+ 监督者（判断）」，给出三档自动化供用户自选——A 人（现状）/ B 人+Codex-CUA（变相全自动，机器分批替代人分批，fanout/tournament/generate-filter 收益最大）/ C 父 agent 走 TRAE API（依赖平台）。新增<strong>本框架唯一运行在 TRAE Work 之外</strong>的可选角色 <code>operator-playbook.md</code>（<code>generate_operator=true</code>，含护栏/调度循环/监督者交接清单/CUA 与 ToS 风险），<strong>不放进 <code>.trae/skills/</code></strong>；escalate/纠偏/授权永远归监督者，B/C 档只改变「谁点鼠标」不改变「谁拍板」。详见 §1.4.5 与 deliverable-specs §11b<br>
+<strong>变更</strong>: v4.6 <strong>三档自动化 + External Stage Dispatcher 外部派发器</strong>：把原「人节点」拆成 Supervisor/Lead（规划确认、review、仲裁）+ Stage Dispatcher（执行阶段机械搬运）两类职责。新增可选 <code>stage-dispatcher.md</code>（<code>generate_stage_dispatcher=true</code>），只负责搬运 Stage 上下文、发起 <code>@stage-orchestrator</code> 执行对话、记录日志并把 escalate/BLOCKED/授权/最终验收上抛 Supervisor；不放进 <code>.trae/skills/</code>。详见 §1.4.5 与 deliverable-specs §11b<br>
 <strong>v4.5</strong>: <strong>多模式编排框架（6 种编排模式全做）</strong>：基于 v4.4 已真机验证的 Orchestrator 图灵完备底座 + 独立 SubAgent + harness 总线，把 Claude Code Dynamic Workflows 的 6 种模式全部用同一套原语落地——新增 3 个轻量角色（Classifier/Synthesizer/Selector）+ 4 个 pattern playbook（classify/fanout/generate-filter/tournament），Stage 层新增 <code>pattern</code> 字段由 <code>stage-executor</code> 路由；<strong>6 种模式均已真机端到端验证</strong>（adversarial/loop=AP1–AP14；classify/fanout/generate-filter/tournament=AP15–AP18，commit c9a5e84，pattern 路由链路 + 3 新角色加载全通过）；新增 <code>generate_patterns</code> 生成开关（默认 false，见 §3.10 与 deliverable-specs §11）<br>
 <strong>v4.4</strong>: 基于 v4.3 真机重跑：①<strong>重要发现——动态编排=图灵完备底座</strong>：Orchestrator 真机验证具备顺序/分支/有界循环/跳出/自修改 tasks.md/持久状态，叠加子代理 Shell(RunCommand) → 可实现<strong>真正自适应的 PGE 流程</strong>（注脚：推理级控制、有界、确定性不可追齐）；"顺序模拟对抗"措辞升级为"LLM 驱动的动态编排"；②<strong>子代理工具能力实测</strong>：17 个工具含 Web+Shell，<strong>唯缺 MCP</strong>；③<strong>AP4 决定性结论 + 方案1</strong>：SubAgent 不继承 MCP → <code>verification_mode=full</code> 浏览器验证改由 <strong>Orchestrator 代行 MCP</strong>，证据写 <code>browser-check.md</code> 供 Evaluator 评分；④v4.3 全部改动（Decision 独立、retry 闭环 AP10、三件套→.trae/specs）真机验证成立<br>
 <strong>v4.3</strong>: 验收标准来源澄清 + per-Stage <code>contract_mode</code>（planned/codraft 可选共识子阶段）<br>
@@ -741,7 +741,7 @@ sup a:hover { text-decoration: underline; }
 </ul>
 <p><strong>我们的定位</strong>：在 TRAE Work 免费版的能力范围内，通过组合现有能力（SPEC + Skills + Rules + SubAgent），<strong>模拟</strong> Claude Code 的 Harness 编排效果。方法论效果可以追齐——同样的角色分离、对抗验证、上下文隔离——但自动化程度无法追齐，因为缺少一个内置的 Orchestrator 来自动触发和调度。</p>
 <p><strong>类比</strong>：Claude Code 是一台"自动挡汽车"——踩油门就走。我们是在"手动挡汽车"上安装了一套"辅助驾驶系统"——换挡仍需手动，但转向、加速、刹车都有辅助。</p>
-<h4 id="145-三档自动化把人节点拆成操作员-监督者">1.4.5 三档自动化：把"人节点"拆成操作员 + 监督者</h4>
+<h4 id="145-三档自动化把人节点拆成-lead-dispatcher-supervisor">1.4.5 三档自动化：把"人节点"拆成 Lead + Dispatcher + Supervisor</h4>
 <p>1.4.4 说的"启动钥匙在人手里"，其实混了两类活。把它拆开后，人真正不可替代的只有一半：</p>
 <div class="table-wrap"><table>
 <thead>
@@ -753,7 +753,7 @@ sup a:hover { text-decoration: underline; }
 </thead>
 <tbody>
 <tr>
-<td><strong>操作员工作</strong>：开新对话、贴固定提示、点"云端运行"、等完成、读 <code>decision.md</code>/<code>state-board.json</code> 推进下一个 Stage</td>
+<td><strong>Stage Dispatcher 工作</strong>：搬运 Stage 上下文、开执行对话、贴 <code>@stage-orchestrator</code>、等完成、读 <code>decision.md</code>/<code>state-board.json</code> 推进下一个 Stage</td>
 <td>机械、可脚本化、重复</td>
 <td>可外包</td>
 </tr>
@@ -769,7 +769,7 @@ sup a:hover { text-decoration: underline; }
 <thead>
 <tr>
 <th>档</th>
-<th>扮演操作员</th>
+<th>扮演 Stage Dispatcher</th>
 <th>效果</th>
 <th>代价 / 前提</th>
 </tr>
@@ -778,7 +778,7 @@ sup a:hover { text-decoration: underline; }
 <tr>
 <td><strong>A</strong></td>
 <td>人</td>
-<td>现状：人兼操作员+监督者</td>
+<td>现状：人兼 Lead + Dispatcher + Supervisor</td>
 <td>每个 Stage 手动开对话；适合低频、重决策</td>
 </tr>
 <tr>
@@ -795,9 +795,9 @@ sup a:hover { text-decoration: underline; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>B 档的现实边界（客观）</strong>：CUA 端到端驱动复杂桌面任务的成功率仍偏低（业界 OSWorld ~38%）、延迟以分钟计、随 UI 改版易失效；但浏览器原生任务可靠得多（WebVoyager ~87%）。因此 B 档要把 CUA 的脆弱面<strong>压到最小</strong>——只做"触发云端运行 + 贴提示 + 取回产物路径"这个不可省的 UI 动作，其余状态交换全部走 git/<code>harness/</code> 总线文本（读 board，别靠截图解析业务状态）。并用我们自己的 PGE 思路管这个会犯错的操作员：动作幂等、有界重试、事件驱动、失败即上抛人。</p>
-<p><strong>收益随模式不同</strong>：Operator 的价值 = 该模式需要重复开对话/推进的次数。fanout / tournament / generate-filter 收益最大——之前"超大 fan-out/tournament 受上下文预算需<strong>人</strong>分批"这条限制，B 档把它变成"<strong>机器</strong>分批"；adversarial/loop 本就单窗口自动化，收益有限。</p>
-<p>这套外部调度逻辑固化为一个可选角色 <strong>Operator playbook</strong>（<code>{harness_dir}operator-playbook.md</code>，<code>generate_operator=true</code> 时生成）——<strong>本框架唯一运行在 TRAE Work 之外</strong>的角色，含护栏、调度循环、监督者交接清单、逐模式操作要点与 CUA/ToS 风险提示。<strong>它不放进 <code>.trae/skills/</code></strong>（那是 TRAE Work 内部技能目录），而是总线里供人/CUA/父agent 消费的说明书。</p>
+<p><strong>B 档的现实边界（客观）</strong>：CUA 端到端驱动复杂桌面任务的成功率仍偏低（业界 OSWorld ~38%）、延迟以分钟计、随 UI 改版易失效；但浏览器原生任务可靠得多（WebVoyager ~87%）。因此 B 档要把 CUA 的脆弱面<strong>压到最小</strong>——只做"触发云端运行 + 贴提示 + 取回产物路径"这个不可省的 UI 动作，其余状态交换全部走 git/<code>harness/</code> 总线文本（读 board，别靠截图解析业务状态）。并用我们自己的 PGE 思路管这个会犯错的 Dispatcher：动作幂等、有界重试、事件驱动、失败即上抛 Supervisor。</p>
+<p><strong>收益随模式不同</strong>：Stage Dispatcher 的价值 = 该模式需要重复开对话/推进的次数。fanout / tournament / generate-filter 收益最大——之前"超大 fan-out/tournament 受上下文预算需<strong>人</strong>分批"这条限制，B 档把它变成"<strong>机器</strong>分批"；adversarial/loop 本就单窗口自动化，收益有限。</p>
+<p>这套外部派发逻辑固化为一个可选文件 <strong>Stage Dispatcher</strong>（<code>{harness_dir}stage-dispatcher.md</code>，<code>generate_stage_dispatcher=true</code>）——它只覆盖执行阶段机械搬运，含护栏、调度循环、Supervisor 交接清单、逐模式操作要点与 CUA/ToS 风险提示。<strong>它不放进 <code>.trae/skills/</code></strong>（那是 TRAE Work 内部技能目录），而是总线里供人/CUA/父agent 消费的说明书。</p>
 <blockquote>
 <p>一句话：B/C 档并不改变"谁拍板"——escalate/纠偏/授权永远归监督者；它们只改变"谁点鼠标"，把人从无谓的机械搬运里解放出来，只在真正的决策与纠偏处介入。</p>
 </blockquote>
@@ -1021,7 +1021,7 @@ sup a:hover { text-decoration: underline; }
 <td><strong>Advisor Skill</strong></td>
 <td>用户一次性调用</td>
 <td>技术栈、目录偏好、TDD、严格度等</td>
-<td>1. 角色 Skill（planner/generator/evaluator/decision-role）<br>2. <strong>stage-executor</strong> playbook Skill<br>3. RULE.md + 钩子规则文本<br>4. <code>harness/templates/*.skeleton.md</code>（三件套+Contract 骨架）<br>5. 空 <code>state-board.json</code><br>6. <code>harness/references/llm-task-authoring-best-practices.md</code>（共享方法论）<br>7. 可选 Agent 配置<br>8. 可选多模式包（<code>generate_patterns</code>：3 角色+4 playbook）<br>9. 可选 <code>harness/operator-playbook.md</code>（<code>generate_operator</code>，三档自动化 B 档）</td>
+<td>1. 角色 Skill（planner/generator/evaluator/decision-role）<br>2. <strong>stage-orchestrator</strong> playbook Skill + stage-executor 兼容 shim<br>3. RULE.md + 钩子规则文本<br>4. <code>harness/templates/*.skeleton.md</code>（三件套+Contract 骨架）<br>5. 空 <code>state-board.json</code><br>6. 可选 Agent 配置<br>7. 可选多模式包（<code>generate_patterns</code>：3 角色+4 playbook）<br>8. 可选 <code>harness/stage-dispatcher.md</code>（<code>generate_stage_dispatcher</code>）</td>
 <td>据技术栈定制编码规范、TDD 流程、评估维度</td>
 </tr>
 <tr>
@@ -1139,7 +1139,7 @@ sup a:hover { text-decoration: underline; }
 <li>读取该 Stage 的 spec.md、tasks.md 和 Orchestrator 标注的 contract.md</li>
 <li>严格遵循 TDD：先写测试，确认测试失败，再写实现</li>
 <li>每次代码改动后立即运行测试</li>
-<li>完成一个 Stage 后立即 git commit</li>
+<li>完成一个 Stage 后按项目规范提交或等待 Orchestrator 指示</li>
 <li>将实现总结写入 <code>harness/milestones/{milestone}/stages/{stage}/gen.md</code></li>
 </ol>
 <p><strong>在 TRAE Work 中的实现</strong>：</p>
@@ -1206,7 +1206,7 @@ sup a:hover { text-decoration: underline; }
 <li>评估报告必须包含：通过/失败状态、各维度分数、具体问题描述、修复建议</li>
 </ol>
 <h3 id="36-decision-角色定义">3.6 Decision 角色定义</h3>
-<p><strong>职责</strong>：作为中立裁决者（Orchestrator 代理），在 Generator 和 Evaluator 产生分歧时做出裁决。Decision 不写代码，不评估代码，只做 pass/retry/escalate 三种决定。</p>
+<p><strong>职责</strong>：作为独立中立裁决者，在 Generator 和 Evaluator 产生分歧时做出裁决。Decision 不写代码，不评估代码，只做 pass/retry/escalate 三种决定。</p>
 <p><strong>为什么需要 Decision？</strong></p>
 <p>在三角色架构中，Generator 和 Evaluator 之间的分歧没有自动解决机制。Evaluator 给出 FAIL 后，Generator 需要修改，但如果没有第三方裁决，可能出现两种情况：
 - Generator 过度修改（修改了不需要改的部分，引入新问题）
@@ -1385,7 +1385,7 @@ harness/                         # ★ 持久真值 + 消息总线
 - 独立上下文（每个角色运行在独立 SubAgent 中）
 - 对抗验证（Generator 实现 → Evaluator 评分 → 循环迭代）
 - 结构化输出（实现总结、评估报告、裁决记录）</p>
-<p><strong>自动化程度无法追齐</strong>（指平台默认能力；引入外部 Operator / 父 agent 可提升，见 §1.4.5 三档自动化）。核心差距在于：
+<p><strong>自动化程度无法追齐</strong>（指平台默认能力；引入外部 Stage Dispatcher / 父 agent 可提升，见 §1.4.5 三档自动化）。核心差距在于：
 - Claude Code 的 Orchestrator 可以<strong>自动发起</strong>对抗循环，无需人工干预
 - TRAE Work 需要人类<strong>手动触发</strong>每个 SPEC 工作流
 - 但一旦 SPEC 启动，tasks.md 中的对抗循环是<strong>自动执行</strong>的（包括 Decision 裁决）</p>
@@ -1641,7 +1641,7 @@ description: &gt;
 1. 必须先读取 harness/milestones/{milestone}/stages/{stage}/ 下的所有文档
 2. 严格遵循 TDD：先写测试 → 确认测试失败 → 再写实现
 3. 每次代码改动后立即运行测试，确认全部通过
-4. 完成一个 Stage 后立即 git commit，commit message 格式: &quot;feat({scope}): {描述}&quot;
+4. 完成一个 Stage 后按项目规范提交或等待 Orchestrator 指示
 5. 将实现总结写入 harness/milestones/{milestone}/stages/{stage}/gen.md
 6. 禁止评价自己的代码好坏
 7. 禁止修改 SPEC 文档或验收标准
@@ -1907,7 +1907,7 @@ description: &gt;
 3. 必须实际启动应用并通过浏览器测试
 4. 按四维评分标准打分
 5. 写入 harness/milestones/{milestone}/stages/{stage}/eval.md
-6. 截图保存到 eval/screenshots/
+6. 浏览器证据由 root Stage Orchestrator 写入 browser-check.md
 7. 不能&quot;放水&quot;，不确定时往低打分
 </code></pre>
 <h4 id="decision-subagent">Decision SubAgent</h4>
@@ -1915,7 +1915,7 @@ description: &gt;
 <pre><code class="language-markdown"># Decision SubAgent
 
 ## 角色
-你是中立裁决者（Orchestrator 代理）。你的职责是对比 Generator 的实现总结和 Evaluator 的评估报告，做出 pass/retry/escalate 裁决。你不写代码，不评估代码，只做裁决。
+你是独立中立裁决者。你的职责是对比 Generator 的实现总结、Evaluator 的评估报告和 Stage Contract，做出 pass/retry/escalate 裁决。你不写代码，不评估代码，只做裁决。
 
 ## 工具集
 - Read: 读取实现总结、评估报告、Contract 文件
@@ -2037,7 +2037,7 @@ description: &gt;
 - 完整性: 5 — 测试覆盖全部模型和连接逻辑
 - 用户体验: N/A（本 Stage 无 UI）
 - 总分: 14/15（排除 N/A 维度）
-- 截图: eval/screenshots/stage-1-api-health.png
+- 浏览器证据: harness/milestones/{milestone}/stages/{stage}/browser-check.md
 - 问题列表: 无阻塞性问题
 - 修复建议: 建议在 Stage 2 中增加数据库连接池配置
 </code></pre>

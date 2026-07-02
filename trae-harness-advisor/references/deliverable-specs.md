@@ -1,8 +1,8 @@
-# Deliverable Specifications (v4.5)
+# Deliverable Specifications (v4.6)
 
 > 本文件是 `trae-harness-advisor` Skill 的 Step 6 文件生成规格。
 > 术语与架构以 `../resources/harness-engineering-on-trae-work.md` 第零部分为权威。
-> 核心理念：Advisor 只生成**脚手架与指导思想**（角色 Skill、stage-executor playbook、结构骨架、RULE.md、空 board），**不生成任何业务内容**。三件套由 Orchestrator 运行时产出。
+> 核心理念：Advisor 只生成**脚手架与指导思想**（角色 Skill、stage-orchestrator playbook、旧名兼容 shim、结构骨架、RULE.md、空 board），**不生成任何业务内容**。三件套由 Orchestrator 运行时产出。
 
 ## 目录
 
@@ -11,17 +11,16 @@
 3. [1. Planner Role Skill](#1-planner-role-skill)
 4. [2. Generator Role Skill](#2-generator-role-skill)
 5. [3. Evaluator Role Skill](#3-evaluator-role-skill)
-6. [4. stage-executor Playbook Skill](#4-stage-executor-playbook-skill)
+6. [4. stage-orchestrator Playbook Skill](#4-stage-orchestrator-playbook-skill)
 7. [5. RULE.md（项目规范）](#5-rulemd项目规范)
 8. [6. 钩子规则文本](#6-钩子规则文本)
 9. [7. 三件套骨架模板](#7-三件套骨架模板)
 10. [8. stage-contract 骨架](#8-stage-contract-骨架)
 11. [9. state-board.json（v2 空表）](#9-state-boardjson-v2-空表)
-12. [9b. 最佳实践参考文档](#9b-最佳实践参考文档)
-13. [10. 可选 Agent 配置](#10-可选-agent-配置)
-14. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
-15. [11b. 可选：Operator playbook](#11b-可选operator-playbookgenerate_operator默认-false)
-16. [12. 生成后验证](#12-生成后验证)
+12. [10. 可选 Agent 配置](#10-可选-agent-配置)
+13. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
+14. [11b. 可选：Stage Dispatcher](#11b-可选stage-dispatchergenerate_stage_dispatcher默认-false)
+15. [12. 生成后验证](#12-生成后验证)
 
 ---
 
@@ -47,7 +46,7 @@
 | （不询问）agent_dir | `{agent_dir}` | `".trae/agents/"` |
 | （不询问）generate_patterns | `{generate_patterns}` | `false`（开启则额外生成多模式编排包：3 角色+4 playbook，见第 11 节） |
 
-> 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成。**Contract 已简化为 Orchestrator 一次标注关键点（见 stage-executor），不再有多轮协商，故无 `max_contract_rounds`。**
+> 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成。**Contract 已简化为 Orchestrator 一次标注关键点（见 stage-orchestrator），不再有多轮协商，故无 `max_contract_rounds`。**
 
 ### 评分严格度映射
 
@@ -87,7 +86,8 @@
 ├── generator-role/SKILL.md       # 内嵌 Agent 工具集 + 路径白名单
 ├── evaluator-role/SKILL.md       # 业务质量四维评分（不含裁决）
 ├── decision-role/SKILL.md        # 独立中立裁决者
-└── stage-executor/SKILL.md       # 运行时拉起 playbook
+├── stage-orchestrator/SKILL.md   # 运行时拉起 playbook
+└── stage-executor/SKILL.md       # 旧名兼容 shim
 RULE.md                           # 项目根目录（钩子规则加载）
 {harness_dir}                     # 默认 harness/（持久真值 + 消息总线）
 ├── templates/
@@ -95,18 +95,17 @@ RULE.md                           # 项目根目录（钩子规则加载）
 │   ├── tasks.skeleton.md
 │   ├── checklist.skeleton.md
 │   └── stage-contract.skeleton.md
-├── references/
-│   └── llm-task-authoring-best-practices.md   # 共享方法论（planner/generator/evaluator/contract 引用）
 └── state-board.json              # v2 空表
-（可选）{harness_dir}operator-playbook.md   # 唯一 TRAE Work 外部角色（仅 generate_operator=true）
+（可选）{harness_dir}stage-dispatcher.md   # 外部机械派发器（generate_stage_dispatcher=true）
 （可选）{agent_dir}               # 默认 .trae/agents/（仅 generate_agents=true）
 ├── generator.md  evaluator.md  decision.md
 .trae/specs/ → 加入 .gitignore（原生临时 scratch，不生成、不依赖）
 ```
 
-运行时由 Orchestrator 创建（**不在 Advisor 输出范围**）：
+运行时由 Planner / Orchestrator 创建（**不在 Advisor 输出范围**）：
 - `{harness_dir}milestones/{milestone}/milestone-plan.md`（Planner 产出）
-- `{harness_dir}milestones/{milestone}/stages/{stage}/{spec,tasks,checklist,contract,gen,eval,decision}.md`
+- `.trae/specs/` 下当前 Stage 的 `spec.md / tasks.md / checklist.md`（Orchestrator 运行 `/spec` 产出；临时脚手架，不复制到 `{harness_dir}`）
+- `{harness_dir}milestones/{milestone}/stages/{stage}/{contract,gen,eval,decision,browser-check}.md`（持久交付物/证据）
 
 注意：
 - Advisor **不生成任何业务内容**（不写 milestone-plan、不写三件套），只生成骨架与角色规范。
@@ -173,7 +172,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 **核心内容（必须保留）**:
 - 定位：独立、只读、中立第三方；**不写代码、不评分**，只裁决
-- 工具集：Read（gen/eval/contract/spec/board）+ Write（仅 decision.md）
+- 工具集：Read（gen/eval/contract/board；必要时读 Orchestrator 提供的当前 `.trae/specs` 上下文）+ Write（仅 decision.md）
 - 输入：`gen.md`+`eval.md`+`contract.md`+ 当前 rounds
 - 输出：`decision.md`（JSON：verdict pass/retry/escalate + reasoning + retry_focus/escalation_reason）
 - 裁决规则：pass / retry（rounds < `{max_rounds}`，必给 retry_focus）/ escalate（rounds 达上限或根本分歧）
@@ -181,11 +180,11 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 ---
 
-## 4. stage-executor Playbook Skill
+## 4. stage-orchestrator Playbook Skill
 
-**文件路径**: `{skill_dir}stage-executor/SKILL.md`
+**文件路径**: `{skill_dir}stage-orchestrator/SKILL.md`
 
-**生成规则**: 基于 `templates/stage-executor-skill-template.md`。这是 **L2 的单一运行时入口**，触发短语如"执行 Stage / 开始阶段 / run stage"。
+**生成规则**: 基于 `templates/stage-orchestrator-skill-template.md`。这是 **L2 的单一运行时入口**，触发短语如"执行 Stage / 开始阶段 / run stage"。同时生成 `{skill_dir}stage-executor/SKILL.md` 作为旧名兼容 shim，只指向 `@stage-orchestrator`。
 
 **核心内容（必须保留，确定性过程）**:
 1. 读 `{harness_dir}state-board.json` → 定位当前 Stage，校验 `depends_on` 全部 `passed`
@@ -205,14 +204,14 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 **文件路径**: `RULE.md`（项目根目录）
 
-**设计说明**: TRAE Work 不支持 `.trae/rules/`。在「设置 > 规则」建一条云端钩子规则让每个 Task 启动读 `RULE.md`；`RULE.md` 顶部指向 `stage-executor` playbook。
+**设计说明**: TRAE Work 不支持 `.trae/rules/`。在「设置 > 规则」建一条云端钩子规则让每个 Task 启动读 `RULE.md`；`RULE.md` 顶部指向 `stage-orchestrator` playbook。
 
 **生成规则**: 基于 `templates/project-rules-template.md`，按 `{tech_stack}`、`{project_scale}` 定制：
 - **常用命令**: 按 `{tech_stack}` 推断（React→`npm run dev`/`npm test`；Python→`pytest`；Go→`go test ./...` 等）
 - **关键目录结构**: `{harness_dir}`（持久总线）、`.trae/specs/`（临时 scratch，gitignore）
 - **编码约定**: 按 `{tech_stack}` 推断
 - **全局禁止修改**: `{harness_dir}`、`{skill_dir}`、`RULE.md`、`node_modules/`、`.git/`、`.env`
-- **入口指引**: "执行某个 Stage 时，加载 stage-executor playbook 并遵循其确定性流程"
+- **入口指引**: "执行某个 Stage 时，加载 stage-orchestrator playbook 并遵循其确定性流程；stage-executor 仅为旧名兼容入口"
 - 若 `{custom_rules}!="none"`：追加到"编码约定"
 
 ---
@@ -280,25 +279,22 @@ RULE.md                           # 项目根目录（钩子规则加载）
       "status": "planned | spec_ready | in_progress | passed | failed | escalated",
       "rounds": 0,
       "last_decision": "pass | retry | escalate | null",
-      "artifacts": { "contract": "", "gen": "", "eval": "", "decision": "" }
+      "artifacts": { "contract": "", "gen": "", "eval": "", "decision": "", "browser_check": "" }
     }]
   }]
 }
 ```
 
 - `milestone-plan.md` = 定义（静态只读）；`state-board.json` = 状态机（动态唯一真值）。两者不重复：plan 描述"是什么"，board 记录"到哪一步"。
+- **artifacts schema**：
+  - adversarial / loop：`contract/gen/eval/decision/browser_check`
+  - classify：`classify` + `routes.{label}.*`
+  - fanout：`parts` + `synthesis`
+  - generate-filter：`candidates` + `selection`
+  - tournament：`brackets` + `winner`
+  - 三件套 `spec/tasks/checklist` 不进入 artifacts。
 - **写协议（最小更新）**：无引擎锁；每次只对当前 Stage 那一条记录做最小字段更新，不整体重写、不动其它 Stage → 不相交小改动，git 合并不冲突。
 - **并发语义**：Stage 并发 = 人类开多个独立云端对话，非自动调度；`depends_on` 是人工投递前的代码冲突规避依据（确认依赖已 passed 且无源文件交集），非自动门控。
-
----
-
-## 9b. 最佳实践参考文档
-
-**文件路径**: `{harness_dir}references/llm-task-authoring-best-practices.md`（核心产物，始终生成）
-
-**生成方式**: 直接从 advisor 包 `references/llm-task-authoring-best-practices.md` **原样复制**（无占位符替换）到目标项目 `{harness_dir}references/` 下。使其随项目仓库走，让 planner/generator/evaluator/contract 骨架内的「详见 {harness_dir}references/...」引用可解析。
-
-**内容**: 面向弱执行 LLM 的任务拆分与文档质量方法论，6 节——三原则（一命令=一边界／显式排除／停止条件）、分阶段拆分+预算+串并行判据、6 段式子任务、执行自我监控（7 必停+诊断）、状态报告格式、验收判定。各角色内联硬规则已自足，此文档为深度补充。
 
 ---
 
@@ -308,9 +304,9 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 | 文件 | 模板 | 要点 |
 |------|------|------|
-| `{agent_dir}generator.md` | `templates/generator-agent-template.md` | 工具集 + 路径白名单（可改 src/、tests/；禁改 {harness_dir}） |
-| `{agent_dir}evaluator.md` | `templates/evaluator-agent-template.md` | 只读全部、只写 eval.md；`{verification_mode}` 调工具集 |
-| `{agent_dir}decision.md` | `templates/decision-agent-template.md` | 仅 Read；裁决阈值映射 `{eval_strictness}`；escalate 条件含 `{max_rounds}` |
+| `{agent_dir}generator.md` | `templates/generator-agent-template.md` | 读当前 Stage 三件套上下文 + contract.md；可改 src/、tests/；只写 gen.md |
+| `{agent_dir}evaluator.md` | `templates/evaluator-agent-template.md` | 子代理无 MCP；只读全部、只写 eval.md；浏览器证据读取 `browser-check.md` |
+| `{agent_dir}decision.md` | `templates/decision-agent-template.md` | 独立裁决者；读 gen/eval/contract/board；只写 decision.md；不强依赖 harness 下 spec.md |
 
 跳过：`{task_type}="verification"` 时跳过 generator.md。
 
@@ -335,27 +331,27 @@ RULE.md                           # 项目根目录（钩子规则加载）
 | `{skill_dir}pattern-generate-filter/SKILL.md` | `templates/pattern-generate-filter-template.md` | Generate-and-filter |
 | `{skill_dir}pattern-tournament/SKILL.md` | `templates/pattern-tournament-template.md` | Tournament |
 
-> adversarial 与 loop 已由 stage-executor 内置（loop=retry 泛化），无需额外文件。Planner 在 milestone-plan 给每个 Stage 标 `pattern`；stage-executor 据此路由（见 resources 3.10）。未开启多模式包时，所有 Stage 走默认 adversarial。
+> adversarial 与 loop 已由 stage-orchestrator 内置（loop=retry 泛化），无需额外文件。Planner 在 milestone-plan 给每个 Stage 标 `pattern`；stage-orchestrator 据此路由（见 resources 3.10）。未开启多模式包时，所有 Stage 走默认 adversarial。
 
 ---
 
-## 11b. 可选：Operator playbook（`generate_operator`，默认 false）
+## 11b. 可选：Stage Dispatcher（`generate_stage_dispatcher`，默认 false）
 
-当 `{generate_operator}=true` 时额外生成 **1 个文件**——本框架**唯一运行在 TRAE Work 之外**的角色，对应「三档自动化」的 B 档（人 + Codex-CUA + TRAE Work）。
+当 `{generate_stage_dispatcher}=true` 时额外生成 **1 个文件**——运行在 TRAE Work 之外的**机械执行派发器**，对应「三档自动化」的 B 档（人类 Supervisor/Lead + Codex-CUA Dispatcher + TRAE Work）。
 
 | 文件 | 模板 | 位置说明 |
 |------|------|------|
-| `{harness_dir}operator-playbook.md` | `templates/operator-playbook-template.md` | **不放进 `{skill_dir}`**（那是 TRAE Work 内部技能目录）。它是总线里的一份外部驱动说明，供人照做 / 喂给 Codex-CUA 当指令 / 给父 agent 当编排脚本 |
+| `{harness_dir}stage-dispatcher.md` | `templates/stage-dispatcher-template.md` | **不放进 `{skill_dir}`**（那是 TRAE Work 内部技能目录）。它是总线里的一份外部派发说明，供人照做 / 喂给 Codex-CUA 当机械执行指令 / 给父 agent 当编排脚本 |
 
 **生成方式**: 从模板复制，替换 `{harness_dir}`/`{max_adversarial_rounds}` 等占位符即可。
 
-**它解决什么**: 把原「人节点」拆成「操作员（机械搬运）」+「监督者（判断）」。Operator 只接管**机械调度**——读 board 找 ready Stage → 在 TRAE Work 开对话派发 stage-executor → 等完成 → 读 decision.md → pass 推进 / escalate/[BLOCKED] 上抛监督者。**一切判断仍归人**（接受 escalate、纠偏方向、给授权）。收益随模式不同：fanout/tournament/generate-filter 最大（机器分批替代人分批），adversarial/loop 有限。
+**它解决什么**: 把原「人节点」拆成三段：Supervisor/Lead 发起 Planner 规划对话并确认 milestone-plan；Stage Dispatcher 只接管**执行阶段机械派发**——读 board 找 ready Stage → 在 TRAE Work 开执行对话派发 `@stage-orchestrator` → 等完成 → 读 decision.md → pass 推进 / escalate/[BLOCKED] 上抛 Supervisor；Supervisor/Lead 处理 review、授权、纠偏、最终仲裁。收益随模式不同：fanout/tournament/generate-filter 最大（机器分批替代人分批），adversarial/loop 有限。
 
-**三档自动化**（谁扮演 Operator）：A=人（现状）｜B=Codex-CUA（变相全自动，受可靠性/成本/平台 ToS 约束）｜C=强 LLM 父 agent 走 TRAE API（最干净，依赖平台暴露 API）。
+**三档自动化**（谁扮演 Dispatcher）：A=人（人兼 Lead + Dispatcher + Supervisor）｜B=Codex-CUA（机器搬运，人只处理规划确认/review/仲裁/授权）｜C=强 LLM 父 agent 走 TRAE API（最干净，依赖平台暴露 API）。
 
-**护栏**（模板内已内置，务必保留）：只搬运不判断、状态以总线文本为准（不靠屏幕解析业务状态）、动作幂等+有界重试、事件驱动禁忌忙轮询、最小 UI 面、不改业务真值、全程写 `operator-log.md`。**CUA 特有风险**（集成面决定可靠性、成本、ToS/反滥用）须如实告知用户由其权衡。
+**护栏**（模板内已内置，务必保留）：只搬运不判断、规划确认/review/escalate/BLOCKED/授权/最终仲裁一律上抛 Supervisor、状态以总线文本为准（不靠屏幕解析业务状态）、动作幂等+有界重试、事件驱动禁忌忙轮询、最小 UI 面、不改业务真值、全程写 `stage-dispatcher-log.md`。**CUA 特有风险**（集成面决定可靠性、成本、ToS/反滥用）须如实告知用户由其权衡。
 
-> 与多模式包正交：`generate_operator` 可单独开，也可与 `generate_patterns` 同开（后者收益最大）。未开启时默认 A 档（人当操作员）。
+> 与多模式包正交：`generate_stage_dispatcher` 可单独开，也可与 `generate_patterns` 同开（后者收益最大）。未开启时默认 A 档（人当 Dispatcher）。
 
 ---
 
@@ -363,8 +359,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 生成所有文件后执行：
 
-1. **目录检查**: `{skill_dir}` 5 个角色/playbook 目录（planner/generator/evaluator/decision/stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_operator=true` 另有 `{harness_dir}operator-playbook.md`。
-2. **文件计数**: 核心 **12 个文件**（5 个 Skill + RULE.md + 4 个骨架 + state-board.json + best-practices 参考文档），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Operator playbook。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
+1. **目录检查**: `{skill_dir}` 5 个核心角色/playbook 目录（planner/generator/evaluator/decision/stage-orchestrator）和 1 个旧名 shim（stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_stage_dispatcher=true` 另有 `{harness_dir}stage-dispatcher.md`。
+2. **文件计数**: 核心 **12 个文件**（5 个权威 Skill + 1 个 stage-executor 兼容 shim + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Stage Dispatcher 文件。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
 3. **引用检查**: 路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 

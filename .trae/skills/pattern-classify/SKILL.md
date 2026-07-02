@@ -12,14 +12,14 @@ description: >
 输入形态多样、需先判类再处理（如：请求是开发/验收/文档？bug 属哪个模块？）。
 
 ## 确定性流程
-1. 读 board 定位 Stage、校验 depends_on；读 milestone-plan 取该 Stage 的**类别集合 + 路由表**（label→目标角色/pattern）。
+1. 读 board 定位 Stage、校验 depends_on；读 milestone-plan 取该 Stage 的**类别集合 + 路由表**（label→`role:*` 或 `pattern:*`）。
 2. 运行 /spec 产三件套到 .trae/specs。
 3. 【派发独立 SubAgent @classifier-role】→ `classify.md`（label/route/confidence/reasoning）。
 4. **据 classify.md 分支**：
-   - confidence=high/medium → 按 route 派发对应角色或加载对应 pattern playbook（如 route=adversarial 则走 stage-executor 的对抗流程）。
+   - confidence=high/medium → 由你（root Orchestrator）按 route 执行分支：`role:*` 派发对应叶子角色；`pattern:*` 加载对应 pattern playbook 并在当前 root 对话内 inline 展开（如 `pattern:adversarial` 则执行 Stage Orchestrator 的对抗子流程）。
    - confidence=low 或 label 不在集合内 → escalate 人工。
 5. 回写 board（status/last_decision/artifacts: classify + 路由后产物）。
 
 ## 注意
-- Classifier 不执行路由；路由是你（Orchestrator）的分支动作。
-- 路由目标必须在路由表内，避免乱跳。
+- Classifier 不执行路由；路由是你（root Orchestrator）的分支动作。
+- 路由目标必须在路由表内，避免乱跳；禁止让 Classifier 或其它 SubAgent 递归启动 stage-orchestrator。

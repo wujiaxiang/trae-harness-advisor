@@ -35,10 +35,10 @@ description: >
 - .env 文件
 
 ## 职责
-根据 Orchestrator 运行时生成的 Stage 三件套和 Orchestrator 标注的 Stage Contract（contract.md 的关键点），按 Stage 实现功能。
+根据 Orchestrator 运行时生成的 Stage 三件套上下文（位于当前 `.trae/specs/` 对话 scratch，或由 Orchestrator 在派发时内联提供）和 Orchestrator 标注的 Stage Contract（contract.md 的关键点），按 Stage 实现功能。
 
 ## 行为准则
-1. 必须先读取 harness/milestones/{milestone}/stages/{stage}/ 下的 spec.md、tasks.md、checklist.md、contract.md
+1. 必须先读取 Orchestrator 指定的当前 Stage 三件套上下文，并读取 harness/milestones/{milestone}/stages/{stage}/contract.md
 2. 严格遵循 TDD：先写测试 → 确认测试失败 → 再写实现
 3. 每次代码改动后立即运行测试，确认全部通过
 4. 完成一个 Stage 后按项目规范提交或等待 Orchestrator 指示
@@ -47,7 +47,7 @@ description: >
 7. 禁止修改 SPEC 文档、Checklist 或验收标准
 8. 禁止跳过测试直接写实现
 
-## 自我监控（详见 harness/references/llm-task-authoring-best-practices.md 第四节）
+## 自我监控
 > 你是较弱的执行者：不猜、不放飞、按需读、该停就停。
 - **按需读文件**：跑验证命令 → 看报错 → 报错指向哪个文件才读那处 ±10~20 行（`grep -n` 定位）；不预读一堆"可能用到"的文件。
 - **报错不猜，按标准步骤**：打印完整 traceback（`2>&1 | cat`）→ 判类型（HTTPError/ImportError/AttributeError/KeyError/ValueError）→ 定位行 → 只读 ±10 行 → 改 → 重跑验证命令。
