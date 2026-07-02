@@ -19,7 +19,12 @@
             "gen": "harness/milestones/harness-selftest/stages/probe/gen.md",
             "eval": "harness/milestones/harness-selftest/stages/probe/eval.md",
             "decision": "harness/milestones/harness-selftest/stages/probe/decision.md",
-            "browser_check": "harness/milestones/harness-selftest/stages/probe/browser-check.md"
+            "browser_check": "harness/milestones/harness-selftest/stages/probe/browser-check.md",
+            "ap19_supplement": {
+              "verdict": "BLOCKED",
+              "decision": "harness/milestones/harness-selftest/stages/probe/decision-ap19.md",
+              "note": "实验补测，不改变 probe.status=passed；MCP server offline 致 wrapper 真机调用未通"
+            }
           }
         },
         {
