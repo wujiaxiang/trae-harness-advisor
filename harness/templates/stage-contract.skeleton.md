@@ -24,16 +24,12 @@
 
 ## MCP Bridge 能力（可选，仅 mcp_access_mode=evaluator_shell_bridge）
 - mode: orchestrator_delegated | evaluator_shell_bridge
-- check_result: harness/mcp-bridge/check.sh --json 的摘要
+- check_result: tools/mcp-bridge/check.sh --json 的摘要
 - allowed_commands:
-  - {命令名}: {用途、参数边界、输出/截图/trace 路径约定}
+  - {wrapper}: {allowedTools、参数边界、输出/截图/trace 路径约定}
 - mcp_to_shell_translation:
-  - 当你想导航 URL 时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:{url}`
-  - 当你想获取快照时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_snapshot`
-  - 当你想截图时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot`
-  - 当你想点击元素时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_click element:"{label}" ref:{snapshot_ref}`
-  - 当你想执行 JS 时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'`；注意参数名是 `function`，不是 `expression`
-- fallback: bridge 不可用时 fallback 到 orchestrator_delegated，或输出 `[BLOCKED: MCP bridge unavailable]`
+  - 从 `config/mcporter.json` 的 `bridgeWrappers.*.translationExamples` 誊写真实命令样例；不得猜参数名
+- fallback: bridge 未安装时输出 `[BLOCKED: MCP bridge not installed]`；bridge 自检不可用时 fallback 到 orchestrator_delegated，或输出 `[BLOCKED: MCP bridge unavailable]`
 
 ## 验收项 6 段式要求
 每个验收项尽量包含：

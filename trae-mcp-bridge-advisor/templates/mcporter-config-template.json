@@ -27,23 +27,23 @@
       "translationExamples": [
         {
           "mcp_intent": "navigate to a URL",
-          "shell": "{harness_dir}mcp-bridge/bin/mcp-browser playwright.browser_navigate url:https://example.com"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:https://example.com"
         },
         {
           "mcp_intent": "capture a browser snapshot",
-          "shell": "{harness_dir}mcp-bridge/bin/mcp-browser playwright.browser_snapshot"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.browser_snapshot"
         },
         {
           "mcp_intent": "take a screenshot",
-          "shell": "{harness_dir}mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot"
         },
         {
           "mcp_intent": "click an element from a snapshot",
-          "shell": "{harness_dir}mcp-bridge/bin/mcp-browser playwright.browser_click element:\"Learn more\" ref:f2e6"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.browser_click element:\"Learn more\" ref:f2e6"
         },
         {
           "mcp_intent": "evaluate JavaScript",
-          "shell": "{harness_dir}mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'"
         }
       ],
       "mustLogTo": "eval.md"

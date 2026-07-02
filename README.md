@@ -43,14 +43,14 @@
 │   ├── decision-role/SKILL.md                         # 独立中立裁决者（独立 SubAgent）
 │   ├── stage-orchestrator/SKILL.md                    # Stage Orchestrator 运行时 playbook（只串联）
 │   ├── stage-executor/SKILL.md                        # 旧名兼容 shim
-│   └── mcporter-bridge/SKILL.md                       # AP19 MCP→Shell 翻译专用 Skill
+│   └── mcp-bridge-client/SKILL.md                     # AP19 MCP→Shell 通用协议 Skill（可选）
 ├── RULE.md                                            # 项目规范（钩子规则加载目标）
 ├── config/mcporter.json                               # AP19 MCP server/runtime 配置源
 ├── harness/                                           # 持久真值 + 消息总线
 │   ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
-│   ├── mcp-bridge/{install.sh,check.sh}               # AP19 shell bridge 脚手架
 │   ├── state-board.json                               # 已 seed: harness-selftest/probe
 │   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP19）
+├── tools/mcp-bridge/{install.sh,check.sh}             # AP19 shell bridge runtime fixture
 ├── poc/                                               # 平台能力自检 PoC（人类可读测试套件）
 │   └── harness-selftest/
 │       ├── README.md                                  # 如何运行与判读
@@ -153,7 +153,7 @@ Planner 在 `milestone-plan.md` 给每个 Stage 标 `pattern`（默认 `adversar
 
 ### 想先看它怎么跑？
 
-本仓库已实例化一套自检环境（`.trae/skills/`+`RULE.md`+`harness/`），可直接在真机 TRAE Work 上跑 `poc/harness-selftest/`——用一条提示词端到端验证 AP1–AP18（含 6 种模式路由）。AP19 用于验证实验性的 Evaluator shell-bridged MCP：需在云端运行环境 install 阶段调用 `cd /workspace && bash harness/mcp-bridge/install.sh`（或仓库实际 clone 目录），确认 Evaluator SubAgent 能自查并写 `eval.md`。详见 `poc/harness-selftest/README.md`。
+本仓库已实例化一套自检环境（`.trae/skills/`+`RULE.md`+`harness/`），可直接在真机 TRAE Work 上跑 `poc/harness-selftest/`——用一条提示词端到端验证 AP1–AP18（含 6 种模式路由）。AP19 用于验证实验性的 Evaluator shell-bridged MCP：需在云端运行环境 install 阶段调用 `cd /workspace && bash tools/mcp-bridge/install.sh`（或仓库实际 clone 目录），确认 Evaluator SubAgent 能自查并写 `eval.md`。详见 `poc/harness-selftest/README.md`。
 
 ## 全自动 vs 半自动：6 种模式怎么模拟、人在哪里补位
 
@@ -276,7 +276,7 @@ flowchart TB
 2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0–v4.5 决策记录，决策 1→17 按时间线）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（12 个核心文件 + 钩子规则文本 + 可选 Agent 配置 + 可选 7 个多模式 Skill，见 §11）
-5. **`trae-harness-advisor/templates/`** — 27 个模板（4 核心角色+stage-orchestrator+旧名 shim+project-rules+4 骨架+3 Agent 配置+3 多模式角色+4 pattern playbook+stage-dispatcher+eval-report+2 MCP bridge 脚本+mcporter config+mcporter-bridge Skill）
+5. **`trae-harness-advisor/templates/`** — Harness 编排模板；MCP bridge runtime 模板已迁移到 `trae-mcp-bridge-advisor/templates/`
 6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP18 假设，并保留 AP19 shell bridge 实验验证入口
 
 **请勿回退**：

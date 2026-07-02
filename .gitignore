@@ -1,7 +1,7 @@
 .DS_Store
 **/.DS_Store
 .trae/specs/
-harness/mcp-bridge/bin/
-harness/mcp-bridge/discovery/
+tools/mcp-bridge/bin/
+tools/mcp-bridge/discovery/
 config/.playwright-mcp/
 .playwright-mcp/

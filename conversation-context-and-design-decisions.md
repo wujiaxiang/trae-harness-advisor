@@ -558,7 +558,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 **仍待处理/操作项**：
 - AP11 实际浏览器交互需预装 chromium（`npx playwright install chromium`）或配置 TRAE 远程环境（docs.trae.cn/solo_set-up-the-remote-environment）。
-- AP19 新增 `evaluator_shell_bridge` 实验验证入口：通过 TRAE Work 远程环境 install 初始化 `harness/mcp-bridge/`，让 Evaluator SubAgent 通过白名单 shell bridge 自查；未真机验证前不得替代默认 `orchestrator_delegated`。
+- AP19 新增 `evaluator_shell_bridge` 实验验证入口：通过 TRAE Work 远程环境 install 初始化 `tools/mcp-bridge/`，让 Evaluator SubAgent 通过白名单 shell bridge 自查；bridge runtime 由 `trae-mcp-bridge-advisor` / `config/mcporter.json` 维护，未真机验证前不得替代默认 `orchestrator_delegated`。
 - 长 session 中 Orchestrator 上下文窗口管理：靠 board+harness 外置状态分 Stage 续跑；超长流程建议人工分批投递（暂未纳入 PoC）。
 - 小项目 Lite 预设（跳过部分角色）为可选优化，尚未实现。
 

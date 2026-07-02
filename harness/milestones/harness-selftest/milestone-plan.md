@@ -32,12 +32,12 @@
 | AP16 | **classify 路由**：Orchestrator 加载 `@pattern-classify` → `@classifier-role` 子代理打标签 → Orchestrator 据标签分支 | patterns | Orchestrator + Classifier |
 | AP17 | **generate-filter 路由**：Orchestrator 加载 `@pattern-generate-filter` → 2 个 `@generator-role` 候选 → `@selector-role` 选优 | patterns | Orchestrator + Selector |
 | AP18 | **tournament 路由（可选）**：Orchestrator 加载 `@pattern-tournament` → `@selector-role` 两两淘汰选冠军（log2(N) 有界） | patterns | Orchestrator + Selector |
-| AP19 | **Evaluator shell-bridged MCP（实验）**：远程环境 install 初始化 `harness/mcp-bridge/`；Orchestrator 只写 `mcp_bridge_capabilities` 与 `mcp_to_shell_translation`；Evaluator SubAgent 按翻译表通过白名单 shell bridge 自查并写 `eval.md` | probe（实验补测） | Orchestrator + Evaluator |
+| AP19 | **Evaluator shell-bridged MCP（实验）**：远程环境 install 初始化 `tools/mcp-bridge/`；Orchestrator 只写 `mcp_bridge_capabilities` 与 `mcp_to_shell_translation`；Evaluator SubAgent 按翻译表通过白名单 shell bridge 自查并写 `eval.md` | probe（实验补测） | Orchestrator + Evaluator |
 
 > 自检约定：**AP4 为已知平台限制（MCP 不下发子代理），记为 known-limitation，不触发 escalate、不阻塞 Stage 通过**；probe 的 Stage 通过判定 = 其余 AP（AP1-3,5-11）全 PASS。这样 probe=passed，adaptive/patterns 的 depends_on 才可被满足（用于测 AP14 门控与多模式路由）。
 > **多模式约定**：`patterns` 是**多模式路由自检 Stage**——它有意在一个 Stage 内依次驱动多个 pattern playbook（正常业务 Stage 每个只标一个 `pattern`），目的是一次验证 v4.5 路由与 3 个新角色（Classifier/Synthesizer/Selector）是否可加载调度。AP18（tournament）为可选，候选数少时其淘汰=选优，与 AP17 原语重叠。
 > **环境约定（AP11 真实浏览器前提）**：Playwright MCP server 只暴露工具，浏览器二进制需另装。云端跑真实导航前，在「设置 > 云端运行环境 > 手动配置」把「**安装命令**」填 `npx -y playwright@1.57.0 install --with-deps chromium`（**版本 pin 到 MCP 内置 playwright**；不 pin 会拉最新版装错修订目录 → binary-not-found，排障见方法论附录 D）、「**启动命令**」清空（本仓库无 server）。未装/版本错则 AP11 降级为"代行链路通/browser not found"，仍不阻塞 probe 通过。
-> **AP19 约定**：`evaluator_shell_bridge` 是实验增强，不改变 AP1–AP18 已验证结论。必须在 TRAE Work 云端运行环境 install 中调用 `cd /workspace && bash harness/mcp-bridge/install.sh`（或仓库实际 clone 目录）并接入真实 bridge wrapper；默认 scaffold 未接真实 MCP 时应记录 `[BLOCKED: MCP bridge unavailable]`，不得声称通过。
+> **AP19 约定**：`evaluator_shell_bridge` 是实验增强，不改变 AP1–AP18 已验证结论。必须在 TRAE Work 云端运行环境 install 中调用 `cd /workspace && bash tools/mcp-bridge/install.sh`（或仓库实际 clone 目录）；bridge runtime 由 `trae-mcp-bridge-advisor` / `config/mcporter.json` 维护。bridge 不可用时应记录 `[BLOCKED: MCP bridge unavailable]`，不得声称通过。
 
 ---
 

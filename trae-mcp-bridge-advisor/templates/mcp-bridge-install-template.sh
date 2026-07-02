@@ -5,9 +5,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HARNESS_DIR="${HARNESS_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
-PROJECT_DIR="$(cd "${HARNESS_DIR}/.." && pwd)"
-BRIDGE_DIR="${HARNESS_DIR}/mcp-bridge"
+BRIDGE_DIR="${MCP_BRIDGE_DIR:-${SCRIPT_DIR}}"
+PROJECT_DIR="$(cd "${BRIDGE_DIR}/../.." && pwd)"
 BIN_DIR="${BRIDGE_DIR}/bin"
 DISCOVERY_DIR="${BRIDGE_DIR}/discovery"
 CONFIG="${MCP_BRIDGE_CONFIG:-${PROJECT_DIR}/config/mcporter.json}"

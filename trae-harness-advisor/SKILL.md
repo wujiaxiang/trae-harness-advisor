@@ -154,8 +154,8 @@ Ask (one round, 3 questions):
 
 5d. MCP access mode for browser/external verification?
    A. orchestrator_delegated (default) — root Stage Orchestrator uses MCP and writes browser-check.md
-   B. evaluator_shell_bridge (experimental) — also generate harness/mcp-bridge/*; remote environment install
-      must run `cd /workspace && bash harness/mcp-bridge/install.sh` (or the actual clone directory).
+   B. evaluator_shell_bridge (experimental) — use an existing bridge maintained by trae-mcp-bridge-advisor;
+      remote environment install must run `cd /workspace && bash tools/mcp-bridge/install.sh` (or the actual clone directory).
       Evaluator uses only whitelisted shell bridge commands
       declared in contract.md and writes evidence into eval.md. Must be validated by AP19 before treating as stable.
 ```
@@ -258,10 +258,10 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
     → {skill_dir}pattern-{classify,fanout,generate-filter,tournament}/SKILL.md  (4 playbooks)
 14. (Optional, generate_stage_dispatcher=true) Stage Dispatcher file (autonomy level B, see deliverable-specs §11b):
     → {harness_dir}stage-dispatcher.md   (external mechanical dispatcher; NOT under {skill_dir})
-15. (Optional, mcp_access_mode=evaluator_shell_bridge) MCP bridge scaffold (experimental AP19, see deliverable-specs §11c):
-    → config/mcporter.json
-    → {harness_dir}mcp-bridge/{install.sh,check.sh}
-    → {skill_dir}mcporter-bridge/SKILL.md   (focused internal Skill for MCP→Shell translation)
+15. (Optional, mcp_access_mode=evaluator_shell_bridge) MCP bridge dependency (experimental AP19, see deliverable-specs §11c):
+    → do not generate bridge runtime here
+    → check for config/mcporter.json + tools/mcp-bridge/{install.sh,check.sh}
+    → if missing, output [BLOCKED: MCP bridge not installed] and point to trae-mcp-bridge-advisor
 ```
 
 Note: do NOT generate milestone-plan.md or any three-piece instance — those are produced by Planner and the Orchestrator at runtime.
