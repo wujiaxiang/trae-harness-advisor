@@ -2,6 +2,11 @@
   "version": "0.1",
   "mode": "evaluator_shell_bridge",
   "description": "Whitelist of shell commands that let Evaluator SubAgents use MCP-backed checks without direct MCP tool access.",
+  "source_model": {
+    "trae_ui_mcp": "TRAE UI-registered MCP servers are available to the root agent, but are not assumed to be visible from the remote environment shell or SubAgents.",
+    "mcporter_discovery": "Optional only. Set MCP_BRIDGE_DISCOVER=1 plus MCP_BRIDGE_SERVER_NAME, MCP_BRIDGE_SERVER_CMD, or MCP_BRIDGE_HTTP_URL to record mcporter-visible tools under harness/mcp-bridge/discovery/.",
+    "subagent_runtime": "Evaluator SubAgents may only call wrapper commands listed below, not raw MCP tools or undiscovered mcporter calls."
+  },
   "commands": [
     {
       "name": "mcp-browser",

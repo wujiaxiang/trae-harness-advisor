@@ -374,9 +374,19 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 **远程环境配置要求**：TRAE Work 云端运行环境的 `runtime_config.install` 必须包含 `cd /workspace && bash {harness_dir}mcp-bridge/install.sh`（或仓库实际 clone 目录）；若需要下载 npm/pypi/github 依赖，`network_policy.common_dependencies` 必须允许对应源。install 脚本长度限制为 10KB，因此具体逻辑放入仓库脚本，远程配置只调用脚本。
 
+**MCP 来源模型**：
+- TRAE UI 注册的 MCP server 默认只保证 root agent 可用，不能假设它的配置文件/凭据在远程环境 shell 中可见。
+- `install.sh` 不自动“发现 TRAE 已注册 MCP”；它只支持显式 discovery：
+  - `MCP_BRIDGE_DISCOVER=1 MCP_BRIDGE_SERVER_NAME={mcporter_config_name}`：读取 MCPorter 已配置 server。
+  - `MCP_BRIDGE_DISCOVER=1 MCP_BRIDGE_SERVER_CMD='{stdio command}'`：按 stdio 命令探测 ad-hoc MCP server。
+  - `MCP_BRIDGE_DISCOVER=1 MCP_BRIDGE_HTTP_URL={url}`：按 HTTP MCP endpoint 探测。
+- discovery 结果只写入 `{harness_dir}mcp-bridge/discovery/` 供 Orchestrator/人读取，不自动扩权给 Evaluator。
+- Evaluator 真正可调用的能力仍必须落成 `{harness_dir}mcp-bridge/bin/mcp-browser` 这类 wrapper，并出现在 `manifest.json` 与 `contract.md` 白名单里。
+
 **运行契约**：
 - Stage Orchestrator 只运行 `check.sh --json` 并读取 `manifest.json`，不得把未知 MCP 能力临时发明给 Evaluator。
 - Stage Orchestrator 必须把 `manifest.json` 的 `invocation_template` / `translation_examples` 誊写成 contract 中的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`，让 Evaluator 明确知道“想用 MCP 时改用哪条 RunCommand”。
+- `check.sh --json` 中的 `discovery` 字段只表示 MCPorter 是否能看到某些 server/tool，不等价于 SubAgent 可用；只有 `commands.* == available` 才代表 wrapper 可供 Evaluator 使用。
 - Evaluator 只能调用 contract 中 `mcp_bridge_capabilities` 声明的白名单命令；遇到浏览器/MCP 意图时必须按 `mcp_to_shell_translation` 改写成 shell，而不是寻找 `mcp__*` 工具。
 - bridge 证据必须写入 `eval.md`；`browser-check.md` 仅用于默认 `orchestrator_delegated` 或 fallback。
 - bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`，或按 contract 明确 fallback 到 `orchestrator_delegated`。

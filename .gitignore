@@ -2,3 +2,4 @@
 **/.DS_Store
 .trae/specs/
 harness/mcp-bridge/bin/
+harness/mcp-bridge/discovery/

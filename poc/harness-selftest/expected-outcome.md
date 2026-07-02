@@ -24,7 +24,7 @@
 | **AP16** | classify：`@pattern-classify` 被路由；`@classifier-role` 给出 `label`；root Orchestrator 据标签分支；SubAgent 不递归启动 Orchestrator | classifier 未加载/无标签 → 分类逻辑并入 Orchestrator 自身推理，取消独立角色 |
 | **AP17** | generate-filter：`@pattern-generate-filter` 被路由；两候选并行；`@selector-role` 选出 `winner` | selector 未加载/未选优 → 由 Evaluator 兼任选优，删 selector-role |
 | **AP18** | （可选）tournament：`@pattern-tournament` 被路由；`@selector-role` 两两淘汰给冠军 | 候选少时=选优（与 AP17 重叠）；路由失败 → tournament 降级为 generate-filter |
-| **AP19** | `mcp_access_mode=evaluator_shell_bridge`：远程环境 install 初始化 bridge；Orchestrator 只写 `mcp_bridge_capabilities` 与 `mcp_to_shell_translation`；Evaluator SubAgent 把 MCP/browser 意图改写成白名单 shell 命令自查并把证据写入 `eval.md`；无 `browser-check.md` 中间代行细节 | bridge 不可用或 SubAgent 不能执行 → 记录 `[BLOCKED: MCP bridge unavailable]`，回退 `orchestrator_delegated` 或继续保留 AP19 未通过 |
+| **AP19** | `mcp_access_mode=evaluator_shell_bridge`：远程环境 install 初始化 bridge；`check.sh --json` 的 `commands.mcp-browser=available`；Orchestrator 只写 `mcp_bridge_capabilities` 与 `mcp_to_shell_translation`；Evaluator SubAgent 把 MCP/browser 意图改写成白名单 shell 命令自查并把证据写入 `eval.md`；无 `browser-check.md` 中间代行细节 | 只有 discovery 但 wrapper 不可用、bridge 不可用或 SubAgent 不能执行 → 记录 `[BLOCKED: MCP bridge unavailable]`，回退 `orchestrator_delegated` 或继续保留 AP19 未通过 |
 
 > 设计验证点（AP11–AP14）确认 v4.4 的新行为：浏览器代行（方案1）、codraft 共识子阶段、真自适应闭环、depends_on 门控。
 > **多模式验证点（AP15–AP18）**确认 v4.5 的 `pattern` 路由：Stage Orchestrator 是否据 `pattern` 加载对应 playbook，3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载调度。核心底层原语（并行=AP9、分支、有界淘汰）此前已验证，本组重点在**路由链路 + 新角色加载**。
