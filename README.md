@@ -16,7 +16,7 @@
 │   │   ├── harness-methodology.md                     # 方法论浓缩参考
 │   │   └── deliverable-specs.md                       # 文件生成规格
 │   ├── resources/                                     # Skill 运行时引用
-│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.5）
+│   │   └── harness-engineering-on-trae-work.md        # 方法论与架构完整文档（v4.6）
 │   └── templates/                                     # 可复用模板（23 个：4 角色+stage-orchestrator+兼容 shim+project-rules+4 骨架+3 Agent+多模式包 3 角色+4 playbook+dispatcher+eval-report）
 │       ├── planner-skill-template.md                  # Planner 角色 Skill 模板
 │       ├── generator-skill-template.md                # Generator 角色 Skill 模板（含路径白名单）
@@ -33,6 +33,10 @@
 │       ├── decision-agent-template.md                 # Decision Agent 配置模板（可选，未来兼容）
 │       ├── project-rules-template.md                  # RULE.md 模板（项目根目录，钩子规则加载）
 │       └── eval-report-template.md                    # 业务质量评估报告模板
+├── trae-mcp-bridge-advisor/                           # MCP shell bridge 初始化与维护 Skill
+│   ├── SKILL.md / SKILL.zh.md                         # bridge runtime 专家：新增 MCP server、维护 wrapper/安装/验证
+│   ├── references/bridge-runtime-spec.md              # MCP bridge runtime 规范
+│   └── templates/                                     # install/check/config/client Skill 模板
 ├── conversation-context-and-design-decisions.md       # 会话上下文与设计决策记录
 │
 │   # ↓↓↓ 以下为「自检 PoC 实例化环境」——由模板实例化，供真机 TRAE Work 跑 harness-selftest ↓↓↓
@@ -113,6 +117,27 @@
 - 并发 = 人类开多个独立对话推进；depends_on 是人工投递前的冲突规避依据，非自动调度。
 - MCP 访问默认由 Stage Orchestrator 代行并写 `browser-check.md`；`evaluator_shell_bridge` 可让 Evaluator 通过远程环境安装的 shell bridge 自查，证据写入 `eval.md`，AP19 已真机验证通过。
 - 约束强度：路径白名单/RULE.md 钩子/playbook 均为提示词级（best-effort），非沙箱强制，需 CI/评审兜底。
+
+### MCP bridge：让 SubAgent 受控使用 MCP（AP19 已验证）
+
+TRAE Work 当前的关键限制是：**SubAgent 默认不继承 MCP 工具**（AP4 known-limitation）。默认方案仍是 Stage Orchestrator 代行 MCP 并把证据写入 `browser-check.md`；如果希望 Evaluator 在自己的隔离上下文里亲自查证，可启用 `mcp_access_mode=evaluator_shell_bridge`。
+
+该模式已在 AP19 真机验证通过：Evaluator SubAgent 只调用项目 wrapper `tools/mcp-bridge/bin/mcp-browser`，通过 `playwright.playwright_navigate` / `playwright_screenshot` / `playwright_get_visible_text` 取得真实页面证据；白名单外 `playwright_invalid_tool` 被 wrapper 拦截为 `[BLOCKED: MCP bridge command not allowed]`；全程未直接调用 raw `npx mcporter call` 或 `mcp__*`。
+
+职责边界：
+
+| 组件 | 负责什么 | 不负责什么 |
+|------|----------|------------|
+| `trae-mcp-bridge-advisor` | 初始化/维护 `config/mcporter.json`、`tools/mcp-bridge/install.sh/check.sh`、wrapper 白名单、安装 pin/CDN、真机验证 | 不编排 Stage，不写 `harness/` 业务产物 |
+| `trae-harness-advisor` | 在 Stage contract 中消费 bridge：检查 `check.sh --json`，誊写 `allowedTools` 与 `translationExamples` | 不生成或扩权 bridge runtime |
+| `mcp-bridge-client` | 教 SubAgent 按 contract 把 MCP 意图翻译成 wrapper RunCommand | 不授予 MCP 权限，不允许 raw `mcporter call` |
+
+通用规则（不限浏览器 MCP）：
+
+- `config/mcporter.json` 是唯一配置源；新增 MCP server 时，`mcpServers.*.args/install`、`bridgeWrappers.*.server/allowedTools`、`translationExamples` 必须来自同一个真实 `tools/list` schema。
+- Mcporter 调用目标必须是 `server.tool`，wrapper 负责转发为 `mcporter call {server}.{tool}`；SubAgent 只能照 contract 的 wrapper 命令执行。
+- 需要二进制或外部运行时的 MCP（浏览器、数据库客户端、仿真器等）必须在 install 中维护版本 pin、CDN/镜像和系统依赖。
+- bridge 不可用时写 `[BLOCKED: MCP bridge unavailable]`；命令未列入白名单时写 `[BLOCKED: MCP bridge command not allowed]`；不得把静态 discovery 当真机证据。
 
 ### 概念速查：谁是什么
 
@@ -273,11 +298,12 @@ flowchart TB
 如果你是一个被要求继续优化此 Skill 的 Agent，请按以下顺序阅读：
 
 1. **`trae-harness-advisor/resources/harness-engineering-on-trae-work.md`** — Harness Engineering 在 TRAE Work 上的完整方法论（v4.6；先读第零部分核心概念定义，再读 4.1 Stage Orchestrator 与三件套骨架，多模式编排见 3.10）
-2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0–v4.5 决策记录，决策 1→17 按时间线）
+2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0–v4.6 决策记录，决策 1→17 按时间线）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（12 个核心文件 + 钩子规则文本 + 可选 Agent 配置 + 可选 7 个多模式 Skill，见 §11）
-5. **`trae-harness-advisor/templates/`** — Harness 编排模板；MCP bridge runtime 模板已迁移到 `trae-mcp-bridge-advisor/templates/`
-6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP19 假设
+5. **`trae-harness-advisor/templates/`** — Harness 编排模板；只消费 MCP bridge 协议，不维护 runtime
+6. **`trae-mcp-bridge-advisor/`** — MCP bridge runtime Skill；维护 `config/mcporter.json`、install/check、wrapper 白名单和 client 协议
+7. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP19 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。
