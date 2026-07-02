@@ -4,14 +4,19 @@
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest", "--headless"],
       "keepAlive": true,
+      "installNotes": [
+        "Playwright downloads large browser binaries. In China/slow networks, pin the Playwright version and set PLAYWRIGHT_DOWNLOAD_HOST to a reachable CDN.",
+        "Keep MCP server install/runtime details here instead of scattering them in TRAE remote-environment UI commands."
+      ],
       "install": [
-        "npx -y playwright install --with-deps chromium"
+        "PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium"
       ]
     }
   },
   "bridgeWrappers": {
     "mcp-browser": {
       "purpose": "Browser/UI evidence collection from Evaluator context.",
+      "policy": "Project-level policy wrapper over official mcporter. SubAgents must not call raw `npx mcporter call`; they may only call this wrapper with allowedTools.",
       "allowedTools": [
         "playwright.browser_navigate",
         "playwright.browser_snapshot",

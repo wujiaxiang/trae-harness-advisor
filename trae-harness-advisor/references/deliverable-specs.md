@@ -376,6 +376,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 **MCP 来源模型**：
 - MCP server 注册、安装命令、daemon keepAlive、wrapper 白名单与翻译样例由本项目 `config/mcporter.json` 自维护；不要依赖 TRAE UI 已注册 MCP 自动透传给 SubAgent。
+- 添加 MCP server 时必须把安装依赖一起维护进 `config/mcporter.json`：版本 pin、下载 CDN/镜像、系统依赖、daemon keepAlive 和 wrapper 白名单必须可审计。Playwright 这类大二进制下载建议使用 `PLAYWRIGHT_DOWNLOAD_HOST` 指向可达 CDN。
 - `install.sh` 读取 `config/mcporter.json`，执行各 server 的 `install` 命令，按 `bridgeWrappers.*.allowedTools` 生成 wrapper，并启动 `mcporter daemon`。
 - discovery 结果只写入 `{harness_dir}mcp-bridge/discovery/` 供 Orchestrator/人读取，不自动扩权给 Evaluator。
 - Evaluator 真正可调用的能力必须落成 `{harness_dir}mcp-bridge/bin/mcp-browser` 这类 wrapper，并同时出现在 `config/mcporter.json` 与 `contract.md` 白名单里。
@@ -385,6 +386,7 @@ RULE.md                           # 项目根目录（钩子规则加载）
 - Stage Orchestrator 必须把 `config/mcporter.json` 的 `bridgeWrappers.*.allowedTools` / `translationExamples` 誊写成 contract 中的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`，让 Evaluator 明确知道“想用 MCP 时改用哪条 RunCommand”。
 - `check.sh --json` 中的 `discovery` 字段只表示 MCPorter 是否能看到某些 server/tool，不等价于 SubAgent 可用；只有 `commands.* == available` 才代表 wrapper 可供 Evaluator 使用。
 - Evaluator 只能调用 contract 中 `mcp_bridge_capabilities` 声明的白名单命令；遇到浏览器/MCP 意图时必须按 `mcp_to_shell_translation` 改写成 shell，而不是寻找 `mcp__*` 工具。
+- 官方 `mcporter` 只作为底层 runtime；不得把 `npx mcporter call ...` 直接暴露给 SubAgent。项目 wrapper 是强制的 policy boundary。
 - bridge 证据必须写入 `eval.md`；`browser-check.md` 仅用于默认 `orchestrator_delegated` 或 fallback。
 - bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`，或按 contract 明确 fallback 到 `orchestrator_delegated`。
 - 本模式必须通过 AP19 真机验证后才能视为稳定能力；本地静态检查不能代表 AP19 通过。

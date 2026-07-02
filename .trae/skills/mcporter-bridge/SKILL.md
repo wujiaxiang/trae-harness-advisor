@@ -10,6 +10,8 @@ description: Evaluator SubAgent 使用 MCPorter/shell bridge 的专用翻译 Ski
 
 这个 Skill 只负责“翻译和约束”，不授予 MCP 权限。真实 MCP 能力来自远程环境 install 阶段安装的 MCPorter/bridge wrapper。
 
+官方 `mcporter` 是底层 runtime（daemon/call/list）。SubAgent 不得直接调用 `npx mcporter call ...`，因为那会绕过项目白名单；必须调用 `harness/mcp-bridge/bin/*` wrapper。
+
 ## 必读输入
 1. 当前 Stage 的 `contract.md`
 2. `contract.md` 中的 `mcp_bridge_capabilities`
@@ -27,6 +29,7 @@ description: Evaluator SubAgent 使用 MCPorter/shell bridge 的专用翻译 Ski
 
 ## 禁止事项
 - 不得直接调用、猜测或要求 `mcp__Playwright__*` 等 MCP tool。
+- 不得直接调用官方通用壳 `npx mcporter call ...`；必须经项目 wrapper。
 - 不得运行 contract 白名单以外的 bridge 命令。
 - 不得用 bridge 修改生产状态、提交表单、删除数据或执行不可逆操作，除非 contract 明确授权且 Stage 验收需要。
 - 不得把 Orchestrator 代行的 `browser-check.md` 当作本模式下的主要证据。
