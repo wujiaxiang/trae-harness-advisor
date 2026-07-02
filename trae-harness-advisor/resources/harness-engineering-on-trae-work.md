@@ -1516,9 +1516,9 @@ Generator 收到失败报告后，逐一修复问题，重新提交。Evaluator 
 
 **规避**：安装命令 pin 到 MCP 内置的 playwright 版本：
 ```
-npx -y playwright@1.57.0 install --with-deps chromium
+PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium
 ```
-> 版本号会随 MCP server 升级变化，不要硬记 1.57.0。用 D.3 一次性查出当前 MCP 实际用的版本再 pin。
+> 版本号会随 MCP server 升级变化，不要硬记 1.57.0。用 D.3 一次性查出当前 MCP 实际用的版本再 pin；国内网络建议同时设置 `PLAYWRIGHT_DOWNLOAD_HOST`，避免大二进制下载超时。
 
 #### D.3 排障步骤（binary-not-found 时）
 

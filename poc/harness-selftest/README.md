@@ -42,7 +42,7 @@
 
 | 编号 | 验证点 |
 |------|--------|
-| AP19 | `mcp_access_mode=evaluator_shell_bridge`：远程环境 install 初始化 `harness/mcp-bridge/`；Orchestrator 只写 bridge 能力和 MCP→Shell 翻译表到 contract；Evaluator SubAgent 按翻译表通过白名单 shell bridge 自查并写 `eval.md` |
+| AP19 | `mcp_access_mode=evaluator_shell_bridge`：`config/mcporter.json` 自维护 MCP server/install/CDN/wrapper 白名单；远程 install 初始化 `harness/mcp-bridge/` 并启动 daemon；Orchestrator 只把 config 白名单和 MCP→Shell 翻译表写到 contract；Evaluator SubAgent 只能按翻译表通过项目 wrapper 自查并写 `eval.md` |
 
 ```
 .trae/skills/{planner-role,generator-role,evaluator-role,decision-role,stage-orchestrator}/SKILL.md # 5 核心
@@ -63,10 +63,10 @@ harness/
 ## 如何运行（AP1–AP19）
 
 见 **`test-prompt.md`**：
-1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）+ 启用 Playwright MCP（AP4/AP11，你已配）+ **在「云端运行环境 > 手动配置」把「安装命令」填 `npx -y playwright@1.57.0 install --with-deps chromium`（版本 pin 到 MCP 内置 playwright，见 test-prompt 第 0 步 / 方法论附录 D）、「启动命令」清空**（AP11 真实导航前提；不配则降级为"链路通"）。
+1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）+ 启用 Playwright MCP（AP4/AP11，你已配）+ **在「云端运行环境 > 手动配置」把「安装命令」填 `PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium`（版本 pin 到 MCP 内置 playwright，见 test-prompt 第 0 步 / 方法论附录 D）、「启动命令」清空**（AP11 真实导航前提；不配则降级为"链路通"）。
 2. **复制 `test-prompt.md` 第 1 步那一整段**发给 TRAE Work——一次跑完 probe + adaptive、AP1–AP14。
 3. **补测 v4.5 多模式**：`probe`/`adaptive` 已在 v4.4 通过，直接复制 **第 1b 步**那段跑 `patterns` Stage（AP15–AP18，单独可跑）。
-4. **补测 AP19**：云端运行环境 install 需追加 `cd /workspace && bash harness/mcp-bridge/install.sh`（或仓库实际 clone 目录），并配置真实 MCP bridge wrapper；复制 **第 1c 步**那段跑 Evaluator shell bridge 验证。默认 scaffold 未接真实 bridge 时应 BLOCKED，不算通过。
+4. **补测 AP19**：云端运行环境 install 需执行 `cd /workspace && bash harness/mcp-bridge/install.sh`（或仓库实际 clone 目录）；MCP 安装和 wrapper 白名单由 `config/mcporter.json` 维护。复制 **第 1c 步**那段跑 Evaluator shell bridge 验证。
 4. 跑完让它把 `VERIFY[APn]` 汇总成表并 push 到 main。
 
 ## 如何判读
