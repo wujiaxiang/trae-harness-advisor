@@ -3,7 +3,10 @@
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest", "--headless", "--executable-path", "/root/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome"],
-      "keepAlive": true
+      "keepAlive": true,
+      "install": [
+        "PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium"
+      ]
     }
   }
 }
