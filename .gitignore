@@ -3,3 +3,4 @@
 .trae/specs/
 harness/mcp-bridge/bin/
 harness/mcp-bridge/discovery/
+config/.playwright-mcp/
