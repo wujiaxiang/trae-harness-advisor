@@ -26,3 +26,30 @@
 
 ## 通过判定
 AP1-3,5-11 全 PASS；AP4=FAIL 记 known-limitation，不触发 escalate、不阻塞 → verdict=pass。
+
+---
+
+## AP19 实验验证段（mcp_access_mode=evaluator_shell_bridge）
+
+> Orchestrator 按 stage-orchestrator playbook §5.5 运行 bridge 自检。本段为 AP19 实验补测，不改变 AP1–AP11 已验证结论。
+
+### Bridge 自检结果
+- 命令：`bash harness/mcp-bridge/check.sh --json`
+- `available`: **false**
+- `mode`: `evaluator_shell_bridge`
+- `commands.mcp-browser`: `unavailable`
+- `errors.mcp-browser`: （空字符串；stub 自检输出见下）
+- Stub 直跑 `harness/mcp-bridge/bin/mcp-browser --bridge-check`：stdout=`mcp-browser bridge is not configured`，exit=1（默认 scaffold 未接真实 MCP wrapper，MCP_BRIDGE_INSTALL_CMD 未设置）。
+
+### mcp_bridge_capabilities
+（bridge 不可用，无可用白名单命令可写入；manifest.json 声明的 `mcp-browser` 命令因 wrapper 为 stub 而不可用。）
+
+### mcp_to_shell_translation
+（bridge 不可用，不写入翻译表；按 spec Scenario: Bridge 不可用 分支处理。）
+
+### 结论
+`[BLOCKED: MCP bridge unavailable]`
+
+`VERIFY[AP19]: FAIL/BLOCKED — check.sh 返回 available=false，mcp-browser wrapper 为 stub（exit=1, "bridge is not configured"），未接真实 MCP，Evaluator 无法按翻译表通过 shell bridge 自查。`
+
+按 spec 约定：bridge 不可用时停止，不派发 Evaluator/Decision，不假装通过。AP19 不改变 probe Stage 已通过的 AP1–AP11 结论（milestone-plan §40：默认 scaffold 未接真实 MCP 时应记录 BLOCKED，不得声称通过）。
