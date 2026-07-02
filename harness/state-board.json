@@ -5,7 +5,7 @@
     {
       "id": "harness-selftest",
       "kind": "verification",
-      "status": "in_progress",
+      "status": "passed",
       "stages": [
         {
           "id": "probe",

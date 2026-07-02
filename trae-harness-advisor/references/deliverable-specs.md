@@ -46,7 +46,7 @@
 | （不询问）skill_dir | `{skill_dir}` | `".trae/skills/"` |
 | （不询问）agent_dir | `{agent_dir}` | `".trae/agents/"` |
 | （不询问）generate_patterns | `{generate_patterns}` | `false`（开启则额外生成多模式编排包：3 角色+4 playbook，见第 11 节） |
-| Q13: mcp_access_mode | `{mcp_access_mode}` | `"orchestrator_delegated"`；可选 `"evaluator_shell_bridge"`（实验，需 AP19 真机验证） |
+| Q13: mcp_access_mode | `{mcp_access_mode}` | `"orchestrator_delegated"`；可选 `"evaluator_shell_bridge"`（AP19 已真机验证，依赖项目 MCP bridge） |
 
 > 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成。**Contract 已简化为 Orchestrator 一次标注关键点（见 stage-orchestrator），不再有多轮协商，故无 `max_contract_rounds`。**
 

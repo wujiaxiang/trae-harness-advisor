@@ -65,7 +65,7 @@
 执行 harness-selftest Milestone 的 AP19 实验验证：mcp_access_mode=evaluator_shell_bridge。严格按 stage-orchestrator playbook，逐行输出 VERIFY[AP19]: PASS|FAIL — 一句话证据。如实回答，不要把本地静态检查当真机通过。
 
 - [ORCHESTRATOR] 读取 RULE.md；运行 `bash tools/mcp-bridge/check.sh --json`；读取 `config/mcporter.json`。
-- [ORCHESTRATOR] 若 check 返回 available=true 且 `commands.mcp-browser=available`，则把 `config/mcporter.json` 中 `bridgeWrappers.mcp-browser.allowedTools` 与 `translationExamples` 誊写为 `harness/milestones/harness-selftest/stages/probe/contract.md` 的 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation`；不要调用 Playwright/MCP 做浏览器观察，不写新的 browser-check 中间细节。
+- [ORCHESTRATOR] 若 check 返回 available=true 且 `commands.mcp-browser=available`，则把 `config/mcporter.json` 中 `bridgeWrappers.mcp-browser.allowedTools` 与 `translationExamples` 誊写为 `harness/milestones/harness-selftest/stages/probe/contract.md` 的 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation`；不要调用 MCP 做中间观察，不写新的 browser-check 中间细节。
 - [ORCHESTRATOR] 若 check 返回 available=false，则写明 `[BLOCKED: MCP bridge unavailable]`，VERIFY[AP19]=FAIL/BLOCKED，并停止；不得假装通过。
 - [EVALUATOR 独立子代理 @evaluator-role，可选加载 @mcp-bridge-client] 读取 contract.md 的 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation`；当想使用 MCP/browser 能力时，必须按翻译表改写成 RunCommand，只调用 `tools/mcp-bridge/bin/mcp-browser ...` 白名单命令完成一次查证；不得直接调用 `npx mcporter call ...` 或 `mcp__*`。把命令、关键输出、截图/trace 路径或 BLOCKED 原因写入 `harness/milestones/harness-selftest/stages/probe/eval.md`。
 - [EVALUATOR 负面用例] 尝试调用一个未列入白名单的 tool（如 `playwright_invalid_tool`），应被 wrapper 拒绝并输出 `[BLOCKED: MCP bridge command not allowed]`。

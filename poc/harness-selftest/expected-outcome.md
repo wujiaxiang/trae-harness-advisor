@@ -24,7 +24,7 @@
 | **AP16** | classify：`@pattern-classify` 被路由；`@classifier-role` 给出 `label`；root Orchestrator 据标签分支；SubAgent 不递归启动 Orchestrator | classifier 未加载/无标签 → 分类逻辑并入 Orchestrator 自身推理，取消独立角色 |
 | **AP17** | generate-filter：`@pattern-generate-filter` 被路由；两候选并行；`@selector-role` 选出 `winner` | selector 未加载/未选优 → 由 Evaluator 兼任选优，删 selector-role |
 | **AP18** | （可选）tournament：`@pattern-tournament` 被路由；`@selector-role` 两两淘汰给冠军 | 候选少时=选优（与 AP17 重叠）；路由失败 → tournament 降级为 generate-filter |
-| **AP19** | `mcp_access_mode=evaluator_shell_bridge`：`config/mcporter.json` 自维护 MCP server/install/CDN/wrapper 白名单；远程 install 生成 wrapper 并启动 daemon；`check.sh --json` 的 `commands.mcp-browser=available`；Orchestrator 只把 config 的白名单与翻译样例誊写为 contract；Evaluator SubAgent 只能经项目 wrapper 自查并写 `eval.md`；白名单外 tool 被 BLOCKED；无 `browser-check.md` 中间代行细节 | wrapper 不可用、bridge 不可用、SubAgent 不能执行、直接调用 raw `mcporter call`、白名单外未拦截、或只做 discovery 未经 wrapper → 记录 BLOCKED/FAIL，回退 `orchestrator_delegated` 或继续保留 AP19 未通过 |
+| **AP19** | `mcp_access_mode=evaluator_shell_bridge`：`config/mcporter.json` 自维护 MCP server/install/CDN/wrapper 白名单；远程 install 生成 wrapper 并启动 daemon；`check.sh --json` 的 `commands.mcp-browser=available`；Orchestrator 只把 config 的白名单与翻译样例誊写为 contract；Evaluator SubAgent 只能经项目 wrapper 自查并写 `eval.md`；wrapper 以 `server.tool` 形式转发给 MCPorter；白名单外 tool 被 BLOCKED；无 `browser-check.md` 中间代行细节 | wrapper 不可用、bridge 不可用、SubAgent 不能执行、直接调用 raw `mcporter call`、白名单外未拦截、只做 discovery 未经 wrapper、或工具名/参数未按 contract schema → 记录 BLOCKED/FAIL，回退 `orchestrator_delegated` 或继续保留 AP19 未通过 |
 
 > 设计验证点（AP11–AP14）确认 v4.4 的新行为：浏览器代行（方案1）、codraft 共识子阶段、真自适应闭环、depends_on 门控。
 > **多模式验证点（AP15–AP18）**确认 v4.5 的 `pattern` 路由：Stage Orchestrator 是否据 `pattern` 加载对应 playbook，3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载调度。核心底层原语（并行=AP9、分支、有界淘汰）此前已验证，本组重点在**路由链路 + 新角色加载**。
@@ -77,6 +77,14 @@
 > 总览：**13/14 PASS**，AP4 为已知平台限制（MCP 不下发子代理）记 known-limitation 不阻塞。board：probe=passed(rounds:1)、adaptive=passed(rounds:2, last_decision:pass)。
 > **v4.4 架构真机端到端验证成立**：Decision 独立、retry 闭环、三件套/总线分离、三方隔离、并行、浏览器代行(方案1)、codraft 共识子阶段、**真 retry→pass 自适应闭环(AP13)**、depends_on 门控。
 > **环境备注**：① AP11 真实浏览器——在「设置 > 云端运行环境 > 手动配置」把「**安装命令**」填 `PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium`（替换默认 `npm install`；**版本须 pin 到 MCP 内置 playwright**，国内网络需配置可达 CDN，否则可能超时或 binary-not-found，排障见方法论附录 D）、「**启动命令**」清空（本仓库无 server）；修对版本后 AP11 取到真实 `document.title=Example Domain` 即真实导航成功；文档 https://docs.trae.cn/work_set-up-the-remote-environment ；② 沙箱无预置 git identity，云端 agent 设了仓库级（非 --global）身份以满足 commit&push。
+
+### AP19 Evaluator shell-bridged MCP — ✅ 真机已验证（commit 7317aad）
+
+| 编号 | 实际结果 | 证据摘要 |
+|------|----------|----------|
+| AP19 | **PASS** | Evaluator 在 SubAgent 上下文只调用 `tools/mcp-bridge/bin/mcp-browser` wrapper：`playwright.playwright_navigate url:https://example.com headless:true` 返回 `Navigated to https://example.com`；`playwright.playwright_screenshot` 生成 `/root/Downloads/screenshot-2026-07-02T18-17-10-843Z.png`（18789B）；`playwright.playwright_get_visible_text` 返回 example.com 真实文本；负向 `playwright.playwright_invalid_tool` 被 wrapper 输出 `[BLOCKED: MCP bridge command not allowed]` 并 exit 2；未直接调用 raw `npx mcporter call` 或 `mcp__*`；Orchestrator 未写 AP19 browser-check。 |
+
+> 结论：AP19 从实验入口升级为 **端到端真机验证成立**。SubAgent 仍不继承 MCP（AP4 不变），但可通过项目自维护 shell bridge + contract 白名单 wrapper 获得受控 MCP 能力；wrapper 必须按 Mcporter `server.tool` 目标转发，contract 必须誊写真实方法名和参数 schema。
 
 ### 本次 v4.3 重跑（commit 21e4497）
 

@@ -7,7 +7,7 @@
 ## Milestone
 - id: `harness-selftest`
 - kind: `verification`
-- 目标：探测平台能力（Skill 自动加载/角色加载/隔离/MCP/白名单/总线/checklist/钩子/并行/无循环）+ 验证设计行为（retry 闭环、浏览器代行、codraft 共识子阶段、真 retry→pass 自适应闭环、depends_on 门控）+ 验证 v4.5 多模式编排路由（fanout/classify/generate-filter/tournament 的 playbook 加载与新角色调度）+ 实验验证 Evaluator shell bridge 是否能把 MCP 查证职责内收到 Evaluator SubAgent 上下文。
+- 目标：探测平台能力（Skill 自动加载/角色加载/隔离/MCP/白名单/总线/checklist/钩子/并行/无循环）+ 验证设计行为（retry 闭环、浏览器代行、codraft 共识子阶段、真 retry→pass 自适应闭环、depends_on 门控）+ 验证 v4.5 多模式编排路由（fanout/classify/generate-filter/tournament 的 playbook 加载与新角色调度）+ 验证 Evaluator shell bridge 能把受控 MCP 查证职责收回到 Evaluator SubAgent 上下文。
 - 范围边界：只写 `harness/milestones/harness-selftest/stages/{probe,adaptive,patterns}/` 下文件；不改 `src/`、不装依赖。
 
 ## 验证点清单（AP1–AP19）

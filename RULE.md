@@ -57,14 +57,15 @@
 - package.json / lockfile（除非 Stage Contract 明确授权）
 
 ## MCP bridge 约束（仅 evaluator_shell_bridge）
-- MCP server 注册、安装命令、wrapper 白名单与翻译样例由本项目 `config/mcporter.json` 自维护；不要依赖 TRAE UI 已注册 MCP 自动透传给 SubAgent。
-- 需要下载大二进制的 MCP（如 Playwright）必须在 `config/mcporter.json` 的 `install` 中维护版本 pin、CDN/镜像和系统依赖安装命令。
-- Stage Orchestrator 只能运行 `tools/mcp-bridge/check.sh --json` 并读取 `config/mcporter.json`，不得自由扫描未知 MCP 能力。
-- Evaluator 只能调用 `contract.md` 中 `mcp_bridge_capabilities` 声明的白名单 shell 命令。
-- Evaluator 不得直接调用官方通用 `npx mcporter call ...`；官方 MCPorter 只作为 wrapper 的底层 runtime。
-- Evaluator 遇到浏览器/MCP 意图时，必须按 `contract.md` 中 `mcp_to_shell_translation` 改写成 RunCommand；不得寻找、编造或直接调用 `mcp__*` 工具。
+- MCP server 注册、安装命令、wrapper 所属 server、白名单与翻译样例由本项目 `config/mcporter.json` 自维护；不要依赖 TRAE UI 已注册 MCP 自动透传给 SubAgent。
+- 任意 MCP server 的安装与调用必须同源：`mcpServers.*.args/install`、`bridgeWrappers.*.server/allowedTools`、`translationExamples` 必须匹配同一个 server 的真实 `tools/list` schema。
+- 需要下载大二进制或外部运行时的 MCP（如浏览器、数据库客户端、仿真器）必须在 `config/mcporter.json` 的 `install` 中维护版本 pin、CDN/镜像和系统依赖安装命令。
+- Stage Orchestrator 只能运行 `tools/mcp-bridge/check.sh --json` 并读取 `config/mcporter.json`，不得自由扫描未知 MCP 能力或临时扩权。
+- Evaluator 只能调用 `contract.md` 中 `mcp_bridge_capabilities` 声明的白名单 shell wrapper 命令。
+- Evaluator 不得直接调用官方通用 `npx mcporter call ...`；MCPorter 只作为 wrapper 的底层 runtime。wrapper 转发目标必须是 Mcporter 要求的 `server.tool` 形式。
+- Evaluator 遇到 MCP 意图时，必须按 `contract.md` 中 `mcp_to_shell_translation` 改写成 RunCommand；不得寻找、编造或直接调用 `mcp__*` 工具，也不得猜测方法名/参数名。
 - bridge 证据必须写入 `eval.md`；默认/回退的 Orchestrator 代行证据才写 `browser-check.md`。
-- bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`，不得假装验证通过。
+- bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`，白名单外命令输出 `[BLOCKED: MCP bridge command not allowed]`，不得假装验证通过。
 
 ## API 层约束（对应 src/api/**、src/services/** 或项目等价目录）
 - 所有 API 路由必须有输入验证

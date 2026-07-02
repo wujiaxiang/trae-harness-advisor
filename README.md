@@ -111,7 +111,7 @@
 - 对抗流程为顺序模拟，最多 3 轮返工，超限 escalate 给人类。
 - milestone-plan.md 是静态定义；state-board.json v2 是动态状态机唯一真值（最小更新，git 合并友好）。
 - 并发 = 人类开多个独立对话推进；depends_on 是人工投递前的冲突规避依据，非自动调度。
-- MCP 访问默认由 Stage Orchestrator 代行并写 `browser-check.md`；实验模式 `evaluator_shell_bridge` 可让 Evaluator 通过远程环境安装的 shell bridge 自查，证据写入 `eval.md`，必须通过 AP19 真机验证。
+- MCP 访问默认由 Stage Orchestrator 代行并写 `browser-check.md`；`evaluator_shell_bridge` 可让 Evaluator 通过远程环境安装的 shell bridge 自查，证据写入 `eval.md`，AP19 已真机验证通过。
 - 约束强度：路径白名单/RULE.md 钩子/playbook 均为提示词级（best-effort），非沙箱强制，需 CI/评审兜底。
 
 ### 概念速查：谁是什么
@@ -153,7 +153,7 @@ Planner 在 `milestone-plan.md` 给每个 Stage 标 `pattern`（默认 `adversar
 
 ### 想先看它怎么跑？
 
-本仓库已实例化一套自检环境（`.trae/skills/`+`RULE.md`+`harness/`），可直接在真机 TRAE Work 上跑 `poc/harness-selftest/`——用一条提示词端到端验证 AP1–AP18（含 6 种模式路由）。AP19 用于验证实验性的 Evaluator shell-bridged MCP：需在云端运行环境 install 阶段调用 `cd /workspace && bash tools/mcp-bridge/install.sh`（或仓库实际 clone 目录），确认 Evaluator SubAgent 能自查并写 `eval.md`。详见 `poc/harness-selftest/README.md`。
+本仓库已实例化一套自检环境（`.trae/skills/`+`RULE.md`+`harness/`），可直接在真机 TRAE Work 上跑 `poc/harness-selftest/`——AP1–AP18 已端到端验证，AP19 也已验证 Evaluator shell-bridged MCP：云端运行环境 install 阶段调用 `cd /workspace && bash tools/mcp-bridge/install.sh`（或仓库实际 clone 目录）后，Evaluator SubAgent 可经项目 wrapper 自查并写 `eval.md`。详见 `poc/harness-selftest/README.md`。
 
 ## 全自动 vs 半自动：6 种模式怎么模拟、人在哪里补位
 
@@ -170,7 +170,7 @@ Planner 在 `milestone-plan.md` 给每个 Stage 标 `pattern`（默认 `adversar
 | **generate-filter** | 自动生成候选+选优 | 并行 N 候选 → Selector 选优 | 同上：候选多则人分批 |
 | **tournament** | 自动多轮淘汰 | Selector 按 log2(N) 轮淘汰 | 轮次多、候选多→人驱动跨对话续跑 |
 
-> 一句话：**在「一个 Stage / 一个上下文窗口」内，我们已是 LLM 驱动的动态编排（图灵完备底座已真机验证）**。与全自动的唯一差距是——① **跨 Stage 的调度**（开新对话、边界闸门）默认由人做（父 agent 上下文预算够时也能自动一次跑多个 Stage）；② **超大 fan-out/tournament** 受上下文预算限制需人分批；③ MCP 默认不下发 SubAgent，浏览器验证由 Orchestrator 代行。前两者是**预算问题**、第三者可用实验性的 `evaluator_shell_bridge` 尝试收回 Evaluator 上下文，但需 AP19 真机验证。
+> 一句话：**在「一个 Stage / 一个上下文窗口」内，我们已是 LLM 驱动的动态编排（图灵完备底座已真机验证）**。与全自动的唯一差距是——① **跨 Stage 的调度**（开新对话、边界闸门）默认由人做（父 agent 上下文预算够时也能自动一次跑多个 Stage）；② **超大 fan-out/tournament** 受上下文预算限制需人分批；③ MCP 默认不下发 SubAgent，浏览器验证默认由 Orchestrator 代行；若启用已验证的 `evaluator_shell_bridge`，Evaluator 可通过项目 wrapper 获得受控 MCP 自查能力。
 
 ### 人算不算一个逻辑角色节点？——算，且是一等节点
 
@@ -277,7 +277,7 @@ flowchart TB
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（12 个核心文件 + 钩子规则文本 + 可选 Agent 配置 + 可选 7 个多模式 Skill，见 §11）
 5. **`trae-harness-advisor/templates/`** — Harness 编排模板；MCP bridge runtime 模板已迁移到 `trae-mcp-bridge-advisor/templates/`
-6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP18 假设，并保留 AP19 shell bridge 实验验证入口
+6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP19 假设
 
 **请勿回退**：
 - 不要恢复旧层级命名；统一使用 Milestone / Stage / Task。

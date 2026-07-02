@@ -38,11 +38,11 @@
 | AP17 | **generate-filter 路由**（@pattern-generate-filter→2 候选→@selector-role 选优） |
 | AP18 | **tournament 路由（可选）**（@pattern-tournament→@selector-role 两两淘汰选冠军） |
 
-**AP19（实验：Evaluator shell-bridged MCP，需单独真机验证）**
+**AP19（Evaluator shell-bridged MCP，✅ 已单独真机验证）**
 
 | 编号 | 验证点 |
 |------|--------|
-| AP19 | `mcp_access_mode=evaluator_shell_bridge`：`config/mcporter.json` 自维护 MCP server/install/CDN/wrapper 白名单；远程 install 初始化 `tools/mcp-bridge/` 并启动 daemon；Orchestrator 只把 config 白名单和 MCP→Shell 翻译表写到 contract；Evaluator SubAgent 只能按翻译表通过项目 wrapper 自查并写 `eval.md` |
+| AP19 | `mcp_access_mode=evaluator_shell_bridge`：`config/mcporter.json` 自维护 MCP server/install/CDN/wrapper 白名单；远程 install 初始化 `tools/mcp-bridge/` 并启动 daemon；Orchestrator 只把 config 白名单和 MCP→Shell 翻译表写到 contract；Evaluator SubAgent 只能按翻译表通过项目 wrapper 自查并写 `eval.md`；真机已验证 wrapper 正向调用和白名单外 BLOCKED |
 
 ```
 .trae/skills/{planner-role,generator-role,evaluator-role,decision-role,stage-orchestrator}/SKILL.md # 5 核心
@@ -52,7 +52,7 @@
 RULE.md                                                                              # 钩子目标
 harness/
 ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
-├── state-board.json                         # probe(passed) + adaptive(passed) + patterns(planned, depends_on=[probe])
+├── state-board.json                         # probe/adaptive/patterns passed，AP19 决策挂在 probe artifacts
 └── milestones/harness-selftest/
     ├── milestone-plan.md                    # ★ 自检计划（AP1–AP19）
     ├── stages/probe/                        # AP1–AP11 交付物落点（contract/gen/eval/decision/browser-check）
@@ -71,4 +71,4 @@ harness/
 
 ## 如何判读
 
-对照 `expected-outcome.md`：v4.4 的 AP1–AP14 见"综合重跑"表（13/14 PASS，AP11 已升级为真实导航成功）；v4.5 的 AP15–AP18 见"多模式路由"表（**✅ 真机 4/4 PASS，commit c9a5e84**）。多模式已确认：每个 `@pattern-*` playbook 被 Stage Orchestrator **路由加载**、3 个新角色（Synthesizer/Classifier/Selector）可被子代理加载、fanout/generate-filter 真并行、canonical 文件名与 Write 白名单对齐无违规。
+对照 `expected-outcome.md`：v4.4 的 AP1–AP14 见"综合重跑"表（13/14 PASS）；v4.5 的 AP15–AP18 见"多模式路由"表（**✅ 真机 4/4 PASS，commit c9a5e84**）；AP19 见"Evaluator shell-bridged MCP"表（**✅ 真机 PASS，commit 7317aad**）。

@@ -73,7 +73,7 @@ description: >
 读取项目/Stage 的 `mcp_access_mode`（默认 `orchestrator_delegated`）：
 
 - **orchestrator_delegated（默认）**：若该 Stage 需要浏览器/MCP 查证，由你代行 MCP，把截图/日志/结论写入 `browser-check.md`，Evaluator 读取该文件纳入评分。
-- **evaluator_shell_bridge（实验增强，需 AP19 真机验证）**：先检查 `config/mcporter.json`、`tools/mcp-bridge/install.sh`、`tools/mcp-bridge/check.sh`。缺失时写 `[BLOCKED: MCP bridge not installed]`，提示用 `trae-mcp-bridge-advisor` 初始化，或按 contract 策略 fallback 到 `orchestrator_delegated`。存在时运行 `tools/mcp-bridge/check.sh --json`，读取 `config/mcporter.json`，把可用白名单命令和 MCP→Shell 翻译表写入 `contract.md` 的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`。bridge 可用时不要代行浏览器观察；Evaluator 在自己的 SubAgent 上下文内按翻译表把 MCP/browser 意图改写成 RunCommand，并把证据写入 `eval.md`。bridge 自检不可用时，按 contract 策略 fallback，或暂停并要求 `[BLOCKED: MCP bridge unavailable]`。
+- **evaluator_shell_bridge（AP19 已验证）**：先检查 `config/mcporter.json`、`tools/mcp-bridge/install.sh`、`tools/mcp-bridge/check.sh`。缺失时写 `[BLOCKED: MCP bridge not installed]`，提示用 `trae-mcp-bridge-advisor` 初始化，或按 contract 策略 fallback 到 `orchestrator_delegated`。存在时运行 `tools/mcp-bridge/check.sh --json`，读取 `config/mcporter.json`，把可用白名单命令和 MCP→Shell 翻译表写入 `contract.md` 的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`。bridge 可用时不要代行 MCP 观察；Evaluator 在自己的 SubAgent 上下文内按翻译表把 MCP 意图改写成 RunCommand，并把证据写入 `eval.md`。bridge 自检不可用时，按 contract 策略 fallback，或暂停并要求 `[BLOCKED: MCP bridge unavailable]`。
 
 禁止自由扫描未知 MCP。只能信任 `config/mcporter.json` + `check.sh --json` 的确定性结果。
 
@@ -82,7 +82,7 @@ description: >
 1. 【派发独立 SubAgent，加载 @generator-role】[GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
 2. **（仅 verification_mode=full 且该 Stage 需浏览器验证）**按 `mcp_access_mode` 处理：
    - `orchestrator_delegated`：由**你（Stage Orchestrator）代行 MCP 浏览器验证**，把截图/日志/结论写入 `browser-check.md`。这属"取证"，不算你兼任评分。
-   - `evaluator_shell_bridge`：你不做浏览器观察，只把 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation` 写入 contract；Evaluator 自己按翻译表把 MCP/browser 意图改写成白名单 shell 命令查证，证据写入 `eval.md`。
+   - `evaluator_shell_bridge`：你不做 MCP 观察，只把 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation` 写入 contract；Evaluator 自己按翻译表把 MCP 意图改写成白名单 shell 命令查证，证据写入 `eval.md`。
 3. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估（用 RunCommand 跑测试/Lint；按 contract 读取 `browser-check.md` 或使用 MCP bridge 自查）→ `eval.md`。
 4. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
    - Decision 必须是独立子代理（与 G/E 隔离、看不到双方对话），保证中立盲审；**你（Stage Orchestrator）不得自己兼任裁决**。

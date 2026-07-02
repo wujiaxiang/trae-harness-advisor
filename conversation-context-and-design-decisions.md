@@ -544,7 +544,7 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 
 4. **无外部触发**: 无法通过 Webhook 或 API 触发 SPEC 工作流，必须手动执行 `/spec` 命令。
 
-### 平台假设验证状态（已真机端到端验证，v4.4 综合自检 13/14 PASS）
+### 平台假设验证状态（已真机端到端验证，AP1–AP19）
 
 通过 `poc/harness-selftest/`（probe + adaptive 两 Stage，commit f76f8fc）已验证：
 
@@ -555,10 +555,11 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 5. ✅ 真并行+无自动循环 — AP9；✅ retry 重派 — AP10；✅ 真 retry→pass 自适应闭环 — AP13
 6. ✅ 浏览器代行链路（方案1）— AP11；✅ codraft — AP12；✅ depends_on 门控 — AP14
 7. ❌ **SubAgent 不继承 MCP — AP4（已知平台限制，不阻塞；默认浏览器验证由 Orchestrator 代行）**
+8. ✅ **Evaluator shell-bridged MCP — AP19（commit 7317aad）**：Evaluator SubAgent 通过 `tools/mcp-bridge/bin/mcp-browser` wrapper 自查，正向 navigate/screenshot/get_visible_text 真机成功，负向白名单外 tool 被 `[BLOCKED: MCP bridge command not allowed]` 拦截；未直接调用 raw `mcporter call` 或 `mcp__*`。
 
 **仍待处理/操作项**：
 - AP11 实际浏览器交互需预装 chromium（`npx playwright install chromium`）或配置 TRAE 远程环境（docs.trae.cn/solo_set-up-the-remote-environment）。
-- AP19 新增 `evaluator_shell_bridge` 实验验证入口：通过 TRAE Work 远程环境 install 初始化 `tools/mcp-bridge/`，让 Evaluator SubAgent 通过白名单 shell bridge 自查；bridge runtime 由 `trae-mcp-bridge-advisor` / `config/mcporter.json` 维护，未真机验证前不得替代默认 `orchestrator_delegated`。
+- AP19 已验证 `evaluator_shell_bridge` 可行：通过 TRAE Work 远程环境 install 初始化 `tools/mcp-bridge/`，让 Evaluator SubAgent 通过 contract 白名单 shell wrapper 自查；bridge runtime 由 `trae-mcp-bridge-advisor` / `config/mcporter.json` 维护。注意 wrapper 必须按 MCPorter `server.tool` 目标转发，contract 必须提供真实方法名和参数 schema。
 - 长 session 中 Orchestrator 上下文窗口管理：靠 board+harness 外置状态分 Stage 续跑；超长流程建议人工分批投递（暂未纳入 PoC）。
 - 小项目 Lite 预设（跳过部分角色）为可选优化，尚未实现。
 
