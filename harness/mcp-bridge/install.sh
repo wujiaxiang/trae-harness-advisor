@@ -1,65 +1,118 @@
 #!/usr/bin/env bash
+# MCP Bridge installer.
+# Open/closed rule: add MCP servers and wrapper allowlists in config/mcporter.json;
+# this script stays generic.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HARNESS_DIR="${HARNESS_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+PROJECT_DIR="$(cd "${HARNESS_DIR}/.." && pwd)"
 BRIDGE_DIR="${HARNESS_DIR}/mcp-bridge"
 BIN_DIR="${BRIDGE_DIR}/bin"
 DISCOVERY_DIR="${BRIDGE_DIR}/discovery"
+CONFIG="${MCP_BRIDGE_CONFIG:-${PROJECT_DIR}/config/mcporter.json}"
 
-mkdir -p "${BIN_DIR}"
-mkdir -p "${DISCOVERY_DIR}"
+mkdir -p "${BIN_DIR}" "${DISCOVERY_DIR}"
+
+if [[ ! -f "${CONFIG}" ]]; then
+  echo "[mcp-bridge] FATAL: config not found: ${CONFIG}" >&2
+  exit 1
+fi
+
+run_config_installs() {
+  python3 - "${CONFIG}" <<'PY' | while IFS=$'\t' read -r name_idx cmd; do
+import json, sys
+config = json.load(open(sys.argv[1]))
+for name, server in config.get("mcpServers", {}).items():
+    for index, command in enumerate(server.get("install", []) or []):
+        print(f"{name}#{index}\t{command}")
+PY
+    [[ -z "${cmd:-}" ]] && continue
+    echo "[mcp-bridge] install ${name_idx}: ${cmd}"
+    bash -lc "${cmd}" || echo "[mcp-bridge] install ${name_idx} FAILED (continue)"
+  done
+}
+
+write_wrapper() {
+  local wrapper_name="$1"
+  local wrapper_path="${BIN_DIR}/${wrapper_name}"
+  python3 - "${CONFIG}" "${wrapper_name}" "${wrapper_path}" <<'PY'
+import json, shlex, sys
+
+config_path, wrapper_name, wrapper_path = sys.argv[1:4]
+config = json.load(open(config_path))
+wrapper = config.get("bridgeWrappers", {}).get(wrapper_name)
+if not wrapper:
+    raise SystemExit(f"missing bridgeWrappers.{wrapper_name}")
+
+allowed = wrapper.get("allowedTools", [])
+quoted_allowed = "\n".join(f"  {shlex.quote(tool)}" for tool in allowed)
+script = f"""#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG={shlex.quote(config_path)}
+ALLOWED=(
+{quoted_allowed}
+)
+
+if [[ "${{1:-}}" == "--bridge-check" ]]; then
+  npx -y mcporter daemon status --config "${{CONFIG}}" >/dev/null
+  exit $?
+fi
+
+TARGET="${{1:-}}"
+if [[ -z "${{TARGET}}" ]]; then
+  echo "[BLOCKED: MCP bridge command not allowed] empty target" >&2
+  exit 2
+fi
+
+FOUND=0
+for entry in "${{ALLOWED[@]}}"; do
+  if [[ "${{entry}}" == "${{TARGET}}" ]]; then
+    FOUND=1
+    break
+  fi
+done
+
+if [[ "${{FOUND}}" -ne 1 ]]; then
+  echo "[BLOCKED: MCP bridge command not allowed] ${{TARGET}}" >&2
+  exit 2
+fi
+
+shift
+npx -y mcporter call "${{TARGET}}" "$@" --config "${{CONFIG}}" --output json --timeout 60000
+"""
+open(wrapper_path, "w").write(script)
+PY
+  chmod +x "${wrapper_path}"
+}
+
+write_wrappers() {
+  python3 - "${CONFIG}" <<'PY' | while IFS= read -r wrapper_name; do
+import json, sys
+config = json.load(open(sys.argv[1]))
+for name in config.get("bridgeWrappers", {}):
+    print(name)
+PY
+    [[ -z "${wrapper_name:-}" ]] && continue
+    write_wrapper "${wrapper_name}"
+  done
+}
 
 run_mcporter_discovery() {
   local output="${DISCOVERY_DIR}/mcporter-list.txt"
   local errors="${DISCOVERY_DIR}/mcporter-list.err"
-
   {
-    echo "MCP_BRIDGE_DISCOVER=${MCP_BRIDGE_DISCOVER:-0}"
-    echo "MCP_BRIDGE_SERVER_NAME=${MCP_BRIDGE_SERVER_NAME:-}"
-    echo "MCP_BRIDGE_SERVER_CMD=${MCP_BRIDGE_SERVER_CMD:-}"
-    echo "MCP_BRIDGE_HTTP_URL=${MCP_BRIDGE_HTTP_URL:-}"
+    echo "mcporter_version=$(npx -y mcporter --version 2>/dev/null || echo unknown)"
+    echo "config=${CONFIG}"
   } > "${DISCOVERY_DIR}/env.txt"
-
-  if [[ "${MCP_BRIDGE_DISCOVER:-0}" != "1" ]]; then
-    echo "discovery skipped; set MCP_BRIDGE_DISCOVER=1" > "${output}"
-    return 0
-  fi
-
-  if [[ -n "${MCP_BRIDGE_SERVER_NAME:-}" ]]; then
-    npx -y mcporter list "${MCP_BRIDGE_SERVER_NAME}" --brief >"${output}" 2>"${errors}" || true
-    return 0
-  fi
-
-  if [[ -n "${MCP_BRIDGE_SERVER_CMD:-}" ]]; then
-    npx -y mcporter list --stdio "${MCP_BRIDGE_SERVER_CMD}" --brief >"${output}" 2>"${errors}" || true
-    return 0
-  fi
-
-  if [[ -n "${MCP_BRIDGE_HTTP_URL:-}" ]]; then
-    npx -y mcporter list --http-url "${MCP_BRIDGE_HTTP_URL}" --brief >"${output}" 2>"${errors}" || true
-    return 0
-  fi
-
-  npx -y mcporter list --timeout "${MCP_BRIDGE_DISCOVERY_TIMEOUT_MS:-5000}" >"${output}" 2>"${errors}" || true
+  (cd "${PROJECT_DIR}" && npx -y mcporter list --config "${CONFIG}" >"${output}" 2>"${errors}") || true
 }
 
-if [[ -n "${MCP_BRIDGE_INSTALL_CMD:-}" ]]; then
-  echo "[mcp-bridge] running MCP_BRIDGE_INSTALL_CMD"
-  bash -lc "${MCP_BRIDGE_INSTALL_CMD}"
-else
-  cat > "${BIN_DIR}/mcp-browser" <<'EOF'
-#!/usr/bin/env bash
-if [[ "${1:-}" == "--bridge-check" ]]; then
-  echo "mcp-browser bridge is not configured"
-  exit 1
-fi
-echo "[BLOCKED: MCP bridge unavailable] Set MCP_BRIDGE_INSTALL_CMD or replace harness/mcp-bridge/bin/mcp-browser with a real MCP wrapper." >&2
-exit 2
-EOF
-  chmod +x "${BIN_DIR}/mcp-browser"
-fi
-
+run_config_installs
+write_wrappers
+echo "[mcp-bridge] starting mcporter daemon"
+(cd "${PROJECT_DIR}" && npx -y mcporter daemon start --config "${CONFIG}") || echo "[mcp-bridge] daemon start failed (may already be running)"
 run_mcporter_discovery
 chmod +x "${BRIDGE_DIR}/check.sh" 2>/dev/null || true
 "${BRIDGE_DIR}/check.sh" --json

@@ -73,9 +73,9 @@ description: >
 读取项目/Stage 的 `mcp_access_mode`（默认 `orchestrator_delegated`）：
 
 - **orchestrator_delegated（默认）**：若该 Stage 需要浏览器/MCP 查证，由你代行 MCP，把截图/日志/结论写入 `browser-check.md`，Evaluator 读取该文件纳入评分。
-- **evaluator_shell_bridge（实验增强，需 AP19 真机验证）**：运行 `harness/mcp-bridge/check.sh --json`，读取 `harness/mcp-bridge/manifest.json`，把可用白名单命令和 MCP→Shell 翻译表写入 `contract.md` 的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`。bridge 可用时不要代行浏览器观察；Evaluator 在自己的 SubAgent 上下文内按翻译表把 MCP/browser 意图改写成 RunCommand，并把证据写入 `eval.md`。bridge 不可用时，按 contract 策略 fallback 到 `orchestrator_delegated`，或暂停并要求 `[BLOCKED: MCP bridge unavailable]`。
+- **evaluator_shell_bridge（实验增强，需 AP19 真机验证）**：运行 `harness/mcp-bridge/check.sh --json`，读取 `config/mcporter.json`，把可用白名单命令和 MCP→Shell 翻译表写入 `contract.md` 的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`。bridge 可用时不要代行浏览器观察；Evaluator 在自己的 SubAgent 上下文内按翻译表把 MCP/browser 意图改写成 RunCommand，并把证据写入 `eval.md`。bridge 不可用时，按 contract 策略 fallback 到 `orchestrator_delegated`，或暂停并要求 `[BLOCKED: MCP bridge unavailable]`。
 
-禁止自由扫描未知 MCP。只能信任 `manifest.json` + `check.sh --json` 的确定性结果。
+禁止自由扫描未知 MCP。只能信任 `config/mcporter.json` + `check.sh --json` 的确定性结果。
 
 ### 6. 顺序派发对抗步骤
 按 tasks.md 顺序执行，最多 3 轮：

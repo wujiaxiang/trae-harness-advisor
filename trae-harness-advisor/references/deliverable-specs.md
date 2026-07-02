@@ -101,8 +101,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 （可选）{harness_dir}stage-dispatcher.md   # 外部机械派发器（generate_stage_dispatcher=true）
 （可选）{harness_dir}mcp-bridge/           # Evaluator shell-bridged MCP 脚手架（mcp_access_mode=evaluator_shell_bridge）
 ├── install.sh
-├── check.sh
-└── manifest.json
+└── check.sh
+（可选）config/mcporter.json               # MCP server/runtime + wrapper 白名单配置源
 （可选）{agent_dir}               # 默认 .trae/agents/（仅 generate_agents=true）
 ├── generator.md  evaluator.md  decision.md
 .trae/specs/ → 加入 .gitignore（原生临时 scratch，不生成、不依赖）
@@ -369,23 +369,20 @@ RULE.md                           # 项目根目录（钩子规则加载）
 |------|------|------|
 | `{harness_dir}mcp-bridge/install.sh` | `templates/mcp-bridge-install-template.sh` | TRAE Work 远程环境 install 阶段调用；安装/准备 bridge wrapper 并运行自检 |
 | `{harness_dir}mcp-bridge/check.sh` | `templates/mcp-bridge-check-template.sh` | 输出 `--json` 能力探测结果，供 Stage Orchestrator 写入 contract |
-| `{harness_dir}mcp-bridge/manifest.json` | `templates/mcp-bridge-manifest-template.json` | 白名单命令和安全边界；Orchestrator 不得自由扫描未知 MCP |
+| `config/mcporter.json` | `templates/mcporter-config-template.json` | MCP server、install 命令、daemon keepAlive、wrapper allowlist 与翻译样例的 runtime 配置源 |
 | `{skill_dir}mcporter-bridge/SKILL.md` | `templates/mcporter-bridge-skill-template.md` | 项目内 focused Skill：教 Evaluator 把 MCP/browser 意图翻译成 contract 白名单 shell 命令 |
 
 **远程环境配置要求**：TRAE Work 云端运行环境的 `runtime_config.install` 必须包含 `cd /workspace && bash {harness_dir}mcp-bridge/install.sh`（或仓库实际 clone 目录）；若需要下载 npm/pypi/github 依赖，`network_policy.common_dependencies` 必须允许对应源。install 脚本长度限制为 10KB，因此具体逻辑放入仓库脚本，远程配置只调用脚本。
 
 **MCP 来源模型**：
-- TRAE UI 注册的 MCP server 默认只保证 root agent 可用，不能假设它的配置文件/凭据在远程环境 shell 中可见。
-- `install.sh` 不自动“发现 TRAE 已注册 MCP”；它只支持显式 discovery：
-  - `MCP_BRIDGE_DISCOVER=1 MCP_BRIDGE_SERVER_NAME={mcporter_config_name}`：读取 MCPorter 已配置 server。
-  - `MCP_BRIDGE_DISCOVER=1 MCP_BRIDGE_SERVER_CMD='{stdio command}'`：按 stdio 命令探测 ad-hoc MCP server。
-  - `MCP_BRIDGE_DISCOVER=1 MCP_BRIDGE_HTTP_URL={url}`：按 HTTP MCP endpoint 探测。
+- MCP server 注册、安装命令、daemon keepAlive、wrapper 白名单与翻译样例由本项目 `config/mcporter.json` 自维护；不要依赖 TRAE UI 已注册 MCP 自动透传给 SubAgent。
+- `install.sh` 读取 `config/mcporter.json`，执行各 server 的 `install` 命令，按 `bridgeWrappers.*.allowedTools` 生成 wrapper，并启动 `mcporter daemon`。
 - discovery 结果只写入 `{harness_dir}mcp-bridge/discovery/` 供 Orchestrator/人读取，不自动扩权给 Evaluator。
-- Evaluator 真正可调用的能力仍必须落成 `{harness_dir}mcp-bridge/bin/mcp-browser` 这类 wrapper，并出现在 `manifest.json` 与 `contract.md` 白名单里。
+- Evaluator 真正可调用的能力必须落成 `{harness_dir}mcp-bridge/bin/mcp-browser` 这类 wrapper，并同时出现在 `config/mcporter.json` 与 `contract.md` 白名单里。
 
 **运行契约**：
-- Stage Orchestrator 只运行 `check.sh --json` 并读取 `manifest.json`，不得把未知 MCP 能力临时发明给 Evaluator。
-- Stage Orchestrator 必须把 `manifest.json` 的 `invocation_template` / `translation_examples` 誊写成 contract 中的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`，让 Evaluator 明确知道“想用 MCP 时改用哪条 RunCommand”。
+- Stage Orchestrator 只运行 `check.sh --json` 并读取 `config/mcporter.json`，不得把未知 MCP 能力临时发明给 Evaluator。
+- Stage Orchestrator 必须把 `config/mcporter.json` 的 `bridgeWrappers.*.allowedTools` / `translationExamples` 誊写成 contract 中的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`，让 Evaluator 明确知道“想用 MCP 时改用哪条 RunCommand”。
 - `check.sh --json` 中的 `discovery` 字段只表示 MCPorter 是否能看到某些 server/tool，不等价于 SubAgent 可用；只有 `commands.* == available` 才代表 wrapper 可供 Evaluator 使用。
 - Evaluator 只能调用 contract 中 `mcp_bridge_capabilities` 声明的白名单命令；遇到浏览器/MCP 意图时必须按 `mcp_to_shell_translation` 改写成 shell，而不是寻找 `mcp__*` 工具。
 - bridge 证据必须写入 `eval.md`；`browser-check.md` 仅用于默认 `orchestrator_delegated` 或 fallback。
@@ -398,8 +395,8 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 生成所有文件后执行：
 
-1. **目录检查**: `{skill_dir}` 5 个核心角色/playbook 目录（planner/generator/evaluator/decision/stage-orchestrator）和 1 个旧名 shim（stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_stage_dispatcher=true` 另有 `{harness_dir}stage-dispatcher.md`；若 `mcp_access_mode=evaluator_shell_bridge` 另有 `{harness_dir}mcp-bridge/` 与 `{skill_dir}mcporter-bridge/`。
-2. **文件计数**: 核心 **12 个文件**（5 个权威 Skill + 1 个 stage-executor 兼容 shim + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Stage Dispatcher 文件、+3 个 MCP bridge 脚手架文件、+1 个 MCPorter bridge 翻译 Skill。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
+1. **目录检查**: `{skill_dir}` 5 个核心角色/playbook 目录（planner/generator/evaluator/decision/stage-orchestrator）和 1 个旧名 shim（stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_stage_dispatcher=true` 另有 `{harness_dir}stage-dispatcher.md`；若 `mcp_access_mode=evaluator_shell_bridge` 另有 `{harness_dir}mcp-bridge/`、`{skill_dir}mcporter-bridge/` 与 `config/mcporter.json`。
+2. **文件计数**: 核心 **12 个文件**（5 个权威 Skill + 1 个 stage-executor 兼容 shim + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Stage Dispatcher 文件、+3 个 MCP bridge 脚手架文件、+1 个 MCPorter bridge 翻译 Skill、+1 个 mcporter config。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
 3. **引用检查**: 路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 

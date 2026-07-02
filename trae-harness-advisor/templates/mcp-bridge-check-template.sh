@@ -3,9 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HARNESS_DIR="${HARNESS_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+PROJECT_DIR="$(cd "${HARNESS_DIR}/.." && pwd)"
 BRIDGE_DIR="${HARNESS_DIR}/mcp-bridge"
 BIN_DIR="${BRIDGE_DIR}/bin"
-MANIFEST="${BRIDGE_DIR}/manifest.json"
+CONFIG="${MCP_BRIDGE_CONFIG:-${PROJECT_DIR}/config/mcporter.json}"
 DISCOVERY_DIR="${BRIDGE_DIR}/discovery"
 
 json_escape() {
@@ -58,7 +59,7 @@ if [[ "${1:-}" == "--json" ]]; then
 {
   "available": ${available},
   "mode": "evaluator_shell_bridge",
-  "manifest": "${MANIFEST}",
+  "config": "${CONFIG}",
   "discovery": {
     "status": "${discovery_status}",
     "path": "${DISCOVERY_DIR}/mcporter-list.txt",

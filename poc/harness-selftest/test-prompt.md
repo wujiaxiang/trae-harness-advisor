@@ -10,7 +10,7 @@
 - 「设置 > 规则」加钩子规则（AP8 前提，配过跳过）：`在开始执行任何任务之前，必须先读取当前项目根目录的 RULE.md 文件……如果 RULE.md 不存在，则跳过此步骤。`
 - 「MCP > 云端」启用 Playwright（AP4/AP11，已配）。
 - 「设置 > 云端运行环境 > 创建」预装浏览器二进制（AP11 真实导航前提）：**预装依赖**选 Node.js；**运行方式 > 手动配置**里，**安装命令**填 `npx -y playwright@1.57.0 install --with-deps chromium`（把默认的 `npm install` 替换掉；**版本号须 pin 到 Playwright MCP server 内置的 playwright 版本**——本次真机 MCP 用 1.57.0；不 pin 会拉最新版装错修订目录导致 binary-not-found，排障见方法论附录 D），**启动命令**清空（本仓库无 server，填 `npm start` 会报错）。安装命令 clone 后阻塞执行，把 chromium + 系统依赖装到 `~/.cache/ms-playwright/`。**不配此项 AP11 只能证"链路通/browser not found"；配对版本才能证真实导航成功。**（若 `--with-deps` 报权限错，退为 `npx -y playwright@1.57.0 install chromium`。）
-- AP19 远程环境安装命令示例：`npx -y playwright install --with-deps chromium && cd /workspace && bash harness/mcp-bridge/install.sh`。若只测 bridge，可先只跑 `cd /workspace && bash harness/mcp-bridge/install.sh`。TRAE UI 注册的 MCP 不保证 shell 可见；若使用 MCPorter discovery，显式设置 `MCP_BRIDGE_DISCOVER=1` 并提供 `MCP_BRIDGE_SERVER_NAME` / `MCP_BRIDGE_SERVER_CMD` / `MCP_BRIDGE_HTTP_URL`。若要让 Evaluator 真正可用，仍需设置 `MCP_BRIDGE_INSTALL_CMD` 或替换 `harness/mcp-bridge/bin/mcp-browser` 为真实 wrapper。
+- AP19 远程环境安装命令示例：`cd /workspace && bash harness/mcp-bridge/install.sh`。MCP server 注册、Playwright 安装命令、daemon keepAlive、wrapper 白名单和翻译样例统一维护在 `config/mcporter.json`；不要依赖 TRAE UI 已注册 MCP 自动透传给 SubAgent。
 
 ## 第 1 步：把下面整段复制发给 TRAE Work
 
@@ -64,7 +64,7 @@
 ```
 执行 harness-selftest Milestone 的 AP19 实验验证：mcp_access_mode=evaluator_shell_bridge。严格按 stage-orchestrator playbook，逐行输出 VERIFY[AP19]: PASS|FAIL — 一句话证据。如实回答，不要把本地静态检查当真机通过。
 
-- [ORCHESTRATOR] 读取 RULE.md；运行 `bash harness/mcp-bridge/check.sh --json`；读取 `harness/mcp-bridge/manifest.json`。
+- [ORCHESTRATOR] 读取 RULE.md；运行 `bash harness/mcp-bridge/check.sh --json`；读取 `config/mcporter.json`。
 - [ORCHESTRATOR] 若 check 返回 available=true，则把 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation` 写入 `harness/milestones/harness-selftest/stages/probe/contract.md`；不要调用 Playwright/MCP 做浏览器观察，不写新的 browser-check 中间细节。
 - [ORCHESTRATOR] 若 check 返回 available=false，则写明 `[BLOCKED: MCP bridge unavailable]`，VERIFY[AP19]=FAIL/BLOCKED，并停止；不得假装通过。
 - [EVALUATOR 独立子代理 @evaluator-role] 读取 contract.md 的 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation`；当想使用 MCP/browser 能力时，必须按翻译表改写成 RunCommand，只调用其中声明的白名单 shell 命令完成一次查证；把命令、关键输出、截图/trace 路径或 BLOCKED 原因写入 `harness/milestones/harness-selftest/stages/probe/eval.md`。

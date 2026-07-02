@@ -14,13 +14,14 @@ description: Evaluator SubAgent 使用 MCPorter/shell bridge 的专用翻译 Ski
 1. 当前 Stage 的 `contract.md`
 2. `contract.md` 中的 `mcp_bridge_capabilities`
 3. `contract.md` 中的 `mcp_to_shell_translation`
-4. 需要时读取 `{harness_dir}mcp-bridge/manifest.json` 作为只读参考；不得绕过 contract 扩权
+4. 需要时读取 `config/mcporter.json` 作为只读参考；不得绕过 contract 扩权
 
 ## 翻译规则
-- 想导航页面：使用 contract 指定的 `mcp-browser navigate {url}`
-- 想获取快照：使用 contract 指定的 `mcp-browser snapshot --output {path}`
-- 想截图：使用 contract 指定的 `mcp-browser screenshot --output {path}`
-- 想读取页面文本：使用 contract 指定的 `mcp-browser text`
+- 想导航页面：使用 contract 指定的 `mcp-browser playwright.browser_navigate url:{url}`
+- 想获取快照：使用 contract 指定的 `mcp-browser playwright.browser_snapshot`
+- 想截图：使用 contract 指定的 `mcp-browser playwright.browser_take_screenshot`
+- 想点击元素：使用 contract 指定的 `mcp-browser playwright.browser_click element:"{label}" ref:{snapshot_ref}`
+- 想执行 JS：使用 contract 指定的 `mcp-browser playwright.browser_evaluate 'function=() => document.title'`；参数名是 `function`，不是 `expression`
 - contract 没有声明的动作：输出 `[BLOCKED: MCP bridge command not allowed]`
 - bridge 自检或命令不可用：输出 `[BLOCKED: MCP bridge unavailable]`
 

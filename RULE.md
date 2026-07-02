@@ -57,7 +57,8 @@
 - package.json / lockfile（除非 Stage Contract 明确授权）
 
 ## MCP bridge 约束（仅 evaluator_shell_bridge）
-- Stage Orchestrator 只能运行 `harness/mcp-bridge/check.sh --json` 并读取 `manifest.json`，不得自由扫描未知 MCP 能力。
+- MCP server 注册、安装命令、wrapper 白名单与翻译样例由本项目 `config/mcporter.json` 自维护；不要依赖 TRAE UI 已注册 MCP 自动透传给 SubAgent。
+- Stage Orchestrator 只能运行 `harness/mcp-bridge/check.sh --json` 并读取 `config/mcporter.json`，不得自由扫描未知 MCP 能力。
 - Evaluator 只能调用 `contract.md` 中 `mcp_bridge_capabilities` 声明的白名单 shell 命令。
 - Evaluator 遇到浏览器/MCP 意图时，必须按 `contract.md` 中 `mcp_to_shell_translation` 改写成 RunCommand；不得寻找、编造或直接调用 `mcp__*` 工具。
 - bridge 证据必须写入 `eval.md`；默认/回退的 Orchestrator 代行证据才写 `browser-check.md`。

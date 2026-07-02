@@ -45,9 +45,10 @@
 │   ├── stage-executor/SKILL.md                        # 旧名兼容 shim
 │   └── mcporter-bridge/SKILL.md                       # AP19 MCP→Shell 翻译专用 Skill
 ├── RULE.md                                            # 项目规范（钩子规则加载目标）
+├── config/mcporter.json                               # AP19 MCP server/runtime 配置源
 ├── harness/                                           # 持久真值 + 消息总线
 │   ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
-│   ├── mcp-bridge/{install.sh,check.sh,manifest.json} # AP19 shell bridge 脚手架
+│   ├── mcp-bridge/{install.sh,check.sh}               # AP19 shell bridge 脚手架
 │   ├── state-board.json                               # 已 seed: harness-selftest/probe
 │   └── milestones/harness-selftest/milestone-plan.md  # 可直接运行的自检计划（AP1–AP19）
 ├── poc/                                               # 平台能力自检 PoC（人类可读测试套件）
@@ -275,7 +276,7 @@ flowchart TB
 2. **`conversation-context-and-design-decisions.md`** — 本项目起源、关键决策及理由（含 v4.0–v4.5 决策记录，决策 1→17 按时间线）
 3. **`trae-harness-advisor/SKILL.zh.md`** — Skill 的工作流程与 I/O 契约
 4. **`trae-harness-advisor/references/deliverable-specs.md`** — 文件生成详细规格（12 个核心文件 + 钩子规则文本 + 可选 Agent 配置 + 可选 7 个多模式 Skill，见 §11）
-5. **`trae-harness-advisor/templates/`** — 27 个模板（4 核心角色+stage-orchestrator+旧名 shim+project-rules+4 骨架+3 Agent 配置+3 多模式角色+4 pattern playbook+stage-dispatcher+eval-report+3 MCP bridge 脚本/manifest+mcporter-bridge Skill）
+5. **`trae-harness-advisor/templates/`** — 27 个模板（4 核心角色+stage-orchestrator+旧名 shim+project-rules+4 骨架+3 Agent 配置+3 多模式角色+4 pattern playbook+stage-dispatcher+eval-report+2 MCP bridge 脚本+mcporter config+mcporter-bridge Skill）
 6. **`poc/harness-selftest/`** — 平台能力自检套件 + 已实例化的 `.trae/skills`/`RULE.md`/`harness/` 环境，真机验证 AP1–AP18 假设，并保留 AP19 shell bridge 实验验证入口
 
 **请勿回退**：

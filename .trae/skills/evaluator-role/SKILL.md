@@ -25,7 +25,7 @@ description: >
 - **默认：子代理拿不到 MCP（无 `mcp__Playwright__*`）**。`mcp_access_mode=orchestrator_delegated` 时，浏览器类验证由主 Orchestrator 代行并写入 `browser-check.md`；你 Read 该文件纳入四维评分。
 - **实验增强：`mcp_access_mode=evaluator_shell_bridge`**。你可以在自己的 SubAgent 上下文内调用 contract 中 `mcp_bridge_capabilities` 声明的白名单 shell 命令（如 `harness/mcp-bridge/bin/mcp-browser ...`）完成查证，并把命令、关键输出、截图/trace 路径写入 `eval.md`。不得调用未列入白名单的 MCP/bridge 命令；不得用 bridge 修改业务状态。bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`。
 - 若存在 `@mcporter-bridge` Skill，且 `mcp_access_mode=evaluator_shell_bridge`，必须同时加载它；它负责把 MCP/browser 意图翻译成 contract 白名单 shell 命令。
-- **MCP → Shell 翻译规则**：当你想调用浏览器/MCP 能力时，不要寻找或编造 `mcp__*` 工具；读取 `contract.md` 的 `mcp_to_shell_translation` / `mcp_bridge_capabilities`，把意图改写成 RunCommand。例如“打开页面”→`harness/mcp-bridge/bin/mcp-browser navigate {url}`，“截图”→`harness/mcp-bridge/bin/mcp-browser screenshot --output ...`，“读取页面文本”→`harness/mcp-bridge/bin/mcp-browser text`。若 contract 没有对应命令，输出 `[BLOCKED: MCP bridge command not allowed]`。
+- **MCP → Shell 翻译规则**：当你想调用浏览器/MCP 能力时，不要寻找或编造 `mcp__*` 工具；读取 `contract.md` 的 `mcp_to_shell_translation` / `mcp_bridge_capabilities`，把意图改写成 RunCommand。例如“打开页面”→`harness/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:{url}`，“快照”→`harness/mcp-bridge/bin/mcp-browser playwright.browser_snapshot`，“执行 JS”→`harness/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'`。注意 evaluate 的参数名是 `function`，不是 `expression`。若 contract 没有对应命令，输出 `[BLOCKED: MCP bridge command not allowed]`。
 
 ## 路径白名单
 ### 允许读取

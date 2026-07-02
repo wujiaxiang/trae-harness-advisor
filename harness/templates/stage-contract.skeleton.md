@@ -28,10 +28,11 @@
 - allowed_commands:
   - {命令名}: {用途、参数边界、输出/截图/trace 路径约定}
 - mcp_to_shell_translation:
-  - 当你想使用 MCP/browser 的 `navigate` 能力时，改用：`harness/mcp-bridge/bin/mcp-browser navigate {url}`
-  - 当你想使用 MCP/browser 的 `snapshot` 能力时，改用：`harness/mcp-bridge/bin/mcp-browser snapshot --output harness/milestones/{milestone}/stages/{stage}/evidence/browser-snapshot.json`
-  - 当你想使用 MCP/browser 的 `screenshot` 能力时，改用：`harness/mcp-bridge/bin/mcp-browser screenshot --output harness/milestones/{milestone}/stages/{stage}/evidence/screenshot.png`
-  - 当你想读取页面文字时，改用：`harness/mcp-bridge/bin/mcp-browser text`
+  - 当你想导航 URL 时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:{url}`
+  - 当你想获取快照时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_snapshot`
+  - 当你想截图时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot`
+  - 当你想点击元素时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_click element:"{label}" ref:{snapshot_ref}`
+  - 当你想执行 JS 时，改用：`harness/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'`；注意参数名是 `function`，不是 `expression`
 - fallback: bridge 不可用时 fallback 到 orchestrator_delegated，或输出 `[BLOCKED: MCP bridge unavailable]`
 
 ## 验收项 6 段式要求

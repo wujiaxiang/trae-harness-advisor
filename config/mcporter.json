@@ -1,0 +1,47 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless"],
+      "keepAlive": true,
+      "install": [
+        "npx -y playwright install --with-deps chromium"
+      ]
+    }
+  },
+  "bridgeWrappers": {
+    "mcp-browser": {
+      "purpose": "Browser/UI evidence collection from Evaluator context.",
+      "allowedTools": [
+        "playwright.browser_navigate",
+        "playwright.browser_snapshot",
+        "playwright.browser_take_screenshot",
+        "playwright.browser_click",
+        "playwright.browser_evaluate"
+      ],
+      "translationExamples": [
+        {
+          "mcp_intent": "navigate to a URL",
+          "shell": "harness/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:https://example.com"
+        },
+        {
+          "mcp_intent": "capture a browser snapshot",
+          "shell": "harness/mcp-bridge/bin/mcp-browser playwright.browser_snapshot"
+        },
+        {
+          "mcp_intent": "take a screenshot",
+          "shell": "harness/mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot"
+        },
+        {
+          "mcp_intent": "click an element from a snapshot",
+          "shell": "harness/mcp-bridge/bin/mcp-browser playwright.browser_click element:\"Learn more\" ref:f2e6"
+        },
+        {
+          "mcp_intent": "evaluate JavaScript",
+          "shell": "harness/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'"
+        }
+      ],
+      "mustLogTo": "eval.md"
+    }
+  }
+}

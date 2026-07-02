@@ -256,7 +256,8 @@ TDD 模式: {tdd_mode}
 14.（可选，generate_stage_dispatcher=true）Stage Dispatcher 文件（三档自动化 B 档，见 deliverable-specs 第 11b 节）：
     → {harness_dir}stage-dispatcher.md   （外部机械派发器；**不放进** {skill_dir}）
 15.（可选，mcp_access_mode=evaluator_shell_bridge）MCP bridge 脚手架（实验 AP19，见 deliverable-specs 第 11c 节）：
-    → {harness_dir}mcp-bridge/{install.sh,check.sh,manifest.json}
+    → config/mcporter.json
+    → {harness_dir}mcp-bridge/{install.sh,check.sh}
     → {skill_dir}mcporter-bridge/SKILL.md   （MCP→Shell 翻译专用内部 Skill）
 ```
 

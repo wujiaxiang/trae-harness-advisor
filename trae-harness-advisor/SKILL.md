@@ -259,7 +259,8 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
 14. (Optional, generate_stage_dispatcher=true) Stage Dispatcher file (autonomy level B, see deliverable-specs §11b):
     → {harness_dir}stage-dispatcher.md   (external mechanical dispatcher; NOT under {skill_dir})
 15. (Optional, mcp_access_mode=evaluator_shell_bridge) MCP bridge scaffold (experimental AP19, see deliverable-specs §11c):
-    → {harness_dir}mcp-bridge/{install.sh,check.sh,manifest.json}
+    → config/mcporter.json
+    → {harness_dir}mcp-bridge/{install.sh,check.sh}
     → {skill_dir}mcporter-bridge/SKILL.md   (focused internal Skill for MCP→Shell translation)
 ```
 
