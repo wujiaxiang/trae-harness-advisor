@@ -39,3 +39,44 @@
 - known_limitations: [AP4 (MCP 不下发子代理)]
 
 依据 contract.md「通过判定」：AP1-3,5-11 全 PASS；AP4=FAIL 记 known-limitation，不触发 escalate、不阻塞 → verdict=pass。本案无需 retry，无 retry_focus。
+
+---
+
+## AP19 实验补测裁决（evaluator_shell_bridge）
+
+> 独立 Decision SubAgent（@decision-role）。本段针对 AP19 实验补测，不改变 AP1–AP11 已验证结论（其 verdict=pass 保持不变）。
+
+### VERIFY 行（严格格式）
+
+- `VERIFY[AP19]: PASS — Evaluator 经白名单 shell wrapper（bash harness/mcp-bridge/bin/mcp-browser）完成 bridge-check（exit=0）+ navigate + snapshot 三次查证，wrapper 真实路由到 mcporter call（返回 playwright server 结构化 isError:true 响应，非 wrapper 自身 BLOCKED 拦截）；浏览器动作因 chrome 二进制未预装失败，与 AP11 同源属环境前置，bridge 机制本身已通，未触发 [BLOCKED: MCP bridge unavailable]；命令/输出/PASS 结论均落 eval.md。`
+
+### 裁决理由（对照 contract「AP19 通过判定」逐条核对）
+
+1. **contract 含翻译表**：✅ contract.md 第 44-57 行含 `mcp_bridge_capabilities`（6 条白名单 shell 命令表，含 wrapper 路径、对应 MCP tool、用途、未列入意图的 BLOCKED 处置）；第 61-69 行含 `mcp_to_shell_translation`（5 条 MCP 意图→shell 命令翻译表）。本条已满足。
+
+2. **Evaluator 自己按翻译表通过 shell bridge 查证一次并写 eval.md**：✅ eval.md 第 65-131 行「AP19 实验补测（evaluator_shell_bridge）」段：
+   - 原始 MCP 意图：`playwright.browser_navigate`（导航 example.com）+ `playwright.browser_snapshot`（捕获快照）—— 均出自翻译表。
+   - 实际执行 shell 命令（第 75-78 行）：`bash harness/mcp-bridge/bin/mcp-browser --bridge-check` / `... playwright.browser_navigate url:https://example.com` / `... playwright.browser_snapshot`，三条命令均经 contract 白名单 wrapper，cwd=/workspace。
+   - 关键输出（第 80-116 行）：bridge-check exit=0 无 BLOCKED 输出；navigate/snapshot 返回 playwright server 结构化 `isError:true` 响应（错误文本 `Chromium distribution 'chrome' is not found at /opt/google/chrome/chrome` 来自 playwright server，证明 wrapper 已路由到 mcporter call 进入 server 执行层，而非 wrapper 自身拦截）。
+   - 落盘（第 71-127 行）：原始意图 / 实际命令 / 输出 / BLOCKED 判定 / PASS 结论俱全，符合 contract「证据落盘」要求。
+   - 未直接调用 mcp__*/run_mcp/裸 npx mcporter call（第 129-131 行明示）—— 满足 contract 第 46 行"不得直接调用"约束。
+
+3. **bridge 机制是否通（wrapper 路由到 mcporter call）**：✅ 三重证据：
+   - bridge-check exit=0，未输出 `[BLOCKED: MCP bridge unavailable]` 也未输出 `[BLOCKED: MCP bridge command not allowed]` → 与 contract「bridge 自检结果 available=true」一致。
+   - navigate/snapshot 返回的是 playwright server 的结构化 JSON 响应（含 `content`/`isError` 字段），这是 mcporter call 透传 server 响应的格式，而非 wrapper 本地拦截格式 → 证明 wrapper 已成功路由到 mcporter call 并触达 playwright server。
+   - 错误根因是 server 层的 chrome 二进制缺失（`/opt/google/chrome/chrome` 不存在），属 server 执行阶段问题，不是 bridge 链路问题。
+
+4. **浏览器二进制缺失是否环境前置（与 AP11 同源），不作为 bridge 机制扣分项**：✅ eval.md 第 120 行明确："浏览器动作因 chrome 二进制未预装（`/opt/google/chrome/chrome` 不存在）失败，未能进入页面渲染阶段，与 AP11 browser-check.md 记录的 chromium 二进制缺失属同一环境前置问题。" 本案 bridge 自检通过、未触发 contract 末段「bridge 不可用则 BLOCKED」分支（本次 available=true，不适用），故浏览器二进制缺失不作为 bridge 机制扣分项，与 AP11 降级处理同源一致。
+
+5. **Orchestrator 是否未代行浏览器中间观察（无新 browser-check 中间细节）**：✅ state-board.json 中 `artifacts.browser_check` 仍指向 AP11 原文件 `harness/milestones/harness-selftest/stages/probe/browser-check.md`，无新增中间 browser-check 文件；eval.md AP19 段的证据由 Evaluator 自己执行 shell bridge 落盘到 eval.md（而非 Orchestrator 代行写入 browser-check.md），符合 contract 第 34 行"Orchestrator 不代行浏览器中间观察，不写新 browser-check 中间细节"。
+
+6. **综合**：contract「AP19 通过判定」5 条全部满足，bridge 机制通、Evaluator 已自查证一次落盘、Orchestrator 未代行、无 BLOCKED 触发 → AP19 = PASS。本案无需 retry，无 retry_focus。
+
+### 裁决结论
+
+- verdict: pass（针对 AP19；不改变 AP1–AP11 的 verdict=pass）
+- known_limitations: [AP4 (MCP 不下发子代理)；AP11/AP19 共享环境前置 — chromium/chrome 二进制未预装，不阻塞 bridge 机制与 Stage 通过]
+
+### 独立性声明
+
+本 Decision SubAgent 仅通过 Read 工具读取 contract.md / eval.md / gen.md / state-board.json / decision.md 五个总线/产物文件做出裁决，未查看 Generator/Evaluator/Orchestrator 任何子代理会话的对话上下文与内部推理，与 G/E/Orchestrator 上下文隔离，裁决中立。

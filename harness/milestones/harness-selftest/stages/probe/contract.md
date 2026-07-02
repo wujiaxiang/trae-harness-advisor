@@ -26,3 +26,52 @@
 
 ## 通过判定
 AP1-3,5-11 全 PASS；AP4=FAIL 记 known-limitation，不触发 escalate、不阻塞 → verdict=pass。
+
+---
+
+## AP19 实验补测（mcp_access_mode=evaluator_shell_bridge）
+
+> 实验增强，不改变 AP1–AP11 已验证结论。Orchestrator 只写能力与翻译表；Evaluator SubAgent 在自己上下文内按翻译表把 MCP/browser 意图改写成白名单 shell 命令查证；Orchestrator 不代行浏览器中间观察，不写新 browser-check 中间细节。
+
+### bridge 自检结果（harness/mcp-bridge/check.sh --json）
+
+- `available`: `true`
+- `mode`: `evaluator_shell_bridge`
+- `config`: `/workspace/config/mcporter.json`
+- `commands.mcp-browser`: `available`
+- discovery: mcporter 0.12.3，1 server（playwright，23 tools，healthy）
+
+### mcp_bridge_capabilities
+
+Evaluator SubAgent 只能调用下列白名单 shell 命令（wrapper：`harness/mcp-bridge/bin/mcp-browser`）。不得直接调用 `mcp__Playwright__*` / `run_mcp` / 裸 `npx mcporter call`。
+
+| 白名单 shell 命令 | 对应 MCP tool | 用途 |
+|------|------|------|
+| `harness/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:{url}` | playwright.browser_navigate | 导航到 URL |
+| `harness/mcp-bridge/bin/mcp-browser playwright.browser_snapshot` | playwright.browser_snapshot | 捕获浏览器快照 |
+| `harness/mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot` | playwright.browser_take_screenshot | 截图 |
+| `harness/mcp-bridge/bin/mcp-browser playwright.browser_click element:"{label}" ref:{ref}` | playwright.browser_click | 点击快照中元素 |
+| `harness/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => ...'` | playwright.browser_evaluate | 在页面执行 JS（参数名为 `function`，非 `expression`） |
+| `harness/mcp-bridge/bin/mcp-browser --bridge-check` | — | bridge daemon 存活自检（非浏览器动作） |
+
+- 未列入上表的 MCP 意图：Evaluator 输出 `[BLOCKED: MCP bridge command not allowed]`。
+- bridge 自检失败或命令不可用：Evaluator 输出 `[BLOCKED: MCP bridge unavailable]`。
+- 证据落盘：每次调用后写入 `eval.md`（原始 MCP 意图 / 实际 shell 命令 / 关键输出 / 截图或 trace 路径 / PASS|FAIL|BLOCKED 结论）。
+
+### mcp_to_shell_translation
+
+| MCP 意图 | 改写后的 shell 命令（RunCommand） |
+|------|------|
+| navigate to a URL | `bash harness/mcp-bridge/bin/mcp-browser playwright.browser_navigate url:https://example.com` |
+| capture a browser snapshot | `bash harness/mcp-bridge/bin/mcp-browser playwright.browser_snapshot` |
+| take a screenshot | `bash harness/mcp-bridge/bin/mcp-browser playwright.browser_take_screenshot` |
+| click an element from a snapshot | `bash harness/mcp-bridge/bin/mcp-browser playwright.browser_click element:"Learn more" ref:f2e6` |
+| evaluate JavaScript | `bash harness/mcp-bridge/bin/mcp-browser playwright.browser_evaluate 'function=() => document.title'` |
+
+### AP19 通过判定
+
+- contract 含 `mcp_bridge_capabilities` + `mcp_to_shell_translation`（本段已满足）。
+- Evaluator SubAgent 自己按翻译表通过 shell bridge 查证一次并写 eval.md（命令、输出、PASS|FAIL|BLOCKED）。
+- Decision SubAgent 独立裁决 AP19，写 `VERIFY[AP19]: PASS|FAIL|BLOCKED — 一句话证据`。
+- Orchestrator 不代行浏览器中间观察，不写新 browser-check 中间细节。
+- bridge 不可用则 `[BLOCKED: MCP bridge unavailable]`，VERIFY[AP19]=FAIL/BLOCKED，停止（本次 available=true，不适用）。

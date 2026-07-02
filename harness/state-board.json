@@ -20,6 +20,14 @@
             "eval": "harness/milestones/harness-selftest/stages/probe/eval.md",
             "decision": "harness/milestones/harness-selftest/stages/probe/decision.md",
             "browser_check": "harness/milestones/harness-selftest/stages/probe/browser-check.md"
+          },
+          "ap19_experimental": {
+            "mcp_access_mode": "evaluator_shell_bridge",
+            "bridge_available": true,
+            "verdict": "pass",
+            "verify_line": "VERIFY[AP19]: PASS",
+            "evidence": "eval.md + decision.md AP19 段（append）；Evaluator 经白名单 shell wrapper 自查证，Orchestrator 未代行浏览器中间观察",
+            "known_limitation": "chrome/chromium 二进制未预装（与 AP11 同源环境前置），不阻塞 bridge 机制"
           }
         },
         {
