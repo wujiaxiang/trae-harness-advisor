@@ -10,18 +10,20 @@ It defines:
 - MCP servers
 - install commands
 - keepAlive behavior
+- wrapper server ownership
 - wrapper allowlists
 - translation examples
 
 ## Install/call consistency
 
-`mcpServers.*.install`, `mcpServers.*.args`, `bridgeWrappers.*.allowedTools`, and `bridgeWrappers.*.translationExamples` must describe the same MCP server implementation.
+`mcpServers.*.install`, `mcpServers.*.args`, `bridgeWrappers.*.server`, `bridgeWrappers.*.allowedTools`, and `bridgeWrappers.*.translationExamples` must describe the same MCP server implementation.
 
 Before adding or replacing a server:
 1. Pin the server package/version when possible.
 2. Confirm the runtime dependency that owns external binaries.
 3. Probe the real `tools/list` schema; do not reuse tool names from a different MCP server.
-4. Keep shell examples on `tools/mcp-bridge/bin/{wrapper}`.
+4. Remember that `mcporter call` targets are `server.tool`; wrappers must forward to that form rather than passing a bare tool name.
+5. Keep shell examples on `tools/mcp-bridge/bin/{wrapper}` and include required runtime parameters such as `headless:true`.
 
 Playwright example:
 - `@playwright/mcp` uses `playwright.browser_*` tool names and may look for a system Chrome distribution depending on version/defaults.

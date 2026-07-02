@@ -45,17 +45,30 @@ if not wrapper:
     raise SystemExit(f"missing bridgeWrappers.{wrapper_name}")
 
 allowed = wrapper.get("allowedTools", [])
+server = wrapper.get("server", "")
+if not server and len(config.get("mcpServers", {})) == 1:
+    server = next(iter(config.get("mcpServers", {})))
 quoted_allowed = "\n".join(f"  {shlex.quote(tool)}" for tool in allowed)
 script = f"""#!/usr/bin/env bash
 set -euo pipefail
 
 CONFIG={shlex.quote(config_path)}
+SERVER={shlex.quote(server)}
 ALLOWED=(
 {quoted_allowed}
 )
 
 if [[ "${{1:-}}" == "--bridge-check" ]]; then
+  if [[ -z "${{SERVER}}" ]]; then
+    for entry in "${{ALLOWED[@]}}"; do
+      if [[ "${{entry}}" != *.* ]]; then
+        echo "[mcp-bridge] wrapper requires bridgeWrappers.{wrapper_name}.server for bare allowed tool: ${{entry}}" >&2
+        exit 1
+      fi
+    done
+  fi
   npx -y mcporter daemon status --config "${{CONFIG}}" >/dev/null
+  npx -y mcporter list --config "${{CONFIG}}" >/dev/null
   exit $?
 fi
 
@@ -65,9 +78,26 @@ if [[ -z "${{TARGET}}" ]]; then
   exit 2
 fi
 
+TOOL_NAME="${{TARGET}}"
+CALL_TARGET="${{TARGET}}"
+if [[ "${{TARGET}}" == *.* ]]; then
+  TARGET_SERVER="${{TARGET%%.*}}"
+  TOOL_NAME="${{TARGET#*.}}"
+  if [[ -n "${{SERVER}}" && "${{TARGET_SERVER}}" != "${{SERVER}}" ]]; then
+    echo "[BLOCKED: MCP bridge command not allowed] ${{TARGET}}" >&2
+    exit 2
+  fi
+elif [[ -n "${{SERVER}}" ]]; then
+  CALL_TARGET="${{SERVER}}.${{TARGET}}"
+fi
+if [[ -z "${{SERVER}}" && "${{CALL_TARGET}}" != *.* ]]; then
+  echo "[BLOCKED: MCP bridge command not allowed] wrapper server is not configured for bare target: ${{TARGET}}" >&2
+  exit 2
+fi
+
 FOUND=0
 for entry in "${{ALLOWED[@]}}"; do
-  if [[ "${{entry}}" == "${{TARGET}}" ]]; then
+  if [[ "${{entry}}" == "${{CALL_TARGET}}" || ( -n "${{SERVER}}" && "${{entry}}" == "${{TOOL_NAME}}" ) ]]; then
     FOUND=1
     break
   fi
@@ -79,7 +109,7 @@ if [[ "${{FOUND}}" -ne 1 ]]; then
 fi
 
 shift
-npx -y mcporter call "${{TARGET}}" "$@" --config "${{CONFIG}}" --output json --timeout 60000
+npx -y mcporter call "${{CALL_TARGET}}" "$@" --config "${{CONFIG}}" --output json --timeout 60000
 """
 open(wrapper_path, "w").write(script)
 PY

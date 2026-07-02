@@ -15,3 +15,5 @@ description: TRAE Work 项目内 MCP shell bridge 初始化与维护专家。用
 - 安装/调用必须同源：`install`、`args`、`allowedTools`、`translationExamples` 必须匹配同一个 MCP server 的真实工具名和参数 schema。
 - Playwright 类 server 不能混用：`@playwright/mcp` 的工具名是 `playwright.browser_*`；`@executeautomation/playwright-mcp-server@1.0.12` 的工具名是 `playwright_*`，且依赖 Playwright 1.57.0 / Chromium revision 1200。
 - 大二进制安装要 pin 到 server 依赖版本并配置可达 CDN；例如 `PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium`。
+- Mcporter 调用目标必须是 `server.tool`；wrapper 要负责把白名单工具转发成 `mcporter call {server}.{tool}`，SubAgent 只能照 contract 的 wrapper 命令执行。
+- 云端浏览器调用要把 `headless:true` 等必要参数写进 translationExamples，不能期待 SubAgent 自己猜。

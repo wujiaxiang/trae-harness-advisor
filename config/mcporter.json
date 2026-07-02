@@ -17,6 +17,7 @@
   },
   "bridgeWrappers": {
     "mcp-browser": {
+      "server": "playwright",
       "purpose": "Browser/UI evidence collection from Evaluator context.",
       "policy": "Project-level policy wrapper over official mcporter. SubAgents must not call raw `npx mcporter call`; they may only call this wrapper with allowedTools.",
       "allowedTools": [
@@ -29,23 +30,23 @@
       "translationExamples": [
         {
           "mcp_intent": "navigate to a URL",
-          "shell": "tools/mcp-bridge/bin/mcp-browser playwright_navigate url:https://example.com"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.playwright_navigate url:https://example.com headless:true"
         },
         {
           "mcp_intent": "take a screenshot",
-          "shell": "tools/mcp-bridge/bin/mcp-browser playwright_screenshot"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.playwright_screenshot"
         },
         {
           "mcp_intent": "click an element by selector",
-          "shell": "tools/mcp-bridge/bin/mcp-browser playwright_click selector:\"text=Learn more\""
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.playwright_click selector:\"text=Learn more\""
         },
         {
           "mcp_intent": "evaluate JavaScript",
-          "shell": "tools/mcp-bridge/bin/mcp-browser playwright_evaluate function:'() => document.title'"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.playwright_evaluate function:'() => document.title'"
         },
         {
           "mcp_intent": "get visible text of page",
-          "shell": "tools/mcp-bridge/bin/mcp-browser playwright_get_visible_text"
+          "shell": "tools/mcp-bridge/bin/mcp-browser playwright.playwright_get_visible_text"
         }
       ],
       "mustLogTo": "eval.md"

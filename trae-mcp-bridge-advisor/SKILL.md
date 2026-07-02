@@ -56,13 +56,15 @@ description: TRAE Work 项目内 MCP shell bridge 初始化与维护专家。用
 
 ### 安装/调用一致性规则
 
-`mcpServers.*.install`、`mcpServers.*.args`、`bridgeWrappers.*.allowedTools` 必须来自同一个 MCP server 实现和同一套真实 schema。不能只换 install 命令而沿用旧 allowedTools，也不能只换工具名而沿用不匹配的浏览器 runtime。
+`mcpServers.*.install`、`mcpServers.*.args`、`bridgeWrappers.*.server`、`bridgeWrappers.*.allowedTools` 必须来自同一个 MCP server 实现和同一套真实 schema。不能只换 install 命令而沿用旧 allowedTools，也不能只换工具名而沿用不匹配的浏览器 runtime。
 
 新增或替换 MCP server 前必须确认：
 - MCP server 包名与版本（建议 pin，例如 `@executeautomation/playwright-mcp-server@1.0.12`）。
 - 该 server 依赖的 runtime 版本和二进制位置（例如 Playwright 1.57.0 对应 Chromium revision 1200）。
 - 实际 `tools/list` 暴露的工具名和参数 schema。
+- Mcporter 的调用目标格式是 `server.tool`；wrapper 必须把 SubAgent 命令转发成 `mcporter call {server}.{tool}`，不能把裸 tool 名直接交给 mcporter。
 - `translationExamples` 中的 shell 命令路径必须使用 `tools/mcp-bridge/bin/{wrapper}`，不能回退旧 `harness/mcp-bridge` 路径。
+- 浏览器类云端调用必须确认是否需要 `headless:true` 等环境参数，并写入 translationExamples；SubAgent 不应自行猜参数。
 
 Playwright 类 server 特别注意不要混用工具名：
 
