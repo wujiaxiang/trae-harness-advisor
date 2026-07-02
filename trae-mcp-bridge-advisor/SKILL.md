@@ -54,7 +54,26 @@ description: TRAE Work 项目内 MCP shell bridge 初始化与维护专家。用
 4. 翻译样例：必须基于真实 schema，不能猜参数名。
 5. 负面用例：白名单外 tool 必须 BLOCKED。
 
-Playwright 这类大二进制下载默认使用可达 CDN，例如：
+### 安装/调用一致性规则
+
+`mcpServers.*.install`、`mcpServers.*.args`、`bridgeWrappers.*.allowedTools` 必须来自同一个 MCP server 实现和同一套真实 schema。不能只换 install 命令而沿用旧 allowedTools，也不能只换工具名而沿用不匹配的浏览器 runtime。
+
+新增或替换 MCP server 前必须确认：
+- MCP server 包名与版本（建议 pin，例如 `@executeautomation/playwright-mcp-server@1.0.12`）。
+- 该 server 依赖的 runtime 版本和二进制位置（例如 Playwright 1.57.0 对应 Chromium revision 1200）。
+- 实际 `tools/list` 暴露的工具名和参数 schema。
+- `translationExamples` 中的 shell 命令路径必须使用 `tools/mcp-bridge/bin/{wrapper}`，不能回退旧 `harness/mcp-bridge` 路径。
+
+Playwright 类 server 特别注意不要混用工具名：
+
+| MCP server | 典型工具名 | 安装/浏览器特征 |
+|---|---|---|
+| `@playwright/mcp` | `playwright.browser_navigate` / `playwright.browser_take_screenshot` | 版本浮动，可能走系统 Chrome distribution |
+| `@executeautomation/playwright-mcp-server@1.0.12` | `playwright_navigate` / `playwright_screenshot` / `playwright_get_visible_text` | 依赖 `playwright@1.57.0` + `@playwright/browser-chromium@1.57.0`，应 pin 安装 Chromium revision 1200 |
+
+如果 install 装的是 Playwright 1.57.0 / chromium-1200，但 server 仍是 `@playwright/mcp@latest`，就可能出现 server 寻找系统 Chrome 或其它 revision、而安装目录对不上的问题。
+
+Playwright 这类大二进制下载默认使用可达 CDN，并 pin 到 server 依赖版本，例如：
 
 ```bash
 PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright npx -y playwright@1.57.0 install --with-deps chromium

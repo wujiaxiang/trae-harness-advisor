@@ -13,6 +13,22 @@ It defines:
 - wrapper allowlists
 - translation examples
 
+## Install/call consistency
+
+`mcpServers.*.install`, `mcpServers.*.args`, `bridgeWrappers.*.allowedTools`, and `bridgeWrappers.*.translationExamples` must describe the same MCP server implementation.
+
+Before adding or replacing a server:
+1. Pin the server package/version when possible.
+2. Confirm the runtime dependency that owns external binaries.
+3. Probe the real `tools/list` schema; do not reuse tool names from a different MCP server.
+4. Keep shell examples on `tools/mcp-bridge/bin/{wrapper}`.
+
+Playwright example:
+- `@playwright/mcp` uses `playwright.browser_*` tool names and may look for a system Chrome distribution depending on version/defaults.
+- `@executeautomation/playwright-mcp-server@1.0.12` uses `playwright_*` tool names and depends on `playwright@1.57.0` / Chromium revision 1200.
+
+Mixing the install command for one Playwright runtime with the server/tool names of another creates binary-path or allowlist mismatches.
+
 ## Runtime files
 
 - `tools/mcp-bridge/install.sh`

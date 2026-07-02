@@ -68,7 +68,7 @@
 - [ORCHESTRATOR] 若 check 返回 available=true 且 `commands.mcp-browser=available`，则把 `config/mcporter.json` 中 `bridgeWrappers.mcp-browser.allowedTools` 与 `translationExamples` 誊写为 `harness/milestones/harness-selftest/stages/probe/contract.md` 的 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation`；不要调用 Playwright/MCP 做浏览器观察，不写新的 browser-check 中间细节。
 - [ORCHESTRATOR] 若 check 返回 available=false，则写明 `[BLOCKED: MCP bridge unavailable]`，VERIFY[AP19]=FAIL/BLOCKED，并停止；不得假装通过。
 - [EVALUATOR 独立子代理 @evaluator-role，可选加载 @mcp-bridge-client] 读取 contract.md 的 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation`；当想使用 MCP/browser 能力时，必须按翻译表改写成 RunCommand，只调用 `tools/mcp-bridge/bin/mcp-browser ...` 白名单命令完成一次查证；不得直接调用 `npx mcporter call ...` 或 `mcp__*`。把命令、关键输出、截图/trace 路径或 BLOCKED 原因写入 `harness/milestones/harness-selftest/stages/probe/eval.md`。
-- [EVALUATOR 负面用例] 尝试调用一个未列入白名单的 tool（如 `playwright.invalid_tool`），应被 wrapper 拒绝并输出 `[BLOCKED: MCP bridge command not allowed]`。
+- [EVALUATOR 负面用例] 尝试调用一个未列入白名单的 tool（如 `playwright_invalid_tool`），应被 wrapper 拒绝并输出 `[BLOCKED: MCP bridge command not allowed]`。
 - [DECISION 独立子代理 @decision-role] 只读 contract/gen/eval/board，判断 AP19 是否通过。
 
 通过标准：config-owned MCP runtime 生效；`check.sh --json` 显示 `commands.mcp-browser=available`；contract 含从 `config/mcporter.json` 誊写的 MCP→Shell 翻译表；Evaluator SubAgent 自己按翻译表通过项目 wrapper 查证并写 eval.md；白名单外 tool 被 BLOCKED；Orchestrator 不代行浏览器中间观察；bridge 不可用时明确 BLOCKED。
