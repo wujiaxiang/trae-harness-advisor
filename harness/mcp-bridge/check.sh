@@ -19,7 +19,10 @@ check_command() {
     echo "missing"
     return 1
   fi
-  if "${cmd}" --bridge-check >/tmp/mcp-bridge-"${name}".out 2>/tmp/mcp-bridge-"${name}".err; then
+  # 探测 mcporter daemon 状态（不依赖 wrapper --bridge-check）
+  local daemon_out
+  if daemon_out=$(cd "${HARNESS_DIR}/.." && npx -y mcporter daemon status 2>/tmp/mcp-bridge-"${name}".err); then
+    echo "${daemon_out}" > /tmp/mcp-bridge-"${name}".out
     echo "available"
     return 0
   fi

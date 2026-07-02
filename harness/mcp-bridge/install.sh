@@ -13,52 +13,72 @@ mkdir -p "${DISCOVERY_DIR}"
 run_mcporter_discovery() {
   local output="${DISCOVERY_DIR}/mcporter-list.txt"
   local errors="${DISCOVERY_DIR}/mcporter-list.err"
+  local config="${HARNESS_DIR}/../config/mcporter.json"
 
-  {
-    echo "MCP_BRIDGE_DISCOVER=${MCP_BRIDGE_DISCOVER:-0}"
-    echo "MCP_BRIDGE_SERVER_NAME=${MCP_BRIDGE_SERVER_NAME:-}"
-    echo "MCP_BRIDGE_SERVER_CMD=${MCP_BRIDGE_SERVER_CMD:-}"
-    echo "MCP_BRIDGE_HTTP_URL=${MCP_BRIDGE_HTTP_URL:-}"
-  } > "${DISCOVERY_DIR}/env.txt"
-
-  if [[ "${MCP_BRIDGE_DISCOVER:-0}" != "1" ]]; then
-    echo "discovery skipped; set MCP_BRIDGE_DISCOVER=1" > "${output}"
+  if [[ ! -f "${config}" ]]; then
+    echo "config/mcporter.json not found" > "${output}"
+    echo "missing config" > "${errors}"
     return 0
   fi
 
-  if [[ -n "${MCP_BRIDGE_SERVER_NAME:-}" ]]; then
-    npx -y mcporter list "${MCP_BRIDGE_SERVER_NAME}" --brief >"${output}" 2>"${errors}" || true
-    return 0
-  fi
-
-  if [[ -n "${MCP_BRIDGE_SERVER_CMD:-}" ]]; then
-    npx -y mcporter list --stdio "${MCP_BRIDGE_SERVER_CMD}" --brief >"${output}" 2>"${errors}" || true
-    return 0
-  fi
-
-  if [[ -n "${MCP_BRIDGE_HTTP_URL:-}" ]]; then
-    npx -y mcporter list --http-url "${MCP_BRIDGE_HTTP_URL}" --brief >"${output}" 2>"${errors}" || true
-    return 0
-  fi
-
-  npx -y mcporter list --timeout "${MCP_BRIDGE_DISCOVERY_TIMEOUT_MS:-5000}" >"${output}" 2>"${errors}" || true
+  cd "${HARNESS_DIR}/.." && npx -y mcporter list >"${output}" 2>"${errors}" || true
 }
 
-if [[ -n "${MCP_BRIDGE_INSTALL_CMD:-}" ]]; then
-  echo "[mcp-bridge] running MCP_BRIDGE_INSTALL_CMD"
-  bash -lc "${MCP_BRIDGE_INSTALL_CMD}"
-else
-  cat > "${BIN_DIR}/mcp-browser" <<'EOF'
+{
+  echo "mcporter_version=$(npx -y mcporter --version 2>/dev/null || echo unknown)"
+  echo "config=${HARNESS_DIR}/../config/mcporter.json"
+} > "${DISCOVERY_DIR}/env.txt"
+
+cat > "${BIN_DIR}/mcp-browser" <<'WRAPPER'
 #!/usr/bin/env bash
+# 通用 MCP bridge wrapper：纯转发 + 白名单校验，不含 MCP server 细节
+# 加新 MCP server 只改 config/mcporter.json + 追加本文件 ALLOWED 数组
+set -euo pipefail
+
+ALLOWED=(
+  "playwright.browser_navigate"
+  "playwright.browser_snapshot"
+  "playwright.browser_take_screenshot"
+  "playwright.browser_click"
+  "playwright.browser_evaluate"
+)
+
 if [[ "${1:-}" == "--bridge-check" ]]; then
-  echo "mcp-browser bridge is not configured"
+  if npx -y mcporter daemon status >/dev/null 2>&1; then
+    echo "available"
+    exit 0
+  fi
+  echo "unavailable: daemon not running"
   exit 1
 fi
-echo "[BLOCKED: MCP bridge unavailable] Set MCP_BRIDGE_INSTALL_CMD or replace harness/mcp-bridge/bin/mcp-browser with a real MCP wrapper." >&2
-exit 2
-EOF
-  chmod +x "${BIN_DIR}/mcp-browser"
+
+TARGET="${1:-}"
+if [[ -z "${TARGET}" ]]; then
+  echo "[BLOCKED: MCP bridge command not allowed] empty target" >&2
+  exit 2
 fi
+
+# 校验白名单
+FOUND=0
+for entry in "${ALLOWED[@]}"; do
+  if [[ "${entry}" == "${TARGET}" ]]; then
+    FOUND=1
+    break
+  fi
+done
+
+if [[ "${FOUND}" -ne 1 ]]; then
+  echo "[BLOCKED: MCP bridge command not allowed] ${TARGET}" >&2
+  exit 2
+fi
+
+shift
+npx -y mcporter call "${TARGET}" "$@" --output json --timeout 60000
+WRAPPER
+chmod +x "${BIN_DIR}/mcp-browser"
+
+echo "[mcp-bridge] starting mcporter daemon"
+cd "${HARNESS_DIR}/.." && npx -y mcporter daemon start 2>&1 || echo "[mcp-bridge] daemon start failed (may already be running)"
 
 run_mcporter_discovery
 chmod +x "${BRIDGE_DIR}/check.sh" 2>/dev/null || true
