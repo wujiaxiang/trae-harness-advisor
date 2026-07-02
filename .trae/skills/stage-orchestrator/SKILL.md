@@ -17,6 +17,7 @@ description: >
 - skeleton 文件只提供结构，不包含业务内容；业务内容由 Stage Orchestrator 在当前 Stage 对话中推理填充。
 - 对抗流程是 LLM 驱动的有界动态编排；最多 3 轮，超限 escalate。
 - 只有 root Stage Orchestrator 拥有控制流、MCP 代行、pattern 路由和 board 回写职责；任何 SubAgent 都不得递归启动本 playbook。
+- MCP 访问默认采用 `orchestrator_delegated`；若项目显式配置 `mcp_access_mode=evaluator_shell_bridge`，你只运行 bridge 自检并把白名单能力写入 contract，不读取浏览器中间状态。
 
 ## 确定性流程
 
@@ -68,11 +69,21 @@ description: >
   3. 共识达成后再进入下面的正式对抗轮。
 - 若 force_contract=false：跳过 contract，Generator 直接按当前 Stage 三件套上下文实现。
 
+### 5.5 MCP 访问模式（verification_mode=full 时）
+读取项目/Stage 的 `mcp_access_mode`（默认 `orchestrator_delegated`）：
+
+- **orchestrator_delegated（默认）**：若该 Stage 需要浏览器/MCP 查证，由你代行 MCP，把截图/日志/结论写入 `browser-check.md`，Evaluator 读取该文件纳入评分。
+- **evaluator_shell_bridge（实验增强，需 AP19 真机验证）**：运行 `harness/mcp-bridge/check.sh --json`，读取 `harness/mcp-bridge/manifest.json`，把可用白名单命令和 MCP→Shell 翻译表写入 `contract.md` 的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`。bridge 可用时不要代行浏览器观察；Evaluator 在自己的 SubAgent 上下文内按翻译表把 MCP/browser 意图改写成 RunCommand，并把证据写入 `eval.md`。bridge 不可用时，按 contract 策略 fallback 到 `orchestrator_delegated`，或暂停并要求 `[BLOCKED: MCP bridge unavailable]`。
+
+禁止自由扫描未知 MCP。只能信任 `manifest.json` + `check.sh --json` 的确定性结果。
+
 ### 6. 顺序派发对抗步骤
 按 tasks.md 顺序执行，最多 3 轮：
 1. 【派发独立 SubAgent，加载 @generator-role】[GENERATOR] 按 contract.md 进行 TDD 实现 → `gen.md`。
-2. **（仅 verification_mode=full 且该 Stage 需浏览器验证）** 由**你（Stage Orchestrator）代行 MCP 浏览器验证**：子代理拿不到 MCP，但你有 `mcp__*`（如 Playwright）。你用 MCP 跑浏览器检查，把截图/日志/结论写入 `browser-check.md`。这属"取证"，不算你兼任评分。
-3. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估（用 RunCommand 跑测试/Lint，并 Read `browser-check.md` 纳入浏览器证据）→ `eval.md`。
+2. **（仅 verification_mode=full 且该 Stage 需浏览器验证）**按 `mcp_access_mode` 处理：
+   - `orchestrator_delegated`：由**你（Stage Orchestrator）代行 MCP 浏览器验证**，把截图/日志/结论写入 `browser-check.md`。这属"取证"，不算你兼任评分。
+   - `evaluator_shell_bridge`：你不做浏览器观察，只把 `mcp_bridge_capabilities` 和 `mcp_to_shell_translation` 写入 contract；Evaluator 自己按翻译表把 MCP/browser 意图改写成白名单 shell 命令查证，证据写入 `eval.md`。
+3. 【派发独立 SubAgent，加载 @evaluator-role】[EVALUATOR] 进行四维业务质量评估（用 RunCommand 跑测试/Lint；按 contract 读取 `browser-check.md` 或使用 MCP bridge 自查）→ `eval.md`。
 4. 【派发**独立** SubAgent，加载 @decision-role】[DECISION] 只读 gen.md+eval.md+contract.md → `decision.md`，裁决 pass/retry/escalate。
    - Decision 必须是独立子代理（与 G/E 隔离、看不到双方对话），保证中立盲审；**你（Stage Orchestrator）不得自己兼任裁决**。
 

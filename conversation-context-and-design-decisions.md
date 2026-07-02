@@ -554,10 +554,11 @@ Sprint Contract 是 Generator 和 Evaluator 之间的"对抗协议"：
 4. ✅ 交付物→harness、三件套→.trae/specs、原生 checklist=完成性 — AP6/AP7
 5. ✅ 真并行+无自动循环 — AP9；✅ retry 重派 — AP10；✅ 真 retry→pass 自适应闭环 — AP13
 6. ✅ 浏览器代行链路（方案1）— AP11；✅ codraft — AP12；✅ depends_on 门控 — AP14
-7. ❌ **SubAgent 不继承 MCP — AP4（已知平台限制，不阻塞；浏览器验证由 Orchestrator 代行）**
+7. ❌ **SubAgent 不继承 MCP — AP4（已知平台限制，不阻塞；默认浏览器验证由 Orchestrator 代行）**
 
 **仍待处理/操作项**：
 - AP11 实际浏览器交互需预装 chromium（`npx playwright install chromium`）或配置 TRAE 远程环境（docs.trae.cn/solo_set-up-the-remote-environment）。
+- AP19 新增 `evaluator_shell_bridge` 实验验证入口：通过 TRAE Work 远程环境 install 初始化 `harness/mcp-bridge/`，让 Evaluator SubAgent 通过白名单 shell bridge 自查；未真机验证前不得替代默认 `orchestrator_delegated`。
 - 长 session 中 Orchestrator 上下文窗口管理：靠 board+harness 外置状态分 Stage 续跑；超长流程建议人工分批投递（暂未纳入 PoC）。
 - 小项目 Lite 预设（跳过部分角色）为可选优化，尚未实现。
 

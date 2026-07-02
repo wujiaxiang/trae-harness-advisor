@@ -22,6 +22,18 @@
 |-----------|-----------|--------------------|
 | {报错1} | {原因} | {操作}；**{禁止事项}** |
 
+## MCP Bridge 能力（可选，仅 mcp_access_mode=evaluator_shell_bridge）
+- mode: orchestrator_delegated | evaluator_shell_bridge
+- check_result: harness/mcp-bridge/check.sh --json 的摘要
+- allowed_commands:
+  - {命令名}: {用途、参数边界、输出/截图/trace 路径约定}
+- mcp_to_shell_translation:
+  - 当你想使用 MCP/browser 的 `navigate` 能力时，改用：`harness/mcp-bridge/bin/mcp-browser navigate {url}`
+  - 当你想使用 MCP/browser 的 `snapshot` 能力时，改用：`harness/mcp-bridge/bin/mcp-browser snapshot --output harness/milestones/{milestone}/stages/{stage}/evidence/browser-snapshot.json`
+  - 当你想使用 MCP/browser 的 `screenshot` 能力时，改用：`harness/mcp-bridge/bin/mcp-browser screenshot --output harness/milestones/{milestone}/stages/{stage}/evidence/screenshot.png`
+  - 当你想读取页面文字时，改用：`harness/mcp-bridge/bin/mcp-browser text`
+- fallback: bridge 不可用时 fallback 到 orchestrator_delegated，或输出 `[BLOCKED: MCP bridge unavailable]`
+
 ## 验收项 6 段式要求
 每个验收项尽量包含：
 1. 前置检查命令：服务是否在线 / 环境变量是否已设（带 ✅/❌）。

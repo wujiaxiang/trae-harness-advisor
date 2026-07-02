@@ -1195,7 +1195,7 @@ sup a:hover { text-decoration: underline; }
 <ul>
 <li>创建 <code>evaluator</code> SubAgent（<code>.trae/agents/evaluator.md</code>）</li>
 <li>创建 <code>evaluator-role</code> Skill（<code>.trae/skills/evaluator-role/SKILL.md</code>）</li>
-<li>工具集（真机实测，子代理无 MCP）：Read、Glob、Grep、<strong>RunCommand（跑 test/lint/build）</strong>、WebSearch/WebFetch；<strong>浏览器验证由 Orchestrator 代行</strong>（它有 MCP），证据写 <code>browser-check.md</code>，Evaluator 读取纳入评分</li>
+<li>工具集（真机实测，子代理默认无 MCP）：Read、Glob、Grep、<strong>RunCommand（跑 test/lint/build）</strong>、WebSearch/WebFetch；默认浏览器验证由 Orchestrator 代行（它有 MCP），证据写 <code>browser-check.md</code>，Evaluator 读取纳入评分；实验模式 <code>evaluator_shell_bridge</code> 可让 Evaluator 通过 contract 白名单 shell bridge 自查并把证据写入 <code>eval.md</code>（需 AP19 真机验证）</li>
 <li>工作目录：只读模式，仅可写入 <code>eval.md</code></li>
 </ul>
 <p><strong>Evaluator 的核心原则</strong>：</p>
@@ -1678,7 +1678,7 @@ description: &gt;
 - 任一维度低于 4 分 → 必须在评估报告中列出具体问题
 
 ## 行为准则
-1. 必须用 RunCommand 实际运行测试；面向 UI 的 Stage 读 Orchestrator 代行写的 browser-check.md（浏览器验证由 Orchestrator 代行 MCP），不能仅凭代码审查判断
+1. 必须用 RunCommand 实际运行测试；面向 UI 的 Stage 按 <code>mcp_access_mode</code> 获取证据：默认读 Orchestrator 代行写的 browser-check.md，实验模式 <code>evaluator_shell_bridge</code> 下用 contract 白名单 shell bridge 自查并把证据写入 eval.md，不能仅凭代码审查判断
 2. 必须截图留证
 3. 不能&quot;放水&quot;——不确定时往低打分
 4. 评估报告必须写入 harness/milestones/{milestone}/stages/{stage}/eval.md

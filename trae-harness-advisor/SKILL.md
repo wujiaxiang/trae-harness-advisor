@@ -61,6 +61,7 @@ Input:
   - agent_dir: string (default: ".trae/agents/", not asked)
   - generate_patterns: boolean (default: false; if true, also generate the multi-mode orchestration pack — 3 lightweight roles + 4 pattern playbooks, see deliverable-specs §11)
   - generate_stage_dispatcher: boolean (default: false; if true, also generate the Stage Dispatcher file — the external mechanical dispatcher for execution-stage conversations, see deliverable-specs §11b)
+  - mcp_access_mode: "orchestrator_delegated" | "evaluator_shell_bridge" (default: "orchestrator_delegated"; shell bridge is experimental and requires AP19 true-machine validation)
 
 Output (12 core files: 11 authoritative files + 1 compatibility shim):
   - {skill_dir}planner-role/SKILL.md
@@ -150,6 +151,13 @@ Ask (one round, 3 questions):
       → advance or escalate). Planning confirmation, review, credentials, business tradeoffs, and final
       arbitration stay with the human Supervisor/Lead. Biggest payoff on fanout/tournament/generate-filter.
       See deliverable-specs §11b.
+
+5d. MCP access mode for browser/external verification?
+   A. orchestrator_delegated (default) — root Stage Orchestrator uses MCP and writes browser-check.md
+   B. evaluator_shell_bridge (experimental) — also generate harness/mcp-bridge/*; remote environment install
+      must run `cd /workspace && bash harness/mcp-bridge/install.sh` (or the actual clone directory).
+      Evaluator uses only whitelisted shell bridge commands
+      declared in contract.md and writes evidence into eval.md. Must be validated by AP19 before treating as stable.
 ```
 
 (Role Skills are always generated under .trae/skills/; spec/contract/eval paths are fixed under harness/, so they are not asked separately. state-board.json is a core artifact, always generated.)
@@ -250,6 +258,9 @@ After confirmation, generate in order. See `references/deliverable-specs.md` for
     → {skill_dir}pattern-{classify,fanout,generate-filter,tournament}/SKILL.md  (4 playbooks)
 14. (Optional, generate_stage_dispatcher=true) Stage Dispatcher file (autonomy level B, see deliverable-specs §11b):
     → {harness_dir}stage-dispatcher.md   (external mechanical dispatcher; NOT under {skill_dir})
+15. (Optional, mcp_access_mode=evaluator_shell_bridge) MCP bridge scaffold (experimental AP19, see deliverable-specs §11c):
+    → {harness_dir}mcp-bridge/{install.sh,check.sh,manifest.json}
+    → {skill_dir}mcporter-bridge/SKILL.md   (focused internal Skill for MCP→Shell translation)
 ```
 
 Note: do NOT generate milestone-plan.md or any three-piece instance — those are produced by Planner and the Orchestrator at runtime.

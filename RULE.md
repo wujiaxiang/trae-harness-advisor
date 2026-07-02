@@ -31,6 +31,7 @@
 - tests/ — 测试文件
 - harness/ — 持久真值与消息总线（milestone-plan、contract、gen/eval/decision、browser-check、state-board.json）
 - harness/templates/ — 三件套与 Stage Contract 的结构骨架，只含章节契约，无业务内容
+- harness/mcp-bridge/ — 可选 MCP shell bridge 脚手架；仅在 `mcp_access_mode=evaluator_shell_bridge` 时使用
 - harness/milestones/{milestone}/stages/{stage}/ — Stage 级持久产物目录
 - .trae/specs/ — 原生 /spec 临时 scratch（gitignored，不依赖，不做消息传递）
 - .trae/skills/ — 角色 Skill 与 stage-orchestrator playbook（静态配置，git 同步）
@@ -54,6 +55,13 @@
 - dist/
 - build/
 - package.json / lockfile（除非 Stage Contract 明确授权）
+
+## MCP bridge 约束（仅 evaluator_shell_bridge）
+- Stage Orchestrator 只能运行 `harness/mcp-bridge/check.sh --json` 并读取 `manifest.json`，不得自由扫描未知 MCP 能力。
+- Evaluator 只能调用 `contract.md` 中 `mcp_bridge_capabilities` 声明的白名单 shell 命令。
+- Evaluator 遇到浏览器/MCP 意图时，必须按 `contract.md` 中 `mcp_to_shell_translation` 改写成 RunCommand；不得寻找、编造或直接调用 `mcp__*` 工具。
+- bridge 证据必须写入 `eval.md`；默认/回退的 Orchestrator 代行证据才写 `browser-check.md`。
+- bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`，不得假装验证通过。
 
 ## API 层约束（对应 src/api/**、src/services/** 或项目等价目录）
 - 所有 API 路由必须有输入验证

@@ -18,11 +18,14 @@ description: >
 - Evaluator = 业务质量（我们编排、在 task 内部运行的对抗验收），回答“做出来的东西是否足够好”。
 - 你运行在 tasks.md 的 [EVALUATOR] 步骤中，输出 eval.md；不要把 checklist 当成质量评分表。
 
-## 工具集（真机实测：子代理无 MCP）
+## 工具集与 MCP 访问模式
 - Read / Glob / Grep: 读取与搜索全部项目文件、Stage 文档、Contract、实现总结
 - RunCommand（Shell）: **运行自动化测试、Lint、构建**（子代理有 Shell，可跑 npm test / pytest / go test 等）
 - WebSearch / WebFetch: 需要时联网查文档
-- **注意：子代理拿不到 MCP（无 `mcp__Playwright__*`）**。浏览器类验证由主 Orchestrator 代行（它有 MCP），把截图/日志写入 `browser-check.md`；你 **Read `browser-check.md`** 把浏览器证据纳入四维评分。你自己负责代码审查 + 自动化测试（RunCommand）。
+- **默认：子代理拿不到 MCP（无 `mcp__Playwright__*`）**。`mcp_access_mode=orchestrator_delegated` 时，浏览器类验证由主 Orchestrator 代行并写入 `browser-check.md`；你 Read 该文件纳入四维评分。
+- **实验增强：`mcp_access_mode=evaluator_shell_bridge`**。你可以在自己的 SubAgent 上下文内调用 contract 中 `mcp_bridge_capabilities` 声明的白名单 shell 命令（如 `harness/mcp-bridge/bin/mcp-browser ...`）完成查证，并把命令、关键输出、截图/trace 路径写入 `eval.md`。不得调用未列入白名单的 MCP/bridge 命令；不得用 bridge 修改业务状态。bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`。
+- 若存在 `@mcporter-bridge` Skill，且 `mcp_access_mode=evaluator_shell_bridge`，必须同时加载它；它负责把 MCP/browser 意图翻译成 contract 白名单 shell 命令。
+- **MCP → Shell 翻译规则**：当你想调用浏览器/MCP 能力时，不要寻找或编造 `mcp__*` 工具；读取 `contract.md` 的 `mcp_to_shell_translation` / `mcp_bridge_capabilities`，把意图改写成 RunCommand。例如“打开页面”→`harness/mcp-bridge/bin/mcp-browser navigate {url}`，“截图”→`harness/mcp-bridge/bin/mcp-browser screenshot --output ...`，“读取页面文本”→`harness/mcp-bridge/bin/mcp-browser text`。若 contract 没有对应命令，输出 `[BLOCKED: MCP bridge command not allowed]`。
 
 ## 路径白名单
 ### 允许读取
@@ -53,7 +56,7 @@ description: >
 
 ## 行为准则
 1. 必须读取 Orchestrator 指定的当前 Stage 三件套上下文，并读取 harness/milestones/{milestone}/stages/{stage}/contract.md 与 gen.md
-2. 必须实际运行可用的测试（用 RunCommand）；面向 UI 的 Stage 的浏览器验证由 Orchestrator 代行并写入 `browser-check.md`，你必须 Read 它纳入评分，不能仅凭代码审查判断
+2. 必须实际运行可用的测试（用 RunCommand）；面向 UI 的 Stage 按 `mcp_access_mode` 获取证据：默认 Read `browser-check.md`，或在 `evaluator_shell_bridge` 下按 contract 的 MCP→Shell 翻译表使用白名单命令自查
 3. 必须保留证据：命令、截图路径、日志摘要或复现步骤
 4. 不能“放水”——不确定时往低打分
 5. 评估报告必须写入 harness/milestones/{milestone}/stages/{stage}/eval.md

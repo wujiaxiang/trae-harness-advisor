@@ -1,9 +1,9 @@
 # Harness Self-Test（平台能力 PoC 自检集）
 
-> 目的：在**真实 TRAE Work** 上一次验证本设计依赖的平台能力 + v4.4 设计行为 + v4.5 多模式路由 **AP1–AP18**，避免"纸面设计、真机跑不通"。
+> 目的：在**真实 TRAE Work** 上一次验证本设计依赖的平台能力 + v4.4 设计行为 + v4.5 多模式路由 + AP19 Evaluator shell-bridged MCP 实验，避免"纸面设计、真机跑不通"。
 > 环境**已在本仓库实例化**（无需先跑 advisor）：`.trae/skills/` 13 个 Skill（含 stage-executor 旧名 shim）、根目录 `RULE.md`、`harness/`（templates + state-board + 自检 Milestone 三个 Stage）都已就绪。
 
-## 它验证什么（AP1–AP18，三个 Stage）
+## 它验证什么（AP1–AP19，三个 Stage + 一个实验项）
 
 **Stage probe（平台能力 AP1–AP11）**
 
@@ -38,6 +38,12 @@
 | AP17 | **generate-filter 路由**（@pattern-generate-filter→2 候选→@selector-role 选优） |
 | AP18 | **tournament 路由（可选）**（@pattern-tournament→@selector-role 两两淘汰选冠军） |
 
+**AP19（实验：Evaluator shell-bridged MCP，需单独真机验证）**
+
+| 编号 | 验证点 |
+|------|--------|
+| AP19 | `mcp_access_mode=evaluator_shell_bridge`：远程环境 install 初始化 `harness/mcp-bridge/`；Orchestrator 只写 bridge 能力和 MCP→Shell 翻译表到 contract；Evaluator SubAgent 按翻译表通过白名单 shell bridge 自查并写 `eval.md` |
+
 ```
 .trae/skills/{planner-role,generator-role,evaluator-role,decision-role,stage-orchestrator}/SKILL.md # 5 核心
 .trae/skills/stage-executor/SKILL.md                                                              # 旧名兼容 shim
@@ -48,18 +54,19 @@ harness/
 ├── templates/{spec,tasks,checklist,stage-contract}.skeleton.md
 ├── state-board.json                         # probe(passed) + adaptive(passed) + patterns(planned, depends_on=[probe])
 └── milestones/harness-selftest/
-    ├── milestone-plan.md                    # ★ 自检计划（AP1–AP18）
+    ├── milestone-plan.md                    # ★ 自检计划（AP1–AP19）
     ├── stages/probe/                        # AP1–AP11 交付物落点（contract/gen/eval/decision/browser-check）
     ├── stages/adaptive/                     # AP12–AP14 交付物落点（codraft + retry→pass + sample.json）
     └── stages/patterns/                     # AP15–AP18 交付物落点（part-*/synthesis/classify/route/cand-*/selection/winner）
 ```
 
-## 如何运行（AP1–AP18）
+## 如何运行（AP1–AP19）
 
 见 **`test-prompt.md`**：
 1. 一次性配置 RULE.md 云端钩子规则（AP8 前提）+ 启用 Playwright MCP（AP4/AP11，你已配）+ **在「云端运行环境 > 手动配置」把「安装命令」填 `npx -y playwright@1.57.0 install --with-deps chromium`（版本 pin 到 MCP 内置 playwright，见 test-prompt 第 0 步 / 方法论附录 D）、「启动命令」清空**（AP11 真实导航前提；不配则降级为"链路通"）。
 2. **复制 `test-prompt.md` 第 1 步那一整段**发给 TRAE Work——一次跑完 probe + adaptive、AP1–AP14。
 3. **补测 v4.5 多模式**：`probe`/`adaptive` 已在 v4.4 通过，直接复制 **第 1b 步**那段跑 `patterns` Stage（AP15–AP18，单独可跑）。
+4. **补测 AP19**：云端运行环境 install 需追加 `cd /workspace && bash harness/mcp-bridge/install.sh`（或仓库实际 clone 目录），并配置真实 MCP bridge wrapper；复制 **第 1c 步**那段跑 Evaluator shell bridge 验证。默认 scaffold 未接真实 bridge 时应 BLOCKED，不算通过。
 4. 跑完让它把 `VERIFY[APn]` 汇总成表并 push 到 main。
 
 ## 如何判读

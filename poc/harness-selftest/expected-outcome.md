@@ -1,4 +1,4 @@
-# Expected Outcome — harness-selftest 判读标准（AP1–AP18）
+# Expected Outcome — harness-selftest 判读标准（AP1–AP19）
 
 > 运行后对照本表判读。每个验证点给出"PASS 的样子"与"FAIL 的含义/动作"。
 
@@ -24,6 +24,7 @@
 | **AP16** | classify：`@pattern-classify` 被路由；`@classifier-role` 给出 `label`；root Orchestrator 据标签分支；SubAgent 不递归启动 Orchestrator | classifier 未加载/无标签 → 分类逻辑并入 Orchestrator 自身推理，取消独立角色 |
 | **AP17** | generate-filter：`@pattern-generate-filter` 被路由；两候选并行；`@selector-role` 选出 `winner` | selector 未加载/未选优 → 由 Evaluator 兼任选优，删 selector-role |
 | **AP18** | （可选）tournament：`@pattern-tournament` 被路由；`@selector-role` 两两淘汰给冠军 | 候选少时=选优（与 AP17 重叠）；路由失败 → tournament 降级为 generate-filter |
+| **AP19** | `mcp_access_mode=evaluator_shell_bridge`：远程环境 install 初始化 bridge；Orchestrator 只写 `mcp_bridge_capabilities` 与 `mcp_to_shell_translation`；Evaluator SubAgent 把 MCP/browser 意图改写成白名单 shell 命令自查并把证据写入 `eval.md`；无 `browser-check.md` 中间代行细节 | bridge 不可用或 SubAgent 不能执行 → 记录 `[BLOCKED: MCP bridge unavailable]`，回退 `orchestrator_delegated` 或继续保留 AP19 未通过 |
 
 > 设计验证点（AP11–AP14）确认 v4.4 的新行为：浏览器代行（方案1）、codraft 共识子阶段、真自适应闭环、depends_on 门控。
 > **多模式验证点（AP15–AP18）**确认 v4.5 的 `pattern` 路由：Stage Orchestrator 是否据 `pattern` 加载对应 playbook，3 个新角色（Synthesizer/Classifier/Selector）是否可被子代理加载调度。核心底层原语（并行=AP9、分支、有界淘汰）此前已验证，本组重点在**路由链路 + 新角色加载**。
@@ -39,6 +40,7 @@
 | AUDIT5 | 可选 Agent 模板与角色 Skill 口径一致：Evaluator Agent 不声称拥有 MCP，Decision Agent 不内嵌在 evaluator-role |
 | AUDIT6 | Stage Dispatcher 只派发 `stage-orchestrator` 执行对话，且只读 `harness/` 持久交付物和 board；规划确认、review、escalate/BLOCKED、授权和最终仲裁必须上抛 Supervisor/Lead |
 | AUDIT7 | `state-board.json` artifacts 使用统一 schema：adversarial/loop 包含 `browser_check`，pattern 使用 namespaced `routes/parts/candidates/brackets` |
+| AUDIT8 | `evaluator_shell_bridge` 只能使用 manifest/contract 白名单命令；contract 必须包含 MCP→Shell 翻译表；Orchestrator 不自由扫描未知 MCP，证据由 Evaluator 写入 `eval.md` |
 
 ## 结果记录
 

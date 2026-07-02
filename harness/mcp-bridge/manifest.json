@@ -1,0 +1,40 @@
+{
+  "version": "0.1",
+  "mode": "evaluator_shell_bridge",
+  "description": "Whitelist of shell commands that let Evaluator SubAgents use MCP-backed checks without direct MCP tool access.",
+  "commands": [
+    {
+      "name": "mcp-browser",
+      "path": "harness/mcp-bridge/bin/mcp-browser",
+      "allowed_for": ["evaluator-role"],
+      "purpose": "Browser/UI evidence collection from Evaluator context.",
+      "allowed_actions": ["snapshot", "screenshot", "navigate", "click", "text"],
+      "invocation_template": "harness/mcp-bridge/bin/mcp-browser <action> [args...]",
+      "translation_examples": [
+        {
+          "mcp_intent": "navigate to a URL",
+          "shell": "harness/mcp-bridge/bin/mcp-browser navigate https://example.com"
+        },
+        {
+          "mcp_intent": "capture a browser snapshot",
+          "shell": "harness/mcp-bridge/bin/mcp-browser snapshot --output harness/milestones/{milestone}/stages/{stage}/evidence/browser-snapshot.json"
+        },
+        {
+          "mcp_intent": "take a screenshot",
+          "shell": "harness/mcp-bridge/bin/mcp-browser screenshot --output harness/milestones/{milestone}/stages/{stage}/evidence/screenshot.png"
+        },
+        {
+          "mcp_intent": "read visible text",
+          "shell": "harness/mcp-bridge/bin/mcp-browser text"
+        }
+      ],
+      "must_log_to": "eval.md"
+    }
+  ],
+  "forbidden": [
+    "Do not expose arbitrary MCP tools.",
+    "Do not use bridge commands to mutate production state.",
+    "Do not let roles call commands not listed in this manifest."
+  ],
+  "fallback": "If check.sh reports unavailable, use orchestrator_delegated mode or stop with [BLOCKED: MCP bridge unavailable]."
+}

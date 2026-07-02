@@ -20,13 +20,14 @@
 12. [10. 可选 Agent 配置](#10-可选-agent-配置)
 13. [11. 可选：多模式编排包](#11-可选多模式编排包generate_patterns默认-false)
 14. [11b. 可选：Stage Dispatcher](#11b-可选stage-dispatchergenerate_stage_dispatcher默认-false)
-15. [12. 生成后验证](#12-生成后验证)
+15. [11c. 可选：MCP bridge 脚手架](#11c-可选mcp-bridge-脚手架mcp_access_modeevaluator_shell_bridge)
+16. [12. 生成后验证](#12-生成后验证)
 
 ---
 
 ## 配置变量映射
 
-问题编号与 `SKILL.md` 工作流 Step 1-4 的 12 个问题严格对应。`skill_dir`、`agent_dir` 不在问答中询问，使用默认值：
+问题编号与 `SKILL.md` 工作流 Step 1-4 的问答严格对应。`skill_dir`、`agent_dir` 不在问答中询问，使用默认值：
 
 | 问题 | 变量名 | 默认值 |
 |------|--------|--------|
@@ -45,6 +46,7 @@
 | （不询问）skill_dir | `{skill_dir}` | `".trae/skills/"` |
 | （不询问）agent_dir | `{agent_dir}` | `".trae/agents/"` |
 | （不询问）generate_patterns | `{generate_patterns}` | `false`（开启则额外生成多模式编排包：3 角色+4 playbook，见第 11 节） |
+| Q13: mcp_access_mode | `{mcp_access_mode}` | `"orchestrator_delegated"`；可选 `"evaluator_shell_bridge"`（实验，需 AP19 真机验证） |
 
 > 注：`task_type` 决定 Milestone 的默认 `kind`（development→development，verification→verification，hybrid→由 Planner 按 Milestone 区分）。Stage 目录路径固定在 `{harness_dir}` 下，不再单独询问 spec/eval/contract 目录。state-board.json 为核心产物，始终生成。**Contract 已简化为 Orchestrator 一次标注关键点（见 stage-orchestrator），不再有多轮协商，故无 `max_contract_rounds`。**
 
@@ -97,6 +99,10 @@ RULE.md                           # 项目根目录（钩子规则加载）
 │   └── stage-contract.skeleton.md
 └── state-board.json              # v2 空表
 （可选）{harness_dir}stage-dispatcher.md   # 外部机械派发器（generate_stage_dispatcher=true）
+（可选）{harness_dir}mcp-bridge/           # Evaluator shell-bridged MCP 脚手架（mcp_access_mode=evaluator_shell_bridge）
+├── install.sh
+├── check.sh
+└── manifest.json
 （可选）{agent_dir}               # 默认 .trae/agents/（仅 generate_agents=true）
 ├── generator.md  evaluator.md  decision.md
 .trae/specs/ → 加入 .gitignore（原生临时 scratch，不生成、不依赖）
@@ -355,12 +361,35 @@ RULE.md                           # 项目根目录（钩子规则加载）
 
 ---
 
+## 11c. 可选：MCP bridge 脚手架（`mcp_access_mode=evaluator_shell_bridge`）
+
+当 `{mcp_access_mode}="evaluator_shell_bridge"` 时额外生成 **3 个实验脚手架文件**，用于 AP19 真机验证：让 Evaluator SubAgent 通过白名单 shell 命令间接调用 MCP 能力，并把查证证据留在 `eval.md`。
+
+| 文件 | 模板 | 用途 |
+|------|------|------|
+| `{harness_dir}mcp-bridge/install.sh` | `templates/mcp-bridge-install-template.sh` | TRAE Work 远程环境 install 阶段调用；安装/准备 bridge wrapper 并运行自检 |
+| `{harness_dir}mcp-bridge/check.sh` | `templates/mcp-bridge-check-template.sh` | 输出 `--json` 能力探测结果，供 Stage Orchestrator 写入 contract |
+| `{harness_dir}mcp-bridge/manifest.json` | `templates/mcp-bridge-manifest-template.json` | 白名单命令和安全边界；Orchestrator 不得自由扫描未知 MCP |
+| `{skill_dir}mcporter-bridge/SKILL.md` | `templates/mcporter-bridge-skill-template.md` | 项目内 focused Skill：教 Evaluator 把 MCP/browser 意图翻译成 contract 白名单 shell 命令 |
+
+**远程环境配置要求**：TRAE Work 云端运行环境的 `runtime_config.install` 必须包含 `cd /workspace && bash {harness_dir}mcp-bridge/install.sh`（或仓库实际 clone 目录）；若需要下载 npm/pypi/github 依赖，`network_policy.common_dependencies` 必须允许对应源。install 脚本长度限制为 10KB，因此具体逻辑放入仓库脚本，远程配置只调用脚本。
+
+**运行契约**：
+- Stage Orchestrator 只运行 `check.sh --json` 并读取 `manifest.json`，不得把未知 MCP 能力临时发明给 Evaluator。
+- Stage Orchestrator 必须把 `manifest.json` 的 `invocation_template` / `translation_examples` 誊写成 contract 中的 `mcp_bridge_capabilities` / `mcp_to_shell_translation`，让 Evaluator 明确知道“想用 MCP 时改用哪条 RunCommand”。
+- Evaluator 只能调用 contract 中 `mcp_bridge_capabilities` 声明的白名单命令；遇到浏览器/MCP 意图时必须按 `mcp_to_shell_translation` 改写成 shell，而不是寻找 `mcp__*` 工具。
+- bridge 证据必须写入 `eval.md`；`browser-check.md` 仅用于默认 `orchestrator_delegated` 或 fallback。
+- bridge 不可用时输出 `[BLOCKED: MCP bridge unavailable]`，或按 contract 明确 fallback 到 `orchestrator_delegated`。
+- 本模式必须通过 AP19 真机验证后才能视为稳定能力；本地静态检查不能代表 AP19 通过。
+
+---
+
 ## 12. 生成后验证
 
 生成所有文件后执行：
 
-1. **目录检查**: `{skill_dir}` 5 个核心角色/playbook 目录（planner/generator/evaluator/decision/stage-orchestrator）和 1 个旧名 shim（stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_stage_dispatcher=true` 另有 `{harness_dir}stage-dispatcher.md`。
-2. **文件计数**: 核心 **12 个文件**（5 个权威 Skill + 1 个 stage-executor 兼容 shim + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Stage Dispatcher 文件。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
+1. **目录检查**: `{skill_dir}` 5 个核心角色/playbook 目录（planner/generator/evaluator/decision/stage-orchestrator）和 1 个旧名 shim（stage-executor）、`{harness_dir}templates/`、`{harness_dir}state-board.json` 均已创建；若 `generate_patterns=true` 另有 7 个多模式 Skill 目录；若 `generate_stage_dispatcher=true` 另有 `{harness_dir}stage-dispatcher.md`；若 `mcp_access_mode=evaluator_shell_bridge` 另有 `{harness_dir}mcp-bridge/` 与 `{skill_dir}mcporter-bridge/`。
+2. **文件计数**: 核心 **12 个文件**（5 个权威 Skill + 1 个 stage-executor 兼容 shim + RULE.md + 4 个骨架 + state-board.json），外加 1 段钩子规则文本；可选 +3 个 Agent 配置、+7 个多模式 Skill、+1 个 Stage Dispatcher 文件、+3 个 MCP bridge 脚手架文件、+1 个 MCPorter bridge 翻译 Skill。`task_type=verification` 时 generator-role 跳过 → 核心 11 个文件。
 3. **引用检查**: 路径使用 `{harness_dir}`、`{skill_dir}` 实际值；无 `feature`/`sprint`/`tasks-pattern` 等遗留词。
 4. **职责检查**: 确认未生成任何业务内容（无 milestone-plan、无三件套实例）。
 
